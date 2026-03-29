@@ -54,7 +54,7 @@ export default StyleSheet.create({
   },
   tagText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text,
   },
   dateText: {
@@ -67,7 +67,7 @@ export default StyleSheet.create({
   },
   weightValue: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.primary,
   },
   heightValue: {

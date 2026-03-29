@@ -1,9 +1,9 @@
 export const lightTheme = {
   colors: {
-    primary: '#FF6B00',
-    primaryDark: '#E65100',
+    primary: '#F95004',
+    primaryDark: '#D64403',
     secondary: '#4F46E5',
-    background: '#F3F4F6',
+    background: '#FFFFFF',
     surface: '#FFFFFF',
     text: '#111827',
     textLight: '#4B5563',
@@ -15,6 +15,13 @@ export const lightTheme = {
     info: '#2563EB',
     white: '#FFFFFF',
     black: '#000000',
+  },
+  typography: {
+    regular: 'Montserrat_400Regular',
+    medium: 'Montserrat_500Medium',
+    semiBold: 'Montserrat_600SemiBold',
+    bold: 'Montserrat_600SemiBold',
+    extraBold: 'Montserrat_700Bold',
   },
   spacing: {
     xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40,
@@ -28,15 +35,15 @@ export const lightTheme = {
 
 export const darkTheme = {
   colors: {
-    primary: '#FF6B00',
-    primaryDark: '#E65100',
-    secondary: '#818CF8', // Lighter indigo for Dark Mode
-    background: '#0F172A', // Slate 900
-    surface: '#1E293B',    // Slate 800
-    text: '#F8FAFC',       // Slate 50
-    textLight: '#CBD5E1',  // Slate 300 (was 400)
-    textMuted: '#94A3B8',  // Slate 400 (was 500)
-    border: '#334155',     // Slate 700
+    primary: '#F95004',
+    primaryDark: '#D64403',
+    secondary: '#818CF8',
+    background: '#000000', // Pure black
+    surface: '#121212',    // Very dark gray
+    text: '#FFFFFF',       // White
+    textLight: '#A0A0A0',  // Light gray
+    textMuted: '#666666',  // Muted gray
+    border: '#222222',     // Dark border
     error: '#EF4444',
     success: '#10B981',
     warning: '#F59E0B',
@@ -44,6 +51,7 @@ export const darkTheme = {
     white: '#FFFFFF',
     black: '#000000',
   },
+  typography: lightTheme.typography,
   spacing: lightTheme.spacing,
   shadow: {
     sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 3 },

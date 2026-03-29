@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS, SPACING } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -10,6 +10,7 @@ import api from '../api';
 
 const AddBreedScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const isEditing = !!route.params?.breed;
   const existingBreed = route.params?.breed;
 
@@ -89,7 +90,7 @@ const AddBreedScreen = ({ navigation, route }) => {
             />
           </View>
 
-          <View style={[styles.noteContainer, { backgroundColor: isDarkMode ? theme.colors.surface : '#F8FAFC', borderColor: theme.colors.border }]}>
+          <View style={[styles.noteContainer, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
             <Text style={[styles.note, { color: theme.colors.textMuted }]}>
               <Text style={[styles.noteBold, { color: theme.colors.primary }]}>Note : </Text>
               Manage your livestock breeds. You can specify whether a breed belongs to Goats or Sheep. 
@@ -129,7 +130,7 @@ const AddBreedScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -150,16 +151,18 @@ const styles = StyleSheet.create({
   noteContainer: {
     padding: SPACING.lg,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     marginTop: SPACING.md,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   note: {
     fontSize: 13,
     lineHeight: 20,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_400Regular',
   },
   noteBold: {
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   footer: {
     marginTop: 'auto',

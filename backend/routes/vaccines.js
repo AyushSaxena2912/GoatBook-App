@@ -12,5 +12,6 @@ router.get('/records', auth, vaccineController.getVaccinationRecords);
 router.post('/records', auth, vaccineController.createVaccinationRecord);
 router.put('/records/:id', auth, vaccineController.updateVaccinationRecord);
 router.delete('/records/:id', auth, vaccineController.deleteVaccinationRecord);
+router.get('/schedules', auth, vaccineController.getVaccinationSchedules);
 
 module.exports = router;

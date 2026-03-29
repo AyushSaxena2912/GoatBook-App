@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, Platform, Alert, TouchableOpacity } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -10,7 +10,8 @@ import { Scan, Info } from 'lucide-react-native';
 import api from '../api';
 
 const AddWeightScreen = ({ route, navigation }) => {
-  const { theme } = useTheme();
+  const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const initialTag = route.params?.tagNumber || '';
   const [tagNumber, setTagNumber] = useState(initialTag);
   const [weight, setWeight] = useState('');
@@ -113,13 +114,13 @@ const AddWeightScreen = ({ route, navigation }) => {
           </View>
 
           {fetchingAnimal && (
-            <View style={[styles.infoBox, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.infoBox}>
               <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>Fetching animal details...</Text>
             </View>
           )}
 
           {animalInfo && (
-            <View style={[styles.animalDetailCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.animalDetailCard}>
                <View style={styles.detailRow}>
                 <Info size={16} color={theme.colors.primary} />
                 <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Breed: </Text>
@@ -142,7 +143,7 @@ const AddWeightScreen = ({ route, navigation }) => {
           />
 
           <GInput 
-            label="Weight (KG)" 
+            label="Weight" 
             value={weight} 
             onChangeText={setWeight} 
             keyboardType="decimal-pad"
@@ -180,7 +181,7 @@ const AddWeightScreen = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -203,16 +204,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
     alignItems: 'center',
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#F8FAFC',
   },
   infoText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Montserrat_400Regular',
   },
   animalDetailCard: {
     padding: 16,
     borderRadius: 16,
     marginBottom: 20,
     borderWidth: 1.5,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   detailRow: {
     flexDirection: 'row',
@@ -221,12 +225,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_500Medium',
     marginLeft: 10,
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   submitBtn: {
     marginTop: 10,

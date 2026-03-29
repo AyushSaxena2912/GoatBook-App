@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW, lightTheme } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const LocationDetailsScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const { locationId } = route.params;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ const LocationDetailsScreen = ({ navigation, route }) => {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Info Card */}
-        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={styles.infoCard}>
           <View style={styles.pathRow}>
              <MapPin size={24} color={theme.colors.primary} />
              <Text style={[styles.locationTitle, { color: theme.colors.text }]}>{location.displayName || location.name}</Text>
@@ -78,7 +79,7 @@ const LocationDetailsScreen = ({ navigation, route }) => {
         <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Livestock at this Location</Text>
         
         {distribution.length === 0 ? (
-          <View style={[styles.emptyContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={styles.emptyContainer}>
             <Info size={40} color={theme.colors.border} />
             <Text style={[styles.emptyText, { color: theme.colors.textLight }]}>No animals found in this location.</Text>
           </View>
@@ -86,7 +87,7 @@ const LocationDetailsScreen = ({ navigation, route }) => {
           distribution.map((item, index) => (
             <TouchableOpacity 
               key={index} 
-              style={[styles.breedRow, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              style={styles.breedRow}
               onPress={() => navigation.navigate('AnimalList', { 
                 breedId: item.breedId, 
                 locationId: location.id,
@@ -110,19 +111,23 @@ const LocationDetailsScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
   scrollContent: {
     padding: SPACING.lg,
+    maxWidth: 768,
+    width: '100%',
+    alignSelf: 'center',
   },
   infoCard: {
-    borderRadius: 32,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
     padding: 24,
-    ...lightTheme.shadow.md,
     marginBottom: 32,
     borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   pathRow: {
     flexDirection: 'row',
@@ -130,16 +135,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   locationTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    letterSpacing: -0.5,
+    fontSize: 20,
+    fontFamily: 'Montserrat_600SemiBold',
     flex: 1,
   },
   locationSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     marginTop: 4,
     marginLeft: 36,
-    fontWeight: '600',
+    fontFamily: 'Montserrat_500Medium',
   },
   divider: {
     height: 1,
@@ -154,14 +158,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNum: {
-    fontSize: 26,
-    fontWeight: '900',
+    fontSize: 22,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 11,
+    fontFamily: 'Montserrat_500Medium',
   },
   verticalDivider: {
     width: 1.5,
@@ -169,44 +171,44 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
+    fontFamily: 'Montserrat_600SemiBold',
     marginBottom: 16,
     marginLeft: 4,
+    textTransform: 'uppercase',
   },
   breedRow: {
-    borderRadius: 20,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    ...lightTheme.shadow.sm,
     borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   breedIndicator: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   indicatorText: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 18,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   breedInfo: {
     flex: 1,
   },
   breedName: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   animalCount: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '500',
+    fontSize: 14,
+    marginTop: 4,
+    fontFamily: 'Montserrat_500Medium',
   },
   emptyContainer: {
     padding: 40,
@@ -214,11 +216,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     borderStyle: 'dashed',
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   emptyText: {
     marginTop: 12,
     textAlign: 'center',
-    fontWeight: '500',
+    fontFamily: 'Montserrat_400Regular',
   },
   center: {
     flex: 1,

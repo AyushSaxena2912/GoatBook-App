@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { COLORS, SPACING, SHADOW, lightTheme } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const VaccinationListScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const mode = route.params?.mode; // 'SINGLE' or 'MASS' or undefined
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +62,7 @@ const VaccinationListScreen = ({ navigation, route }) => {
             <Calendar size={12} color={theme.colors.textLight} />
             <Text style={[styles.dateText, { color: theme.colors.textLight }]}>{item.date}</Text>
           </View>
-          <View style={[styles.modeBadge, item.creationMode === 'MASS' ? styles.massBadge : styles.singleBadge, 
+          <View style={[styles.modeBadge, 
             { backgroundColor: isDarkMode ? '#1E293B' : (item.creationMode === 'MASS' ? '#EEF2FF' : '#F3F4F6') }]}>
             <Text style={[styles.modeText, { color: isDarkMode ? theme.colors.primary : '#6B7280' }]}>{item.creationMode || 'SINGLE'}</Text>
           </View>
@@ -125,7 +126,7 @@ const VaccinationListScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -136,7 +137,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginBottom: SPACING.md,
-    ...lightTheme.shadow.sm,
     borderWidth: 1.5,
   },
   recordHeader: {
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   vaccineName: {
     fontSize: 17,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     letterSpacing: -0.5,
   },
   tagRow: {
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   tagNumber: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
     marginLeft: 4,
   },
   dateBox: {
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 11,
     marginLeft: 4,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   rightCol: {
     alignItems: 'flex-end',
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   modeText: {
     fontSize: 10,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     textTransform: 'uppercase',
   },
   dueSection: {
@@ -202,11 +202,11 @@ const styles = StyleSheet.create({
   },
   dueLabel: {
     fontSize: 13,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   dueValue: {
     fontSize: 13,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   remarkText: {
     fontSize: 13,
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderTopWidth: 1,
     paddingTop: 10,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   center: {
     flex: 1,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   fab: {
     position: 'absolute',

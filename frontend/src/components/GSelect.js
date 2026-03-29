@@ -45,6 +45,7 @@ const GSelect = ({
     paddingHorizontal: (value || modalVisible) ? 4 : 0,
     zIndex: 1,
     fontWeight: (value || modalVisible) ? '700' : '500',
+    maxWidth: '90%',
   };
 
   const selectedOption = options.find(opt => opt.value === value);
@@ -61,7 +62,7 @@ const GSelect = ({
           modalVisible && { borderColor: theme.colors.primary, borderWidth: 2 }
         ]}
       >
-        <Animated.Text style={labelStyle} pointerEvents="none">
+        <Animated.Text style={labelStyle} pointerEvents="none" numberOfLines={1} ellipsizeMode="tail">
           {label}{required && '*'}
         </Animated.Text>
         
@@ -127,7 +128,7 @@ const GSelect = ({
                   <Text style={[
                     styles.optionText,
                     { color: theme.colors.text },
-                    item.value === value && { color: theme.colors.primary, fontWeight: '900' }
+                    item.value === value && { color: theme.colors.primary, fontWeight: '600' }
                   ]}>
                     {item.label}
                   </Text>
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '600',
     letterSpacing: -0.5,
   },
   listContainer: {
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });
 

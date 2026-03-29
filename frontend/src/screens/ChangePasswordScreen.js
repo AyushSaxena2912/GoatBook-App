@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,6 +9,7 @@ import api from '../api';
 
 const ChangePasswordScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,9 +84,10 @@ const ChangePasswordScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   flex: {
     flex: 1,
@@ -93,6 +95,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     flexGrow: 1,
+    paddingBottom: 40,
   },
   form: {
     marginTop: SPACING.md,
@@ -106,7 +109,7 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xl,
   },
   saveBtn: {
-    height: 56,
+    marginTop: 10,
   },
 });
 

@@ -1,15 +1,19 @@
-const { Location, Animal, Breed } = require('../models');
-const { Op } = require('sequelize');
+const prisma = require('../config/prisma');
+const { v4: uuidv4 } = require('uuid');
 
-// Helper to build hierarchical name: Current / Parent / Grandparent
+/**
+ * Utility: Build a breadcrumb-style hierarchical name for a location
+ * Example: 'Internal Pen 1 / Shed A / North Block'
+ * Useful for frontend dropdowns and lists to distinguish locations with same simple names
+ */
 const buildHierarchicalName = (location, allLocations) => {
   let name = location.name;
   let current = location;
   const visited = new Set([location.id]);
   
-  while (current.parentLocationId) {
-    if (visited.has(current.parentLocationId)) break; // Protection
-    const parent = allLocations.find(l => l.id === current.parentLocationId);
+  while (current.parent_location_id) {
+    if (visited.has(current.parent_location_id)) break; // Prevent infinite loops from circular parentage
+    const parent = allLocations.find(l => l.id === current.parent_location_id);
     if (!parent) break;
     name += ` / ${parent.name}`;
     current = parent;
@@ -18,20 +22,27 @@ const buildHierarchicalName = (location, allLocations) => {
   return name;
 };
 
-// @desc    Get all locations for a farm
+// @desc    Get all locations for a farm with hierarchical paths
+// @route   GET /api/locations
 exports.getLocations = async (req, res) => {
   try {
-    const allLocations = await Location.findAll({
-      where: { farmId: req.farmId },
-      raw: true // Simplify for path building
+    const allLocations = await prisma.locations.findMany({
+      where: { farm_id: req.farmId }
     });
 
     const locationsWithPaths = allLocations.map(loc => ({
-      ...loc,
-      displayName: buildHierarchicalName(loc, allLocations)
+      id: loc.id,
+      code: loc.code,
+      name: loc.name,
+      type: loc.type,
+      parentLocationId: loc.parent_location_id,
+      farmId: loc.farm_id,
+      createdAt: loc.created_at,
+      updatedAt: loc.updated_at,
+      displayName: buildHierarchicalName(loc, allLocations) // Add the breadcrumb name
     }));
 
-    // Sort by name for a better list experience
+    // Sort alphabetically by the full hierarchical name
     locationsWithPaths.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     res.json(locationsWithPaths);
@@ -41,18 +52,26 @@ exports.getLocations = async (req, res) => {
   }
 };
 
-// @desc    Add a new location
+// @desc    Create a new location (shed, pen, or sub-location)
+// @route   POST /api/locations
 exports.addLocation = async (req, res) => {
   const { code, name, type, parentLocationId } = req.body;
   try {
-    const location = await Location.create({
-      code,
-      name,
-      type,
-      parentLocationId: parentLocationId || null,
-      farmId: req.farmId,
-      createdByUserId: req.user.id
+    const now = new Date();
+    const location = await prisma.locations.create({
+      data: {
+        id: uuidv4(),
+        code,
+        name,
+        type: type || 'Internal Location',
+        parent_location_id: parentLocationId || null,
+        farm_id: req.farmId,
+        created_by_user_id: req.user.id,
+        created_at: now,
+        updated_at: now
+      }
     });
+
     res.status(201).json(location);
   } catch (err) {
     console.error('ADD LOCATION ERROR:', err);
@@ -60,82 +79,95 @@ exports.addLocation = async (req, res) => {
   }
 };
 
-// @desc    Update a location
+// @desc    Update location attributes
+// @route   PUT /api/locations/:id
 exports.updateLocation = async (req, res) => {
   const { code, name, type, parentLocationId } = req.body;
   try {
-    const location = await Location.findOne({
-      where: { id: req.params.id, farmId: req.farmId }
+    const location = await prisma.locations.findFirst({
+      where: { id: req.params.id, farm_id: req.farmId }
     });
 
     if (!location) {
       return res.status(404).json({ message: 'Location not found' });
     }
 
-    // Prevent circular reference
+    // Integrity Check: Prevent location from being its own parent (leads to infinite recursion)
     if (parentLocationId === req.params.id) {
         return res.status(400).json({ message: 'Location cannot be its own parent' });
     }
 
-    await location.update({ code, name, type, parentLocationId: parentLocationId || null, updatedByUserId: req.user.id });
-    res.json(location);
+    const updated = await prisma.locations.update({
+      where: { id: req.params.id },
+      data: {
+        code,
+        name,
+        type,
+        parent_location_id: parentLocationId || null,
+        updated_by_user_id: req.user.id,
+        updated_at: new Date()
+      }
+    });
+
+    res.json(updated);
   } catch (err) {
     console.error('UPDATE LOCATION ERROR:', err);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
-// @desc    Delete a location
+// @desc    Safely remove a location
+// @route   DELETE /api/locations/:id
 exports.deleteLocation = async (req, res) => {
   try {
-    const location = await Location.findOne({
-      where: { id: req.params.id, farmId: req.farmId }
+    const location = await prisma.locations.findFirst({
+      where: { id: req.params.id, farm_id: req.farmId }
     });
 
     if (!location) {
       return res.status(404).json({ message: 'Location not found' });
     }
 
-    // Check if animals are present in this location
-    const animalCount = await Animal.count({ where: { locationId: location.id } });
+    // Integrity Check 1: Prevent deletion if animals are currently parked here
+    const animalCount = await prisma.animals.count({ where: { location_id: location.id } });
     if (animalCount > 0) {
       return res.status(400).json({ message: 'Cannot delete location with animals present' });
     }
 
-    // Check for child locations
-    const childCount = await Location.count({ where: { parentLocationId: location.id } });
+    // Integrity Check 2: Prevent deletion if this is a parent to other sub-locations
+    const childCount = await prisma.locations.count({ where: { parent_location_id: location.id } });
     if (childCount > 0) {
         return res.status(400).json({ message: 'Cannot delete location that has sub-locations' });
     }
 
-    await location.destroy();
-    res.json({ message: 'Location removed' });
+    await prisma.locations.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Location removed successfully' });
   } catch (err) {
     console.error('DELETE LOCATION ERROR:', err);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
-// @desc    Get animal distribution at a location grouped by breed
+// @desc    Get report of animal distribution within a specific location grouped by breed
+// @route   GET /api/locations/:id/stats
 exports.getLocationStats = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Check if location exists and belongs to farm
-    const location = await Location.findOne({ where: { id, farmId: req.farmId } });
+    const location = await prisma.locations.findFirst({ where: { id, farm_id: req.farmId } });
     if (!location) return res.status(404).json({ message: 'Location not found' });
 
-    // Fetch animals at this location with their breed info
-    const animals = await Animal.findAll({
-      where: { locationId: id, farmId: req.farmId },
-      include: [{ model: Breed, attributes: ['name', 'animalType'] }]
+    // Fetch animals residing at this physical location
+    const animals = await prisma.animals.findMany({
+      where: { location_id: id, farm_id: req.farmId },
+      include: { breeds: { select: { name: true, animal_type: true } } }
     });
 
-    // Group animals by breed
+    // Grouping Logic: Categorize animals by their breed to show variety in the shed
     const distribution = {};
     animals.forEach(animal => {
-      const breedName = animal.Breed?.name || 'Unknown Breed';
-      const breedId = animal.breedId;
+      const breedName = animal.breeds?.name || 'Unknown Breed';
+      const breedId = animal.breed_id;
       
       if (!distribution[breedId]) {
         distribution[breedId] = {
@@ -149,13 +181,18 @@ exports.getLocationStats = async (req, res) => {
       distribution[breedId].count += 1;
       distribution[breedId].animals.push({
           id: animal.id,
-          tagNumber: animal.tagNumber,
+          tagNumber: animal.tag_number,
           gender: animal.gender
       });
     });
 
     res.json({
-      location,
+      location: {
+        id: location.id,
+        code: location.code,
+        name: location.name,
+        type: location.type
+      },
       totalAnimals: animals.length,
       distribution: Object.values(distribution)
     });

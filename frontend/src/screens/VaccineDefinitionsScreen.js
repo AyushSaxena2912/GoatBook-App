@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW, lightTheme } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const VaccineDefinitionsScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [vaccines, setVaccines] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,9 +32,9 @@ const VaccineDefinitionsScreen = ({ navigation }) => {
   };
 
   const renderItem = ({ item }) => (
-    <View style={[styles.recordItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+    <View style={styles.recordItem}>
       <View style={styles.recordHeader}>
-        <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#EEF2FF' }]}>
+        <View style={styles.iconBox}>
           <ListPlus size={20} color={theme.colors.primary} />
         </View>
         <View style={{ flex: 1 }}>
@@ -84,7 +85,7 @@ const VaccineDefinitionsScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -96,8 +97,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginBottom: SPACING.md,
-    ...lightTheme.shadow.sm,
     borderWidth: 1.5,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   recordHeader: {
     flexDirection: 'row',
@@ -110,15 +112,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#EEF2FF',
   },
   vaccineName: {
     fontSize: 17,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     letterSpacing: -0.5,
   },
   daysText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   remarkText: {
     marginTop: 10,
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingTop: 10,
     borderTopWidth: 1,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   editBtn: {
     padding: 8,
@@ -143,7 +146,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   fab: {
     position: 'absolute',

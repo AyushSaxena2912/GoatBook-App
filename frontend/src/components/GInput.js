@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, View, TextInput, Text, Animated, Platform, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING } from '../theme';
+import { Eye, EyeOff } from 'lucide-react-native';
+import { COLORS, SPACING, lightTheme } from '../theme';
 
 import { useTheme } from '../theme/ThemeContext';
 
@@ -18,6 +19,7 @@ const GInput = ({
 }) => {
   const { isDarkMode, theme } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
 
   useEffect(() => {
@@ -46,7 +48,8 @@ const GInput = ({
     backgroundColor: (isFocused || value) ? theme.colors.surface : 'transparent',
     paddingHorizontal: (isFocused || value) ? 4 : 0,
     zIndex: 1,
-    fontWeight: (isFocused || value) ? '700' : '500',
+    fontFamily: theme.typography.medium,
+    maxWidth: '90%',
   };
 
   const inputRef = useRef(null);
@@ -60,12 +63,12 @@ const GInput = ({
         style={[
           styles.inputWrapper, 
           { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-          isFocused && { borderColor: theme.colors.primary, borderWidth: 2 },
+          isFocused && { borderColor: theme.colors.primary, borderWidth: 1.5 },
           error && { borderColor: theme.colors.error },
           isMultiline && { height: 'auto', minHeight: 80, alignItems: 'flex-start', paddingTop: 16 }
         ]}
       >
-        <Animated.Text style={labelStyle} pointerEvents="none">
+        <Animated.Text style={labelStyle} pointerEvents="none" numberOfLines={1} ellipsizeMode="tail">
           {label}{required && '*'}
         </Animated.Text>
         <TextInput
@@ -74,20 +77,32 @@ const GInput = ({
             styles.input,
             isMultiline && { textAlignVertical: 'top', height: 'auto', minHeight: 60, marginTop: 4 },
             props.style,
-            { color: theme.colors.text },
+            { color: theme.colors.text, fontFamily: theme.typography.medium },
           ])}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           placeholder={(isFocused && !value) ? placeholder : ""} 
           placeholderTextColor={theme.colors.textMuted}
           cursorColor={theme.colors.primary}
           selectionColor={theme.colors.primary + '40'}
           {...props}
+          secureTextEntry={secureTextEntry && !showPassword}
         />
+        {secureTextEntry && (
+          <TouchableOpacity 
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            {showPassword ? (
+              <EyeOff size={20} color={theme.colors.textLight} />
+            ) : (
+              <Eye size={20} color={theme.colors.textLight} />
+            )}
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
       {error && <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>}
     </View>
@@ -113,13 +128,14 @@ const styles = StyleSheet.create({
     height: '100%',
     textAlignVertical: 'center',
     paddingTop: Platform.OS === 'ios' ? 0 : 4,
-    fontWeight: '500',
   },
   errorText: {
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
-    fontWeight: '600',
+  },
+  eyeIcon: {
+    padding: 8,
   },
 });
 

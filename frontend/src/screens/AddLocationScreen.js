@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { COLORS, SPACING } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,7 +9,8 @@ import GSelect from '../components/GSelect';
 import api from '../api';
 
 const AddLocationScreen = ({ navigation, route }) => {
-  const { theme } = useTheme();
+  const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const isEditing = !!route.params?.location;
   const existingLocation = route.params?.location;
 
@@ -183,7 +184,7 @@ const AddLocationScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -197,6 +198,7 @@ const styles = StyleSheet.create({
   formContainer: {
     marginTop: SPACING.md,
     paddingTop: 8,
+    backgroundColor: 'transparent',
   },
   gap: {
     height: 16,
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
   },
   halfBtn: {
     width: '48%',
-  }
+  },
 });
 
 export default AddLocationScreen;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const AddVaccinationScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const existingRecord = route.params?.record;
   const isEditing = !!existingRecord;
   const mode = route.params?.mode || (isEditing ? 'single' : 'single');
@@ -208,10 +209,10 @@ const AddVaccinationScreen = ({ navigation, route }) => {
             />
 
             <View style={styles.inlineStats}>
-              <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }]}>
+              <View style={styles.statBox}>
                 <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Given Every</Text>
-                <View style={[styles.badge, { backgroundColor: isDarkMode ? theme.colors.primary + '33' : '#E2E8F0' }]}>
-                  <Text style={[styles.badgeText, { color: theme.colors.primary }]}>{daysBetween}</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{daysBetween}</Text>
                 </View>
                 <Text style={[styles.statSuffix, { color: theme.colors.textLight }]}>Days</Text>
               </View>
@@ -259,9 +260,9 @@ const AddVaccinationScreen = ({ navigation, route }) => {
                 {selectedAnimals.length > 0 && (
                   <View style={styles.selectedContainer}>
                     {selectedAnimals.map(animal => (
-                      <View key={animal.id} style={[styles.animalChip, { backgroundColor: isDarkMode ? '#1E293B' : '#F0F9FF', borderColor: isDarkMode ? theme.colors.primary + '66' : theme.colors.border }]}>
+                      <View key={animal.id} style={styles.animalChip}>
                         <CheckCircle2 size={16} color={theme.colors.success} />
-                        <Text style={[styles.chipText, { color: isDarkMode ? theme.colors.white : theme.colors.primary }]}>{animal.tagNumber}</Text>
+                        <Text style={styles.chipText}>{animal.tagNumber}</Text>
                         <TouchableOpacity onPress={() => removeAnimal(animal.id)}>
                           <X size={16} color={theme.colors.textLight} />
                         </TouchableOpacity>
@@ -273,7 +274,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
             )}
 
             {isEditing && (
-              <View style={[styles.editInfoSection, { backgroundColor: isDarkMode ? '#1E293B' : theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.editInfoSection}>
                 <Text style={[styles.editInfoLabel, { color: theme.colors.textLight }]}>Animal Tag</Text>
                 <View style={styles.editInfoValue}>
                   <CheckCircle2 size={16} color={theme.colors.success} />
@@ -322,7 +323,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -346,29 +347,34 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     alignSelf: 'flex-start',
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#F8FAFC',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   statLabel: {
     fontSize: 14,
     marginRight: 8,
-    fontWeight: '600',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   badge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 8,
+    backgroundColor: isDarkMode ? theme.colors.primary + '33' : '#F1F5F9',
   },
   badgeText: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.primary,
   },
   statSuffix: {
     fontSize: 14,
     marginLeft: 8,
-    fontWeight: '600',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     marginVertical: SPACING.lg,
     letterSpacing: -0.5,
   },
@@ -390,7 +396,7 @@ const styles = StyleSheet.create({
   },
   addTagBtnText: {
     color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 14,
   },
   selectedContainer: {
@@ -401,23 +407,26 @@ const styles = StyleSheet.create({
   animalChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginRight: 8,
     marginBottom: 8,
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#F0F9FF',
+    borderColor: isDarkMode ? theme.colors.primary + '66' : theme.colors.border,
   },
   chipText: {
     marginHorizontal: 8,
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
+    color: isDarkMode ? theme.colors.white : theme.colors.primary,
   },
   emptyText: {
     fontSize: 14,
     textAlign: 'center',
     marginTop: 24,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   footer: {
     marginTop: 20,
@@ -434,10 +443,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1.5,
+    backgroundColor: isDarkMode ? theme.colors.surface : '#F8FAFC',
+    borderColor: theme.colors.border,
   },
   editInfoLabel: {
     fontSize: 12,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -448,7 +459,7 @@ const styles = StyleSheet.create({
   },
   editTagText: {
     fontSize: 22,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     marginLeft: 10,
   },
 });

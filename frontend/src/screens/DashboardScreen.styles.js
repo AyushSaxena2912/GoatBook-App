@@ -1,113 +1,67 @@
 import { StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
-import { COLORS, SPACING, SHADOW } from '../theme';
+import { SPACING } from '../theme';
 
-export default StyleSheet.create({
+export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: theme.colors.background,
   },
   header: {
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 48,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    ...SHADOW.lg,
+    backgroundColor: theme.colors.primary,
   },
-  userInfo: {
+  menuButton: {
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    color: '#FFF',
+    fontFamily: 'Montserrat_600SemiBold',
     flex: 1,
   },
-  welcome: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-  },
-  farmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  farmName: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: COLORS.white,
-    marginLeft: 6,
-    letterSpacing: -0.5,
-  },
-  logoutBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
+  themeToggle: {
+    padding: 8,
+    marginLeft: 10,
   },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     flex: 1,
-    marginTop: 0, // Removed negative margin to prevent overlap
-    paddingTop: 20,
-  },
-  welcomeSection: {
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  hiText: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.text,
-  },
-  subHi: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  row: {
-    justifyContent: 'space-between',
   },
   list: {
     paddingBottom: 40,
   },
-  tile: {
-    backgroundColor: COLORS.white,
-    width: '48%',
-    borderRadius: 24,
-    padding: 16,
+  row: {
+    justifyContent: 'space-between',
     marginBottom: 16,
-    ...SHADOW.md,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
   },
-  tileIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: '#FFF1EA',
+  tile: {
+    backgroundColor: theme.colors.surface,
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    // Subtle shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDarkMode ? 0.3 : 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  tileInfo: {
-    paddingLeft: 4,
+  tileIcon: {
+    marginBottom: 12,
   },
   tileTitle: {
     fontSize: 13,
-    color: COLORS.textMuted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  tileCount: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: COLORS.text,
-    marginTop: 1,
+    color: theme.colors.text,
+    fontFamily: 'Montserrat_500Medium',
+    textAlign: 'center',
   },
 });

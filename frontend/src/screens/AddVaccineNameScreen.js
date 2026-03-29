@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -11,6 +11,7 @@ import { ListPlus } from 'lucide-react-native';
 
 const AddVaccineNameScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [name, setName] = useState('');
   const [daysBetween, setDaysBetween] = useState('');
   const [remark, setRemark] = useState('');
@@ -117,8 +118,8 @@ const AddVaccineNameScreen = ({ navigation }) => {
               <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 20 }} />
             ) : vaccines.length > 0 ? (
               vaccines.map((v) => (
-                <View key={v.id} style={[styles.vaccineItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                  <View style={[styles.vaccineIcon, { backgroundColor: isDarkMode ? theme.colors.surface : '#EEF2FF' }]}>
+                <View key={v.id} style={styles.vaccineItem}>
+                  <View style={styles.vaccineIcon}>
                     <ListPlus size={20} color={theme.colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -137,12 +138,13 @@ const AddVaccineNameScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
   content: {
     padding: SPACING.lg,
+    paddingBottom: 40,
   },
   formCard: {
     paddingBottom: SPACING.lg,
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   },
   daysLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
     marginRight: 10,
   },
   daysInputBox: {
@@ -163,14 +165,14 @@ const styles = StyleSheet.create({
   },
   daysSuffix: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
     marginLeft: 10,
   },
   helperText: {
     fontSize: 13,
     lineHeight: 18,
     marginBottom: SPACING.lg,
-    fontWeight: '600',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   footer: {
     marginTop: SPACING.md,
@@ -179,11 +181,12 @@ const styles = StyleSheet.create({
   listSection: {
     marginTop: 20,
     paddingTop: 24,
-    borderTopWidth: 1,
+    borderTopWidth: 1.5,
+    borderTopColor: theme.colors.border,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     marginBottom: 20,
     letterSpacing: -0.5,
   },
@@ -194,29 +197,32 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1.5,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   vaccineIcon: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#EEF2FF',
   },
   vaccineLabel: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   vaccineDays: {
     fontSize: 13,
     marginTop: 2,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 24,
     fontStyle: 'italic',
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
 });
 

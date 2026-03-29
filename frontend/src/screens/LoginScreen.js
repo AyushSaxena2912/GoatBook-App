@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -8,6 +8,7 @@ import api, { setAuthToken, setSelectedFarm } from '../api';
 
 const LoginScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { identifier: email, password });
       const { token, farms } = response.data;
       
       await setAuthToken(token);
@@ -31,7 +32,12 @@ const LoginScreen = ({ navigation }) => {
       } else if (farms && farms.length === 1) {
         await setSelectedFarm(farms[0].id);
         setLoading(false);
-        navigation.replace('Dashboard');
+        try {
+          navigation.replace('MainDrawer');
+        } catch (navError) {
+          console.error('Navigation Error:', navError);
+          alert('Navigation Failed: ' + navError.message);
+        }
       } else {
         alert('No farms found for this account.');
         setLoading(false);
@@ -46,33 +52,25 @@ const LoginScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
-        <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
-            <View style={[styles.logoCircle, { backgroundColor: '#FFFFFF' }]}>
-                <Text style={styles.logoText}>GB</Text>
+        <View style={styles.formWrapper}>
+            <View style={styles.titleContainer}>
+                <Text style={styles.mainTitle}>Login</Text>
+                <Text style={styles.subTitle}>Login to Goatwala Farm APP!</Text>
             </View>
-            <Text style={[styles.appName, { color: '#FFFFFF' }]}>GoatBook</Text>
-            <Text style={[styles.appTagline, { color: 'rgba(255,255,255,0.8)' }]}>Modern Farm Management</Text>
-        </View>
 
-        <View style={styles.formContainer}>
-            <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={[styles.welcomeTitle, { color: theme.colors.text }]}>Welcome Back</Text>
-                <Text style={[styles.welcomeSub, { color: theme.colors.textLight }]}>Manage your farm with ease</Text>
-
-                <View style={styles.form}>
+            <View style={styles.form}>
                 <GInput 
-                    label="Email Address" 
+                    label="Email or Phone" 
                     value={email} 
                     onChangeText={setEmail} 
-                    placeholder="example@mail.com"
-                    keyboardType="email-address"
+                    placeholder="email or phone number"
                     autoCapitalize="none"
                     required 
                 />
-                <View style={{ height: 16 }} />
+                <View style={{ height: 20 }} />
                 <GInput 
                     label="Password" 
                     value={password} 
@@ -81,23 +79,26 @@ const LoginScreen = ({ navigation }) => {
                     required 
                 />
                 
-                <TouchableOpacity style={styles.forgotPass}>
-                    <Text style={[styles.forgotText, { color: theme.colors.primary }]}>Forgot Password?</Text>
+                <TouchableOpacity 
+                    style={styles.forgotPass}
+                    onPress={() => navigation.navigate('ForgotPassword')}
+                >
+                    <Text style={[styles.forgotText, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Forgot password?</Text>
                 </TouchableOpacity>
 
                 <GButton 
-                    title="Sign In" 
+                    title="Login" 
                     onPress={handleLogin} 
                     loading={loading}
+                    containerStyle={styles.loginBtn}
                 />
-                </View>
-            </View>
 
-            <View style={styles.footer}>
-                <Text style={[styles.footerText, { color: theme.colors.textLight }]}>New to GoatBook? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                    <Text style={[styles.link, { color: theme.colors.primary }]}>Create Account</Text>
-                </TouchableOpacity>
+                <View style={styles.footer}>
+                    <Text style={styles.footerText}>Don’t have an account? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                        <Text style={styles.link}>Register</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
       </ScrollView>
@@ -105,90 +106,65 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: 24,
   },
-  header: {
+  formWrapper: {
     paddingTop: 80,
-    paddingBottom: 70,
-    alignItems: 'center',
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
+    flex: 1,
   },
-  logoCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+  titleContainer: {
+    marginBottom: 60,
   },
-  logoText: {
-    fontSize: 44,
-    fontWeight: '900',
-    color: '#312E81',
+  mainTitle: {
+    fontSize: 32,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.primary,
+    letterSpacing: -1,
   },
-  appName: {
-    fontSize: 34,
-    fontWeight: '900',
-    marginTop: 16,
-    letterSpacing: -0.5,
-  },
-  appTagline: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  formContainer: {
-    paddingHorizontal: 20,
-    marginTop: -40,
-  },
-  card: {
-    borderRadius: 32,
-    padding: 24,
-    borderWidth: 1,
-  },
-  welcomeTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  welcomeSub: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 32,
-    fontWeight: '600',
+  subTitle: {
+    fontSize: 16,
+    marginTop: 8,
+    fontFamily: 'Montserrat_500Medium',
+    color: theme.colors.textLight,
   },
   form: {
-    marginTop: 0,
+    flex: 1,
   },
   forgotPass: {
     alignSelf: 'flex-end',
-    marginVertical: 16,
-    marginBottom: 32,
+    marginTop: 12,
+    marginBottom: 30,
   },
   forgotText: {
-    fontWeight: '800',
     fontSize: 14,
+    color: theme.colors.primary,
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  loginBtn: {
+    marginTop: 10,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 40,
+    marginTop: 30,
+    paddingBottom: 40,
   },
   footerText: {
-    fontWeight: '700',
+    fontSize: 15,
+    fontFamily: 'Montserrat_500Medium',
+    color: theme.colors.textLight,
   },
   link: {
-    fontWeight: '900',
+    fontSize: 15,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.primary,
     textDecorationLine: 'underline',
   }
 });

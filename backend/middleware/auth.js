@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User, Employee, FarmEmployee } = require('../models');
+const prisma = require('../config/prisma');
 
 module.exports = async (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -13,21 +13,24 @@ module.exports = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     
     // Fetch user and their employee identity
-    const user = await User.findByPk(decoded.id, {
-      include: [{ model: Employee, as: 'employeeProfile' }]
+    const user = await prisma.users.findUnique({
+      where: { id: decoded.id },
+      include: { employees: true }
     });
 
-    if (!user || !user.employeeProfile) {
+    const employeeProfile = user?.employees?.[0];
+
+    if (!user || !employeeProfile) {
       return res.status(401).json({ message: 'User or Employee profile not found' });
     }
 
     req.user = user;
-    req.employee = user.employeeProfile;
+    req.employee = employeeProfile;
 
     // If a farmId is provided, verify the employee belongs to that farm
     if (farmId) {
-      const membership = await FarmEmployee.findOne({
-        where: { farmId, employeeId: user.employeeProfile.id }
+      const membership = await prisma.farm_employees.findFirst({
+        where: { farm_id: farmId, employee_id: employeeProfile.id }
       });
 
       if (!membership) {

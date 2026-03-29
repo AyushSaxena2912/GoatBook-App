@@ -1,0 +1,302 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model animals {
+  id                                      String                          @id @db.Uuid
+  tag_number                              String                          @db.VarChar(255)
+  color                                   String?                         @db.VarChar(255)
+  breed_id                                String                          @db.Uuid
+  location_id                             String?                         @db.Uuid
+  farm_id                                 String                          @db.Uuid
+  gender                                  enum_animals_gender
+  birth_date                              DateTime?                       @db.Date
+  birth_weight                            Decimal?                        @db.Decimal(6, 2)
+  animal_type                             String?                         @default("GOAT") @db.VarChar(255)
+  is_breeder                              Boolean?                        @default(false)
+  is_qurbani                              Boolean?                        @default(false)
+  batch_no                                String?                         @db.VarChar(255)
+  mother_tag_id                           String?                         @db.VarChar(255)
+  father_tag_id                           String?                         @db.VarChar(255)
+  acquisition_method                      enum_animals_acquisition_method @default(BORN)
+  purchase_date                           DateTime?                       @db.Date
+  purchase_price                          Decimal?                        @db.Decimal(10, 2)
+  age_in_months                           Int?
+  female_condition                        enum_animals_female_condition?
+  birth_type                              enum_animals_birth_type?
+  status                                  enum_animals_status             @default(LIVE)
+  is_ready_for_sale                       Boolean?                        @default(false)
+  sale_price                              Decimal?                        @db.Decimal(10, 2)
+  current_weight                          Decimal?                        @db.Decimal(6, 2)
+  remark                                  String?
+  created_by_user_id                      String?                         @db.Uuid
+  updated_by_user_id                      String?                         @db.Uuid
+  created_at                              DateTime                        @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime                        @updatedAt @db.Timestamptz(6)
+  breeds                                  breeds                          @relation(fields: [breed_id], references: [id], onDelete: Cascade)
+  users_animals_created_by_user_idTousers users?                          @relation("animals_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                   farms                           @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  locations                               locations?                      @relation(fields: [location_id], references: [id])
+  users_animals_updated_by_user_idTousers users?                          @relation("animals_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+  vaccination_records                     vaccination_records[]
+  weights                                 weights[]
+  animal_transactions                     animal_transactions[]
+}
+
+model breeds {
+  id                                     String    @id @db.Uuid
+  name                                   String    @db.VarChar(255)
+  animal_type                            String?   @default("Goat") @db.VarChar(255)
+  category                               String?   @db.VarChar(255)
+  farm_id                                String?   @db.Uuid
+  is_default                             Boolean   @default(false)
+  created_by_user_id                     String?   @db.Uuid
+  updated_by_user_id                     String?   @db.Uuid
+  created_at                             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                             DateTime  @updatedAt @db.Timestamptz(6)
+  animals                                animals[]
+  users_breeds_created_by_user_idTousers users?    @relation("breeds_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                  farms?    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_breeds_updated_by_user_idTousers users?    @relation("breeds_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model employees {
+  id                 String                       @id @db.Uuid
+  user_id            String                       @db.Uuid
+  employee_type      enum_employees_employee_type @default(EMPLOYEE)
+  created_by_user_id String?                      @db.Uuid
+  updated_by_user_id String?                      @db.Uuid
+  created_at         DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                     @updatedAt @db.Timestamptz(6)
+  users              users                        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  farm_employees     farm_employees[]
+  farms              farms[]
+}
+
+model farm_employees {
+  id                 String    @id @db.Uuid
+  farm_id            String    @db.Uuid
+  employee_id        String    @db.Uuid
+  created_by_user_id String?   @db.Uuid
+  updated_by_user_id String?   @db.Uuid
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @updatedAt @db.Timestamptz(6)
+  employees          employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  farms              farms     @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+
+  @@unique([farm_id, employee_id])
+}
+
+model farms {
+  id                  String                @id @db.Uuid
+  name                String                @db.VarChar(255)
+  location            String?               @db.VarChar(255)
+  owner_employee_id   String                @db.Uuid
+  created_by_user_id  String?               @db.Uuid
+  updated_by_user_id  String?               @db.Uuid
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime              @updatedAt @db.Timestamptz(6)
+  animals             animals[]
+  breeds              breeds[]
+  farm_employees      farm_employees[]
+  employees           employees             @relation(fields: [owner_employee_id], references: [id], onDelete: NoAction)
+  locations           locations[]
+  vaccination_records vaccination_records[]
+  vaccines            vaccines[]
+  weights             weights[]
+}
+
+model locations {
+  id                                        String      @id @db.Uuid
+  code                                      String      @db.VarChar(255)
+  name                                      String      @db.VarChar(255)
+  type                                      String      @default("Internal Location") @db.VarChar(255)
+  parent_location_id                        String?     @db.Uuid
+  farm_id                                   String      @db.Uuid
+  created_by_user_id                        String?     @db.Uuid
+  updated_by_user_id                        String?     @db.Uuid
+  created_at                                DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at                                DateTime    @updatedAt @db.Timestamptz(6)
+  animals                                   animals[]
+  users_locations_created_by_user_idTousers users?      @relation("locations_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                     farms       @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  locations                                 locations?  @relation("locationsTolocations", fields: [parent_location_id], references: [id])
+  other_locations                           locations[] @relation("locationsTolocations")
+  users_locations_updated_by_user_idTousers users?      @relation("locations_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model users {
+  id                                                                String                @id @db.Uuid
+  name                                                              String                @db.VarChar(255)
+  email                                                             String                @unique @db.VarChar(255)
+  phone                                                             String?               @db.VarChar(255)
+  password                                                          String                @db.VarChar(255)
+  created_by_user_id                                                String?               @db.Uuid
+  updated_by_user_id                                                String?               @db.Uuid
+  reset_password_token                                              String?               @db.VarChar(255)
+  reset_password_expires                                            DateTime?             @db.Timestamptz(6)
+  created_at                                                        DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                                                        DateTime              @updatedAt @db.Timestamptz(6)
+  animals_animals_created_by_user_idTousers                         animals[]             @relation("animals_created_by_user_idTousers")
+  animals_animals_updated_by_user_idTousers                         animals[]             @relation("animals_updated_by_user_idTousers")
+  breeds_breeds_created_by_user_idTousers                           breeds[]              @relation("breeds_created_by_user_idTousers")
+  breeds_breeds_updated_by_user_idTousers                           breeds[]              @relation("breeds_updated_by_user_idTousers")
+  employees                                                         employees[]
+  locations_locations_created_by_user_idTousers                     locations[]           @relation("locations_created_by_user_idTousers")
+  locations_locations_updated_by_user_idTousers                     locations[]           @relation("locations_updated_by_user_idTousers")
+  vaccination_records_vaccination_records_created_by_user_idTousers vaccination_records[] @relation("vaccination_records_created_by_user_idTousers")
+  vaccination_records_vaccination_records_updated_by_user_idTousers vaccination_records[] @relation("vaccination_records_updated_by_user_idTousers")
+  vaccines_vaccines_created_by_user_idTousers                       vaccines[]            @relation("vaccines_created_by_user_idTousers")
+  vaccines_vaccines_updated_by_user_idTousers                       vaccines[]            @relation("vaccines_updated_by_user_idTousers")
+  weights_weights_created_by_user_idTousers                         weights[]             @relation("weights_created_by_user_idTousers")
+  weights_weights_updated_by_user_idTousers                         weights[]             @relation("weights_updated_by_user_idTousers")
+}
+
+model vaccination_records {
+  id                                                  String                                 @id @db.Uuid
+  vaccine_id                                          String                                 @db.Uuid
+  animal_id                                           String                                 @db.Uuid
+  date                                                DateTime                               @db.Date
+  valid_till                                          DateTime?                              @db.Date
+  next_due_date                                       DateTime?                              @db.Date
+  remark                                              String?
+  farm_id                                             String                                 @db.Uuid
+  creation_mode                                       enum_vaccination_records_creation_mode @default(SINGLE)
+  created_by_user_id                                  String?                                @db.Uuid
+  updated_by_user_id                                  String?                                @db.Uuid
+  created_at                                          DateTime                               @default(now()) @db.Timestamptz(6)
+  updated_at                                          DateTime                               @updatedAt @db.Timestamptz(6)
+  animals                                             animals                                @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+  users_vaccination_records_created_by_user_idTousers users?                                 @relation("vaccination_records_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                               farms                                  @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_vaccination_records_updated_by_user_idTousers users?                                 @relation("vaccination_records_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+  vaccines                                            vaccines                               @relation(fields: [vaccine_id], references: [id], onDelete: Cascade)
+}
+
+model vaccines {
+  id                                       String                  @id @db.Uuid
+  name                                     String                  @db.VarChar(255)
+  disease_name                             String?                 @db.VarChar(255)
+  dose_ml                                  Decimal?                @db.Decimal(6, 2)
+  application_route                        String?                 @db.VarChar(255)
+  immunity_duration_days                   Int?
+  next_due_duration_days                   Int?
+  days_between                             Int                     @default(0)
+  remark                                   String?
+  farm_id                                  String?                 @db.Uuid
+  is_default                               Boolean                 @default(false)
+  created_by_user_id                       String?                 @db.Uuid
+  updated_by_user_id                       String?                 @db.Uuid
+  created_at                               DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime                @updatedAt @db.Timestamptz(6)
+  vaccination_records                      vaccination_records[]
+  vaccination_schedules                    vaccination_schedules[]
+  users_vaccines_created_by_user_idTousers users?                  @relation("vaccines_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                    farms?                  @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_vaccines_updated_by_user_idTousers users?                  @relation("vaccines_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model weights {
+  id                                      String   @id @db.Uuid
+  animal_id                               String   @db.Uuid
+  farm_id                                 String   @db.Uuid
+  weight                                  Decimal  @db.Decimal(6, 2)
+  height                                  Decimal? @db.Decimal(6, 2)
+  date                                    DateTime @db.Date
+  tag_number                              String   @db.VarChar(255)
+  remark                                  String?
+  created_by_user_id                      String?  @db.Uuid
+  updated_by_user_id                      String?  @db.Uuid
+  created_at                                 DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                                 DateTime @updatedAt @db.Timestamptz(6)
+  animals                                 animals  @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+  users_weights_created_by_user_idTousers users?   @relation("weights_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                   farms    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_weights_updated_by_user_idTousers users?   @relation("weights_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+enum enum_animals_acquisition_method {
+  BORN
+  PURCHASED
+}
+
+enum enum_animals_birth_type {
+  SINGLE
+  TWIN
+  TRIPLET
+  QUADRUPLET
+}
+
+enum enum_animals_female_condition {
+  MATED
+  PREGNANT
+  NONE
+}
+
+enum enum_animals_gender {
+  MALE
+  FEMALE
+}
+
+enum enum_animals_status {
+  LIVE
+  SOLD
+  DEAD
+}
+
+enum enum_employees_employee_type {
+  OWNER
+  EMPLOYEE
+  BUTCHER
+  AGENT
+}
+
+enum enum_vaccination_records_creation_mode {
+  SINGLE
+  MASS
+}
+
+model vaccination_schedules {
+  id                                       String                  @id @db.Uuid
+  vaccine_id                               String                  @db.Uuid
+  start_day                                Int                     @default(0)
+  repetition_days                          Int
+  duration_days                            Int?
+  is_default                               Boolean                 @default(false)
+  created_at                               DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime                @updatedAt @db.Timestamptz(6)
+  vaccines                                 vaccines                @relation(fields: [vaccine_id], references: [id], onDelete: Cascade)
+}
+
+model animal_transactions {
+  id                String    @id @db.Uuid
+  animal_id         String    @db.Uuid
+  tag_number        String    @db.VarChar(255)
+  teeth_stage       String?   @db.VarChar(255)
+  purchase_weight   Decimal?  @db.Decimal(6, 2)
+  purchase_rate     Decimal?  @db.Decimal(10, 2)
+  purchase_date     DateTime? @db.Date
+  landing_cost      Decimal?  @db.Decimal(10, 2)
+  weight_difference Decimal?  @db.Decimal(6, 2)
+  sale_date         DateTime? @db.Date
+  sale_rate         Decimal?  @db.Decimal(10, 2)
+  sale_weight       Decimal?  @db.Decimal(6, 2)
+  stay_days         Int?
+  per_day_expense   Decimal?  @db.Decimal(10, 2)
+  total_expense     Decimal?  @db.Decimal(10, 2)
+  cost_of_goat      Decimal?  @db.Decimal(10, 2)
+  sale_price        Decimal?  @db.Decimal(10, 2)
+  discount          Decimal?  @db.Decimal(10, 2)
+  net_sale_price    Decimal?  @db.Decimal(10, 2)
+  profit_loss       Decimal?  @db.Decimal(10, 2)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  animals           animals   @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+}

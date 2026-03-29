@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, SHADOW } from '../theme';
+import { SPACING } from '../theme';
 
-export default StyleSheet.create({
+export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: theme.colors.background,
   },
   flex: {
     flex: 1,
@@ -12,11 +12,12 @@ export default StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     flexGrow: 1,
+    paddingBottom: 40,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.primary,
     marginBottom: SPACING.md,
   },
   formContainer: {
@@ -44,8 +45,8 @@ export default StyleSheet.create({
   },
   maleLabel: {
     fontSize: 14,
-    color: COLORS.text,
-    fontWeight: '500',
+    color: theme.colors.text,
+    fontFamily: 'Montserrat_600SemiBold',
     marginRight: 12,
   },
   checkboxContainer: {
@@ -56,26 +57,27 @@ export default StyleSheet.create({
     width: 20,
     height: 20,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
-    borderRadius: 4,
+    borderColor: theme.colors.border,
+    borderRadius: 6,
     marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   checkboxLabel: {
     fontSize: 14,
-    color: COLORS.text,
+    fontFamily: 'Montserrat_500Medium',
+    color: theme.colors.text,
   },
   weightSection: {
     marginTop: SPACING.xl,
-    backgroundColor: COLORS.white,
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
     overflow: 'hidden',
   },
   weightHeader: {
@@ -84,30 +86,31 @@ export default StyleSheet.create({
     alignItems: 'center',
     padding: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: theme.colors.border,
   },
   weightContent: {
     padding: SPACING.md,
     alignItems: 'center',
   },
   addNewBtn: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 10,
     alignSelf: 'flex-end',
     marginBottom: SPACING.md,
   },
   addNewText: {
-    color: COLORS.white,
-    fontWeight: 'bold',
+    color: '#FFF',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 13,
     marginLeft: 6,
   },
   noRecordsText: {
-    color: '#9CA3AF',
+    color: theme.colors.textMuted,
+    fontFamily: 'Montserrat_500Medium',
     fontSize: 13,
     marginTop: 20,
     marginBottom: 20,
@@ -120,13 +123,13 @@ export default StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: theme.colors.border,
   },
   weightIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FFF1EA',
+    borderRadius: 10,
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#FEF2E6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -136,28 +139,30 @@ export default StyleSheet.create({
   },
   weightKg: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.text,
   },
   weightDate: {
     fontSize: 12,
-    color: COLORS.textLight,
+    fontFamily: 'Montserrat_400Regular',
+    color: theme.colors.textLight,
   },
   heightInfoBlock: {
     alignItems: 'flex-end',
   },
   weightLabel: {
     fontSize: 10,
-    color: COLORS.textLight,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.textLight,
   },
   weightValue: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.text,
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: theme.colors.border,
     marginVertical: 16,
   },
   readyForSaleRow: {
@@ -168,7 +173,51 @@ export default StyleSheet.create({
   },
   readyLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Montserrat_600SemiBold',
+    color: theme.colors.primary,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusText: {
+    color: theme.colors.text,
+    fontSize: 12,
+    fontFamily: 'Montserrat_600SemiBold',
+    textTransform: 'uppercase',
+  },
+  readyToSellCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    marginBottom: 12,
+  },
+  readyHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  readyTitle: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_600SemiBold',
+    letterSpacing: 1,
+  },
+  readyOptions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
 });

@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, Bug, X, MapPin } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, SearchX, X, MapPin } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFromCache, saveToCache } from '../utils/cache';
@@ -16,6 +16,7 @@ const AnimalListScreen = ({ navigation, route }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
 
   useFocusEffect(
@@ -115,14 +116,12 @@ const AnimalListScreen = ({ navigation, route }) => {
       style={[styles.animalItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
       onPress={() => navigation.navigate('EditAnimal', { animal: item })}
     >
-      <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1EA' }]}>
-        <Bug size={24} color={theme.colors.primary} />
-      </View>
+
       <View style={styles.animalInfo}>
         <Text style={[styles.tagNumber, { color: theme.colors.text }]}>Tag: {item.tagNumber}</Text>
         <Text style={[styles.breedName, { color: theme.colors.textLight }]}>{item.Breed?.name} • {item.gender}</Text>
         {item.Location && (
-          <View style={[styles.locationTag, { backgroundColor: isDarkMode ? '#334155' : '#F3F4F6' }]}>
+          <View style={[styles.locationTag, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}>
             <MapPin size={12} color={theme.colors.textLight} style={styles.locIcon} />
             <Text style={[styles.locationName, { color: theme.colors.textLight }]}>{item.Location.name}</Text>
           </View>
@@ -137,7 +136,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Bug size={64} color={theme.colors.border} />
+      <SearchX size={64} color={theme.colors.border} />
       <Text style={[styles.noRecords, { color: theme.colors.text }]}>
         {searchQuery ? "No matching animals found" : "No Animals found"}
       </Text>
@@ -153,14 +152,15 @@ const AnimalListScreen = ({ navigation, route }) => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
         title="Animals List" 
-        onBack={() => navigation.goBack()} 
+        onMenu={() => navigation.openDrawer()} 
+        onBack={() => navigation.goBack()}
         rightIcon={isSearching ? <X color={theme.colors.white} size={24} /> : <Search color={theme.colors.white} size={24} />}
         onRightPress={toggleSearch}
       />
 
       {isSearching && (
         <Animated.View style={[styles.searchBarContainer, { backgroundColor: theme.colors.surface, transform: [{ translateY: searchBarTranslateY }] }]}>
-          <View style={[styles.searchInner, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.searchInner, { backgroundColor: isDarkMode ? '#000' : '#F9FAFB' }]}>
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
@@ -209,14 +209,18 @@ const AnimalListScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
   searchBarContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    ...lightTheme.shadow.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDarkMode ? 0.3 : 0.05,
+    shadowRadius: 2,
+    elevation: 2,
     zIndex: 5,
   },
   searchInner: {
@@ -233,12 +237,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 8,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   actionRow: {
     padding: 16,
     paddingBottom: 8,
     alignItems: 'flex-end',
+    maxWidth: 768,
+    width: '100%',
+    alignSelf: 'center',
   },
   addButton: {
     flexDirection: 'row',
@@ -246,14 +253,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 14,
-    ...lightTheme.shadow.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   plusIcon: {
     marginRight: 8,
   },
   addButtonText: {
     color: 'white',
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 14,
   },
   listContent: {
@@ -261,35 +272,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 40,
+    maxWidth: 768,
+    width: '100%',
+    alignSelf: 'center',
   },
   animalItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     marginBottom: 12,
-    borderRadius: 20,
+    borderRadius: 12,
     borderWidth: 1,
-    ...lightTheme.shadow.sm,
-  },
-  iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDarkMode ? 0.3 : 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   animalInfo: {
     flex: 1,
   },
   tagNumber: {
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   breedName: {
     fontSize: 14,
-    marginTop: 2,
-    fontWeight: '600',
+    marginTop: 4,
+    fontFamily: 'Montserrat_500Medium',
   },
   locationTag: {
     flexDirection: 'row',
@@ -305,7 +315,7 @@ const styles = StyleSheet.create({
   },
   locationName: {
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   emptyContainer: {
     flex: 1,
@@ -315,8 +325,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   noRecords: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontFamily: 'Montserrat_500Medium',
     marginTop: 24,
     marginBottom: 8,
   },
@@ -324,7 +334,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_400Regular',
   },
   center: {
     flex: 1,
@@ -339,7 +349,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     color: 'white',
   },
   statusLIVE: { backgroundColor: '#10B981' },

@@ -1,14 +1,15 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, MapPin, X } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, MapPin, X, SearchX } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 
 const LocationListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,13 +72,10 @@ const LocationListScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity 
-      style={[styles.locationCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+      style={styles.locationCard}
       onPress={() => navigation.navigate('LocationDetails', { locationId: item.id })}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1EA' }]}>
-        <MapPin size={24} color={theme.colors.primary} />
-      </View>
       <View style={styles.locationInfo}>
         <Text style={[styles.locationName, { color: theme.colors.text }]} numberOfLines={1}>{item.displayName || item.name}</Text>
         <Text style={[styles.locationMeta, { color: theme.colors.textLight }]}>{item.code} • {item.type}</Text>
@@ -90,14 +88,15 @@ const LocationListScreen = ({ navigation }) => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
         title="Location List" 
-        onBack={() => navigation.goBack()} 
+        onMenu={() => navigation.openDrawer()} 
+        onBack={() => navigation.goBack()}
         rightIcon={isSearching ? <X color={theme.colors.white} size={24} /> : <Search color={theme.colors.white} size={24} />}
         onRightPress={toggleSearch}
       />
 
       {isSearching && (
-        <Animated.View style={[styles.searchBarContainer, { backgroundColor: theme.colors.surface, transform: [{ translateY: searchBarTranslateY }] }]}>
-          <View style={[styles.searchInner, { backgroundColor: theme.colors.background }]}>
+        <Animated.View style={[styles.searchBarContainer, { transform: [{ translateY: searchBarTranslateY }] }]}>
+          <View style={styles.searchInner}>
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
@@ -119,7 +118,7 @@ const LocationListScreen = ({ navigation }) => {
       {!isSearching && (
         <View style={styles.actionRow}>
           <TouchableOpacity 
-            style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+            style={[styles.addButton, { backgroundColor: theme.colors.primary, ...theme.shadow.sm }]}
             onPress={() => navigation.navigate('AddLocation')}
           >
             <Plus color={theme.colors.white} size={20} style={styles.plusIcon} />
@@ -139,7 +138,7 @@ const LocationListScreen = ({ navigation }) => {
           keyExtractor={item => item.id}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-                <MapPin size={64} color={theme.colors.border} />
+                <SearchX size={64} color={theme.colors.border} />
                 <Text style={[styles.noRecords, { color: theme.colors.text }]}>No Locations Found</Text>
                 <Text style={[styles.emptyDesc, { color: theme.colors.textLight }]}>Add stables, pens, or sections to organize your farm.</Text>
             </View>
@@ -152,14 +151,14 @@ const LocationListScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
   searchBarContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    ...lightTheme.shadow.sm,
+    backgroundColor: theme.colors.surface,
     zIndex: 5,
   },
   searchInner: {
@@ -168,6 +167,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
+    backgroundColor: theme.colors.background,
   },
   searchIcon: {
     marginRight: 8,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 8,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   actionRow: {
     padding: 16,
@@ -189,14 +189,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 14,
-    ...lightTheme.shadow.sm,
   },
   plusIcon: {
     marginRight: 8,
   },
   addButtonText: {
     color: 'white',
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 14,
   },
   listContent: {
@@ -208,33 +207,24 @@ const styles = StyleSheet.create({
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    ...lightTheme.shadow.sm,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   locationInfo: {
     flex: 1,
   },
   locationName: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.5,
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   locationMeta: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontSize: 14,
+    marginTop: 4,
+    fontFamily: 'Montserrat_500Medium',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -242,15 +232,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   noRecords: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 18,
+    fontFamily: 'Montserrat_500Medium',
     marginTop: 16,
   },
   emptyDesc: {
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_400Regular',
   },
   center: {
     flex: 1,

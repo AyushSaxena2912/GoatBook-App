@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, X, Ghost } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, X, SearchX } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFromCache, saveToCache } from '../utils/cache';
 
 const BreedListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [breeds, setBreeds] = useState([]);
   const [filteredBreeds, setFilteredBreeds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,13 +84,10 @@ const BreedListScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity 
-      style={[styles.breedCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+      style={styles.breedCard}
       onPress={() => navigation.navigate('BreedDetails', { breedId: item.id })}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1EA' }]}>
-        <Ghost size={24} color={theme.colors.primary} />
-      </View>
       <View style={styles.breedInfo}>
         <Text style={[styles.breedName, { color: theme.colors.text }]}>{item.name}</Text>
         <Text style={[styles.animalType, { color: theme.colors.textLight }]}>{item.animalType}</Text>
@@ -102,14 +100,15 @@ const BreedListScreen = ({ navigation }) => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
         title="Breeds List" 
-        onBack={() => navigation.goBack()} 
+        onMenu={() => navigation.openDrawer()} 
+        onBack={() => navigation.goBack()}
         rightIcon={isSearching ? <X color={theme.colors.white} size={24} /> : <Search color={theme.colors.white} size={24} />}
         onRightPress={toggleSearch}
       />
       
       {isSearching && (
-        <Animated.View style={[styles.searchBarContainer, { backgroundColor: theme.colors.surface, transform: [{ translateY: searchBarTranslateY }] }]}>
-          <View style={[styles.searchInner, { backgroundColor: theme.colors.background }]}>
+        <Animated.View style={[styles.searchBarContainer, { transform: [{ translateY: searchBarTranslateY }] }]}>
+          <View style={styles.searchInner}>
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
@@ -131,7 +130,7 @@ const BreedListScreen = ({ navigation }) => {
       {!isSearching && (
         <View style={styles.actionRow}>
           <TouchableOpacity 
-            style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+            style={[styles.addButton, { backgroundColor: theme.colors.primary, ...theme.shadow.sm }]}
             onPress={() => navigation.navigate('AddBreed')}
           >
             <Plus color={theme.colors.white} size={20} style={styles.plusIcon} />
@@ -151,7 +150,7 @@ const BreedListScreen = ({ navigation }) => {
           keyExtractor={item => item.id}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-                <Ghost size={64} color={theme.colors.border} />
+                <SearchX size={64} color={theme.colors.border} />
                 <Text style={[styles.noRecords, { color: theme.colors.text }]}>No Breeds Found</Text>
                 <Text style={[styles.emptyDesc, { color: theme.colors.textLight }]}>Register different breeds to categorize your livestock.</Text>
             </View>
@@ -164,14 +163,14 @@ const BreedListScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
   searchBarContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    ...lightTheme.shadow.sm,
+    backgroundColor: theme.colors.surface,
     zIndex: 5,
   },
   searchInner: {
@@ -180,6 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
+    backgroundColor: theme.colors.background,
   },
   searchIcon: {
     marginRight: 8,
@@ -188,12 +188,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 8,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   },
   actionRow: {
     padding: 16,
     paddingBottom: 8,
     alignItems: 'flex-end',
+    maxWidth: 768,
+    width: '100%',
+    alignSelf: 'center',
   },
   addButton: {
     flexDirection: 'row',
@@ -201,52 +204,45 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 14,
-    ...lightTheme.shadow.sm,
   },
   plusIcon: {
     marginRight: 8,
   },
   addButtonText: {
     color: 'white',
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 14,
   },
   listContent: {
     flexGrow: 1,
     paddingHorizontal: 16,
-    paddingBottom: 40,
     paddingTop: 16,
+    paddingBottom: 40,
+    maxWidth: 768,
+    width: '100%',
+    alignSelf: 'center',
   },
   breedCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    ...lightTheme.shadow.sm,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   breedInfo: {
     flex: 1,
   },
   breedName: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.5,
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   animalType: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontSize: 14,
+    marginTop: 4,
+    fontFamily: 'Montserrat_500Medium',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -254,15 +250,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   noRecords: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 18,
+    fontFamily: 'Montserrat_500Medium',
     marginTop: 16,
   },
   emptyDesc: {
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_400Regular',
   },
   center: {
     flex: 1,

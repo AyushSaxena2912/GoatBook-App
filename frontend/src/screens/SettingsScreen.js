@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -8,9 +8,11 @@ import api from '../api';
 
 const SettingsScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Component mount: fetch user profile to determine their role (OWNER vs EMPLOYEE)
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -18,6 +20,7 @@ const SettingsScreen = ({ navigation }) => {
   const fetchProfile = async () => {
     try {
       const response = await api.get('/users/profile');
+      // Set the user's role to control visibility of specific settings (e.g., Farm Settings)
       setRole(response.data?.employeeProfile?.employeeType);
     } catch (error) {
       console.error('Error fetching profile in settings:', error);
@@ -65,14 +68,14 @@ const SettingsScreen = ({ navigation }) => {
             {visibleOptions.map((item) => (
               <TouchableOpacity 
                 key={item.id} 
-                style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} 
+                style={styles.card} 
                 onPress={item.onPress}
                 activeOpacity={0.7}
               >
-                <View style={[styles.iconContainer, { backgroundColor: isDarkMode ? '#1E293B' : '#F3F4F6' }]}>
+                <View style={styles.iconContainer}>
                   {item.icon}
                 </View>
-                <Text style={[styles.cardTitle, { color: theme.colors.text }]}>{item.title}</Text>
+                <Text style={styles.cardTitle}>{item.title}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -82,7 +85,7 @@ const SettingsScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -107,17 +110,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.md,
     borderWidth: 1.5,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   iconContainer: {
     marginBottom: SPACING.md,
-    padding: 16,
-    borderRadius: 16,
   },
   cardTitle: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     textAlign: 'center',
     letterSpacing: -0.2,
+    color: theme.colors.text,
   },
 });
 

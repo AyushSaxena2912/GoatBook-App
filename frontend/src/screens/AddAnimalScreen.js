@@ -1,32 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { COLORS, SPACING } from '../theme';
+import { SPACING } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
-import styles from './AddAnimalScreen.styles';
+import { getStyles } from './AddAnimalScreen.styles';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import GDatePicker from '../components/GDatePicker';
-import { Check, HelpCircle, ChevronDown, ChevronUp, Plus, Scale, Syringe } from 'lucide-react-native';
+import { 
+  Check, HelpCircle, ChevronDown, ChevronUp, Plus, Scale, Syringe, 
+  Heart, Baby, Milk, Shield 
+} from 'lucide-react-native';
 import api from '../api';
 import { getFromCache } from '../utils/cache';
 
-const CheckBox = ({ label, value, onToggle }) => {
-  const { theme } = useTheme();
-  return (
-    <TouchableOpacity style={styles.checkboxContainer} onPress={onToggle} activeOpacity={0.7}>
-      <View style={[styles.checkbox, { borderColor: theme.colors.border }, value && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }]}>
-        {value && <Check size={14} color="white" />}
-      </View>
-      <Text style={[styles.checkboxLabel, { color: theme.colors.text }]}>{label}</Text>
-    </TouchableOpacity>
-  );
-};
-
 const AddAnimalScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+
+  const CheckBox = ({ label, value, onToggle }) => {
+    return (
+      <TouchableOpacity style={styles.checkboxContainer} onPress={onToggle} activeOpacity={0.7}>
+        <View style={[styles.checkbox, { borderColor: theme.colors.border }, value && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }]}>
+          {value && <Check size={14} color="#FFF" />}
+        </View>
+        <Text style={[styles.checkboxLabel, { color: theme.colors.text }]}>{label}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   const isEditing = !!route.params?.animal;
   const existingAnimal = route.params?.animal || {};
   const [weightExpanded, setWeightExpanded] = useState(false);
@@ -39,16 +43,21 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [vaccinationExpanded, setVaccinationExpanded] = useState(false);
   const [breedId, setBreedId] = useState(existingAnimal.breedId || '');
   const [color, setColor] = useState(existingAnimal.color || '');
-  const [gender, setGender] = useState(existingAnimal.gender || 'FEMALE');
+  const [gender, setGender] = useState(existingAnimal.gender || '');
   const [batchNo, setBatchNo] = useState(existingAnimal.batchNo || '');
-  const [acquisitionMethod, setAcquisitionMethod] = useState(existingAnimal.acquisitionMethod || 'BORN');
+  const [acquisitionMethod, setAcquisitionMethod] = useState(existingAnimal.acquisitionMethod || '');
   const [locationId, setLocationId] = useState(existingAnimal.locationId || null);
+  
+  const [matingExpanded, setMatingExpanded] = useState(false);
+  const [breedingExpanded, setBreedingExpanded] = useState(false);
+  const [milkExpanded, setMilkExpanded] = useState(false);
+  const [insuranceExpanded, setInsuranceExpanded] = useState(false);
   
   // Age and Parents
   const [birthDate, setBirthDate] = useState(existingAnimal.birthDate || '');
   const [birthWeight, setBirthWeight] = useState(existingAnimal.birthWeight?.toString() || '');
   const [ageInMonths, setAgeInMonths] = useState(existingAnimal.ageInMonths?.toString() || '');
-  const [birthType, setBirthType] = useState(existingAnimal.birthType || 'SINGLE');
+  const [birthType, setBirthType] = useState(existingAnimal.birthType || '');
   const [motherTagId, setMotherTagId] = useState(existingAnimal.motherTagId || '');
   const [fatherTagId, setFatherTagId] = useState(existingAnimal.fatherTagId || '');
   
@@ -131,14 +140,22 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
   // Calculate age when birth date changes
   useEffect(() => {
-    if (birthDate) {
+    if (birthDate && birthDate !== '') {
       const birth = new Date(birthDate);
-      const now = new Date();
-      let months = (now.getFullYear() - birth.getFullYear()) * 12;
-      months -= birth.getMonth();
-      months += now.getMonth();
-      if (months < 0) months = 0;
-      setAgeInMonths(months.toString());
+      if (!isNaN(birth.getTime())) {
+        const now = new Date();
+        let months = (now.getFullYear() - birth.getFullYear()) * 12;
+        months -= birth.getMonth();
+        months += now.getMonth();
+        if (months < 0) months = 0;
+        setAgeInMonths(months.toString());
+      } else {
+        setAgeInMonths('');
+      }
+    } else {
+      // If birthDate is cleared, we don't necessarily clear age if it was manually entered
+      // but if it was auto-calculated, maybe we should? 
+      // For now, let's just ensure it's not NaN.
     }
   }, [birthDate]);
 
@@ -205,6 +222,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
       }
     }
 
+    const isValidDate = (d) => {
+      if (!d || d === '' || d === 'Invalid Date' || d === 'Invalid date') return false;
+      const date = new Date(d);
+      return !isNaN(date.getTime());
+    };
+
     setLoading(true);
     try {
       const payload = { 
@@ -215,16 +238,16 @@ const AddAnimalScreen = ({ navigation, route }) => {
         batchNo,
         acquisitionMethod,
         locationId,
-        birthDate: birthDate || null,
-        birthWeight: birthWeight ? parseFloat(birthWeight) : null,
-        ageInMonths: ageInMonths ? parseInt(ageInMonths) : null,
+        birthDate: isValidDate(birthDate) ? birthDate : null,
+        birthWeight: (birthWeight && !isNaN(parseFloat(birthWeight))) ? parseFloat(birthWeight) : null,
+        ageInMonths: (ageInMonths && !isNaN(parseInt(ageInMonths))) ? parseInt(ageInMonths) : null,
         birthType: birthType || null,
         motherTagId: acquisitionMethod === 'BORN' ? (motherTagId || null) : null,
         fatherTagId: acquisitionMethod === 'BORN' ? (fatherTagId || null) : null,
         isBreeder: gender === 'MALE' ? isBreeder : false,
         isQurbani: gender === 'MALE' ? isQurbani : false,
-        purchaseDate: acquisitionMethod === 'PURCHASED' ? purchaseDate : null,
-        purchasePrice: acquisitionMethod === 'PURCHASED' ? purchasePrice : null,
+        purchaseDate: (acquisitionMethod === 'PURCHASED' && isValidDate(purchaseDate)) ? purchaseDate : null,
+        purchasePrice: (purchasePrice && !isNaN(parseFloat(purchasePrice))) ? parseFloat(purchasePrice) : null,
         femaleCondition: (gender === 'FEMALE' && acquisitionMethod === 'PURCHASED') ? femaleCondition : null,
         remark,
         status: animalStatus,
@@ -273,17 +296,51 @@ const AddAnimalScreen = ({ navigation, route }) => {
     );
   };
 
-  const sectionHeaderStyle = [styles.sectionTitle, { color: theme.colors.primary, borderLeftWidth: 4, borderLeftColor: theme.colors.primary, paddingLeft: 10, marginTop: 10 }];
+  const sectionHeaderStyle = [
+    styles.sectionTitle, 
+    { 
+      color: theme.colors.primary, 
+      fontFamily: 'Montserrat_600SemiBold',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      fontSize: 14,
+      marginBottom: 16,
+      marginTop: 24,
+      borderBottomWidth:1.5,
+      borderBottomColor: theme.colors.border,
+      paddingBottom: 8
+    }
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
         title={isEditing ? "Edit Animal" : "Add New Animal"} 
         onBack={() => navigation.goBack()} 
+        rightIcon={isEditing && (
+          <View style={styles.statusBadge}>
+            <View style={[styles.statusDot, { backgroundColor: animalStatus === 'LIVE' ? '#10B981' : '#EF4444' }]} />
+            <Text style={styles.statusText}>{animalStatus}</Text>
+          </View>
+        )}
       />
       
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          {isEditing && (
+            <View style={styles.readyToSellCard}>
+               <View style={styles.readyHeaderRow}>
+                  <Text style={[styles.readyTitle, { color: theme.colors.error }]}>READY TO SELL</Text>
+                  <HelpCircle size={18} color={theme.colors.textMuted} />
+               </View>
+               <View style={styles.readyOptions}>
+                  <CheckBox label="No" value={!isReadyForSale} onToggle={() => setIsReadyForSale(false)} />
+                  <View style={{ width: 24 }} />
+                  <CheckBox label="Yes" value={isReadyForSale} onToggle={() => setIsReadyForSale(true)} />
+               </View>
+            </View>
+          )}
+
           <Text style={sectionHeaderStyle}>Identification</Text>
 
           <View style={styles.formContainer}>
@@ -330,10 +387,16 @@ const AddAnimalScreen = ({ navigation, route }) => {
               />
             </View>
 
-            {/* MALE CONDITIONAL ROW */}
+            {/* MALE CONDITIONAL ROW (Aligned with fields) */}
             {gender === 'MALE' && (
-              <View style={[styles.row, { paddingVertical: 12, alignItems: 'center' }]}>
-                <Text style={[styles.maleLabel, { color: theme.colors.text }]}>Male Options:</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12, marginLeft: 11 }}>
+                <Text style={{ 
+                  fontSize: 14, 
+                  color: theme.colors.text, 
+                  fontFamily: theme.typography.semiBold,
+                  marginRight: 16,
+                  fontWeight: '500'
+                }}>Male Options:</Text>
                 <CheckBox label="Breeder" value={isBreeder} onToggle={toggleBreeder} />
                 <View style={{ width: 16 }} />
                 <CheckBox label="Qurbani" value={isQurbani} onToggle={toggleQurbani} />
@@ -351,7 +414,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
               />
               <GInput 
                 containerStyle={styles.halfWidth}
-                label="Batch / Group No" 
+                label="Batch No" 
                 value={batchNo} 
                 onChangeText={setBatchNo} 
                 placeholder="e.g. 31"
@@ -362,7 +425,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
             <View style={styles.row}>
               <GSelect 
                 containerStyle={styles.halfWidth}
-                label="By Purchase/Birth" 
+                label="Source" 
                 value={acquisitionMethod} 
                 onSelect={setAcquisitionMethod}
                 options={[
@@ -373,7 +436,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
               />
               <GSelect 
                 containerStyle={styles.halfWidth}
-                label="Location/Shed" 
+                label="Location" 
                 value={locationId} 
                 onSelect={setLocationId}
                 options={locations}
@@ -381,54 +444,83 @@ const AddAnimalScreen = ({ navigation, route }) => {
               />
             </View>
 
-            <Text style={sectionHeaderStyle}>Growth & Background</Text>
+            {/* GROWTH SECTION: Only visible if Gender is Female OR acquisitionMethod is PURCHASED/BORN check images */}
+            {((gender === 'FEMALE') || (acquisitionMethod === 'PURCHASED') || (acquisitionMethod === 'BORN')) && (
+              <>
+                <Text style={sectionHeaderStyle}>Growth & Background</Text>
+                
+                {/* Born specific fields check image 3 */}
+                {acquisitionMethod === 'BORN' && (
+                  <View style={styles.row}>
+                    <GDatePicker 
+                      containerStyle={styles.halfWidth}
+                      label="Birth Date" 
+                      value={birthDate} 
+                      onDateChange={setBirthDate}
+                      placeholder="Select Date"
+                      required
+                    />
+                    <GInput 
+                      containerStyle={styles.halfWidth}
+                      label="Birth Wt." 
+                      value={birthWeight} 
+                      onChangeText={setBirthWeight} 
+                      keyboardType="decimal-pad"
+                      placeholder="e.g. 5.5"
+                    />
+                  </View>
+                )}
 
-            {/* UNIVERSAL ROW: Birth Date and Birth Wt */}
-            <View style={styles.row}>
-              <GDatePicker 
-                containerStyle={styles.halfWidth}
-                label="Birth Date" 
-                value={birthDate} 
-                onDateChange={setBirthDate}
-                placeholder="09-09-2025"
-              />
-              <GInput 
-                containerStyle={styles.halfWidth}
-                label="Birth Wt.(KG)" 
-                value={birthWeight} 
-                onChangeText={setBirthWeight} 
-                keyboardType="decimal-pad"
-                placeholder="e.g. 5.5"
-              />
-            </View>
+                {/* AGE and BIRTH TYPE: Visible if Female or Method is set */}
+                <View style={styles.row}>
+                  <GInput 
+                    containerStyle={styles.halfWidth}
+                    label="Age (Months)" 
+                    value={ageInMonths} 
+                    onChangeText={setAgeInMonths} 
+                    keyboardType="number-pad"
+                    placeholder="e.g. 12"
+                    required={(acquisitionMethod === 'PURCHASED' || gender === 'FEMALE')}
+                  />
+                  <GSelect 
+                    containerStyle={styles.halfWidth}
+                    label="Birth Type" 
+                    value={birthType} 
+                    onSelect={setBirthType}
+                    options={[
+                      { label: 'Single', value: 'SINGLE' },
+                      { label: 'Twin', value: 'TWIN' },
+                      { label: 'Triplet', value: 'TRIPLET' },
+                      { label: 'Quadruplet', value: 'QUADRUPLET' }
+                    ]}
+                    placeholder="Select Type"
+                  />
+                </View>
 
-            {/* UNIVERSAL ROW: Age and Birth Type */}
-            <View style={styles.row}>
-              <GInput 
-                containerStyle={styles.halfWidth}
-                label="Age(In Months)" 
-                value={ageInMonths} 
-                onChangeText={setAgeInMonths} 
-                keyboardType="number-pad"
-                placeholder="e.g. 12"
-                required={acquisitionMethod === 'PURCHASED'}
-              />
-              <GSelect 
-                containerStyle={styles.halfWidth}
-                label="Birth Type" 
-                value={birthType} 
-                onSelect={setBirthType}
-                options={[
-                  { label: 'Single', value: 'SINGLE' },
-                  { label: 'Twin', value: 'TWIN' },
-                  { label: 'Triplet', value: 'TRIPLET' },
-                  { label: 'Quadruplet', value: 'QUADRUPLET' }
-                ]}
-              />
-            </View>
+                {/* PARENTS: Only if Born at farm */}
+                {acquisitionMethod === 'BORN' && (
+                  <View style={styles.row}>
+                    <GInput 
+                      containerStyle={styles.halfWidth}
+                      label="Mother Tag ID" 
+                      value={motherTagId}
+                      onChangeText={setMotherTagId}
+                      placeholder="e.g. 1974"
+                    />
+                    <GInput 
+                      containerStyle={styles.halfWidth}
+                      label="Father Tag ID" 
+                      value={fatherTagId}
+                      onChangeText={setFatherTagId}
+                      placeholder="e.g. 1974"
+                    />
+                  </View>
+                )}
+              </>
+            )}
 
-            {/* CONDITIONAL SECTIONS BASED ON ACQUISITION METHOD */}
-            {acquisitionMethod === 'PURCHASED' ? (
+            {/* PURCHASE SECTION */}
+            {acquisitionMethod === 'PURCHASED' && (
               <>
                 <View style={styles.row}>
                   <GDatePicker 
@@ -436,7 +528,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     label="Purchase Date" 
                     value={purchaseDate} 
                     onDateChange={setPurchaseDate}
-                    placeholder="09-09-2025"
+                    placeholder="Select Date"
                     required
                   />
                   <GInput 
@@ -466,70 +558,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                   </View>
                 )}
               </>
-            ) : (
-              // BORN SPECIFIC: MOTHER & FATHER
-              <View style={styles.row}>
-                <GInput 
-                  containerStyle={styles.halfWidth}
-                  label="Mother Tag ID" 
-                  value={motherTagId}
-                  onChangeText={setMotherTagId}
-                  placeholder="e.g. 1974"
-                />
-                <GInput 
-                  containerStyle={styles.halfWidth}
-                  label="Father Tag ID" 
-                  value={fatherTagId}
-                  onChangeText={setFatherTagId}
-                  placeholder="e.g. 1974"
-                />
-              </View>
             )}
-
-            <View style={[styles.sectionDivider, { backgroundColor: theme.colors.border }]} />
-
-            <View style={{ marginBottom: 16 }}>
-              <GSelect 
-                label="Animal Status" 
-                value={animalStatus} 
-                onSelect={setAnimalStatus}
-                options={[
-                  { label: 'Live', value: 'LIVE' },
-                  { label: 'Sold', value: 'SOLD' },
-                  { label: 'Dead', value: 'DEAD' }
-                ]}
-              />
-            </View>
-
-            <View style={styles.readyForSaleRow}>
-              <Text style={[styles.readyLabel, { color: theme.colors.primary }]}>Ready for Sale?</Text>
-              <CheckBox label={isReadyForSale ? 'Yes' : 'No'} value={isReadyForSale} onToggle={() => setIsReadyForSale(!isReadyForSale)} />
-            </View>
-
-            {isReadyForSale && (
-              <View style={[styles.row, { marginTop: 12 }]}>
-                <GInput 
-                  containerStyle={styles.halfWidth}
-                  label="Current Weight (KG)" 
-                  value={currentWeight} 
-                  onChangeText={setCurrentWeight} 
-                  keyboardType="decimal-pad"
-                  placeholder="e.g. 25.5"
-                  required
-                />
-                <GInput 
-                  containerStyle={styles.halfWidth}
-                  label="Sale Price" 
-                  value={salePrice} 
-                  onChangeText={setSalePrice} 
-                  keyboardType="number-pad"
-                  placeholder="e.g. 15000"
-                  required
-                />
-              </View>
-            )}
-
-            <View style={[styles.sectionDivider, { backgroundColor: theme.colors.border }]} />
 
             <GInput 
               label="Remark" 
@@ -548,9 +577,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 activeOpacity={0.7}
                 onPress={() => setWeightExpanded(!weightExpanded)}
               >
-                <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.primary, marginBottom: 0 }]}>Weight Records</Text>
-                  <Scale size={16} color={theme.colors.textMuted} style={{ marginLeft: 8 }} />
+                <View style={styles.row}>
+                  <Text style={styles.sectionTitle}>WEIGHT HISTORY</Text>
                 </View>
                 {weightExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
               </TouchableOpacity>
@@ -558,11 +586,11 @@ const AddAnimalScreen = ({ navigation, route }) => {
               {weightExpanded && (
                 <View style={styles.weightContent}>
                   <TouchableOpacity 
-                    style={[styles.addNewBtn, { backgroundColor: theme.colors.secondary }]}
+                    style={styles.addNewBtn}
                     onPress={() => navigation.navigate('AddWeight', { tagNumber: existingAnimal.tagNumber })}
                   >
-                    <Plus size={16} color="white" />
-                    <Text style={styles.addNewText}>Add Record</Text>
+                    <Plus size={16} color="#FFF" />
+                    <Text style={styles.addNewText}>Add New Record</Text>
                   </TouchableOpacity>
 
                   {weightsLoading ? (
@@ -596,61 +624,155 @@ const AddAnimalScreen = ({ navigation, route }) => {
           )}
 
           {isEditing && (
-            <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-              <TouchableOpacity 
-                style={[styles.weightHeader, { borderBottomColor: theme.colors.border }]}
-                activeOpacity={0.7}
-                onPress={() => setVaccinationExpanded(!vaccinationExpanded)}
-              >
-                <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.primary, marginBottom: 0 }]}>Vaccinations</Text>
-                  <Syringe size={16} color={theme.colors.textMuted} style={{ marginLeft: 8 }} />
+            <>
+              {/* VACCINATION RECORD */}
+              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={[styles.weightHeader, { borderBottomColor: theme.colors.border }]}
+                  activeOpacity={0.7}
+                  onPress={() => setVaccinationExpanded(!vaccinationExpanded)}
+                >
+                <View style={styles.row}>
+                  <Text style={styles.sectionTitle}>VACCINATION RECORD</Text>
                 </View>
                 {vaccinationExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
               </TouchableOpacity>
-              
-              {vaccinationExpanded && (
-                <View style={styles.weightContent}>
-                  <TouchableOpacity 
-                    style={[styles.addNewBtn, { backgroundColor: theme.colors.secondary }]}
-                    onPress={() => navigation.navigate('AddVaccination', { mode: 'single', preSelectedAnimal: existingAnimal })}
-                  >
-                    <Plus size={16} color="white" />
-                    <Text style={styles.addNewText}>Add Record</Text>
-                  </TouchableOpacity>
-
-                  {vaccinationsLoading ? (
-                    <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 20 }} />
-                  ) : vaccinations.length > 0 ? (
-                    <View style={styles.weightList}>
-                      {vaccinations.map((v, idx) => (
-                        <TouchableOpacity 
-                          key={v.id} 
-                          style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === vaccinations.length - 1 && { borderBottomWidth: 0 }]}
-                          onPress={() => navigation.navigate('AddVaccination', { mode: 'single', record: v })}
-                        >
-                          <View style={[styles.weightIconBox, { backgroundColor: isDarkMode ? theme.colors.surface : '#F0F9FF' }]}>
-                            <Syringe size={16} color={theme.colors.primary} />
-                          </View>
-                          <View style={styles.weightInfoBlock}>
-                            <Text style={[styles.weightKg, { color: theme.colors.text }]}>{v.vaccine?.name}</Text>
-                            <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{v.date}</Text>
-                          </View>
-                          {v.nextDueDate && (
-                            <View style={[styles.heightInfoBlock, { minWidth: 100 }]}>
-                              <Text style={[styles.weightLabel, { color: theme.colors.primary }]}>Due Date</Text>
-                              <Text style={[styles.weightValue, { color: theme.colors.text }]}>{v.nextDueDate}</Text>
+                {vaccinationExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity 
+                      style={styles.addNewBtn}
+                      onPress={() => navigation.navigate('AddVaccination', { mode: 'single', preSelectedAnimal: existingAnimal })}
+                    >
+                      <Plus size={16} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    
+                    {vaccinationsLoading ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : vaccinations.length > 0 ? (
+                      <View style={styles.weightList}>
+                        {vaccinations.map((v, idx) => (
+                          <TouchableOpacity 
+                            key={v.id} 
+                            style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === vaccinations.length - 1 && { borderBottomWidth: 0 }]}
+                            onPress={() => navigation.navigate('AddVaccination', { mode: 'single', record: v })}
+                          >
+                            <View style={styles.weightIconBox}>
+                              <Syringe size={16} color={theme.colors.primary} />
                             </View>
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ) : (
-                    <Text style={[styles.noRecordsText, { color: theme.colors.textMuted }]}>No records found</Text>
-                  )}
-                </View>
-              )}
-            </View>
+                            <View style={styles.weightInfoBlock}>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{v.vaccine?.name}</Text>
+                              <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{v.date}</Text>
+                            </View>
+                            {v.nextDueDate && (
+                              <View style={[styles.heightInfoBlock, { minWidth: 100 }]}>
+                                <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Due Date</Text>
+                                <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{v.nextDueDate}</Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                    )}
+                  </View>
+                )}
+              </View>
+
+
+
+              {/* MATING RECORD */}
+              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={[styles.weightHeader, { borderBottomColor: theme.colors.border }]}
+                  activeOpacity={0.7}
+                  onPress={() => setMatingExpanded(!matingExpanded)}
+                >
+                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.primary, marginBottom: 0, fontSize: 15, fontFamily: theme.typography.semiBold }]}>MATING RECORD</Text>
+                  </View>
+                  {matingExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
+                {matingExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity style={styles.addNewBtn}>
+                      <Plus size={16} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* BREEDING/DELIVERY */}
+              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={[styles.weightHeader, { borderBottomColor: theme.colors.border }]}
+                  activeOpacity={0.7}
+                  onPress={() => setBreedingExpanded(!breedingExpanded)}
+                >
+                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.primary, marginBottom: 0, fontSize: 15, fontFamily: theme.typography.semiBold }]}>BREEDING/DELIVERY RECORD</Text>
+                  </View>
+                  {breedingExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
+                {breedingExpanded && (
+                  <View style={styles.weightContent}>
+                     <TouchableOpacity style={styles.addNewBtn}>
+                      <Plus size={16} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* MILK HISTORY */}
+              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={[styles.weightHeader, { borderBottomColor: theme.colors.border }]}
+                  activeOpacity={0.7}
+                  onPress={() => setMilkExpanded(!milkExpanded)}
+                >
+                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.primary, marginBottom: 0, fontSize: 15, fontFamily: theme.typography.semiBold }]}>MILK HISTORY</Text>
+                  </View>
+                  {milkExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
+                {milkExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity style={styles.addNewBtn}>
+                      <Plus size={16} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* INSURANCE */}
+              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={[styles.weightHeader, { borderBottomColor: theme.colors.border }]}
+                  activeOpacity={0.7}
+                  onPress={() => setInsuranceExpanded(!insuranceExpanded)}
+                >
+                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.primary, marginBottom: 0, fontSize: 15, fontFamily: theme.typography.semiBold }]}>INSURANCE</Text>
+                  </View>
+                  {insuranceExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
+                {insuranceExpanded && (
+                  <View style={[styles.weightContent, { paddingHorizontal: 4 }]}>
+                    <GInput label="Insurance Company" placeholder="Insurance Company" />
+                    <GInput label="Plan Name" placeholder="Plan Name" />
+                    <GInput label="Policy Number" placeholder="Policy Number" />
+                    <GInput label="Agent Name" placeholder="Agent Name" />
+                  </View>
+                )}
+              </View>
+            </>
           )}
 
           <View style={styles.footer}>
@@ -675,7 +797,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
             ) : (
               <GButton 
                 title="Create Animal Record" 
-                onPress={handleSave}
+                onPress={handleSave} 
                 loading={loading}
               />
             )}

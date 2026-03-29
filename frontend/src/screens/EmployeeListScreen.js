@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const EmployeeListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,12 +33,9 @@ const EmployeeListScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity 
-      style={[styles.item, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+      style={styles.item}
       onPress={() => navigation.navigate('EditEmployee', { employee: item })}
     >
-      <View style={[styles.avatar, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1EA' }]}>
-        <User size={24} color={theme.colors.primary} />
-      </View>
       <View style={styles.info}>
         <Text style={[styles.name, { color: theme.colors.text }]}>{item.name}</Text>
         <Text style={[styles.role, { color: theme.colors.textLight }]}>{item.role} • {item.email}</Text>
@@ -55,7 +53,7 @@ const EmployeeListScreen = ({ navigation }) => {
       
       <View style={styles.actionRow}>
         <TouchableOpacity 
-          style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+          style={[styles.addButton, { backgroundColor: theme.colors.primary, ...theme.shadow.sm }]}
           onPress={() => navigation.navigate('AddEmployee')}
         >
           <UserPlus color={theme.colors.white} size={20} style={styles.plusIcon} />
@@ -84,7 +82,7 @@ const EmployeeListScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -98,11 +96,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 14,
-    ...lightTheme.shadow.sm,
   },
   addButtonText: {
     color: 'white',
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
     marginLeft: 8,
     fontSize: 14,
   },
@@ -116,31 +113,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     marginBottom: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    ...lightTheme.shadow.sm,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   info: {
     flex: 1,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.5,
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   role: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontSize: 14,
+    marginTop: 4,
+    fontFamily: 'Montserrat_500Medium',
   },
   center: {
     flex: 1,
@@ -153,7 +141,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Montserrat_500Medium',
   }
 });
 

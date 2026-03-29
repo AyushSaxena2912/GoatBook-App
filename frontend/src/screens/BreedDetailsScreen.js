@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, SHADOW, lightTheme } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const BreedDetailsScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const { breedId } = route.params;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,17 +54,13 @@ const BreedDetailsScreen = ({ navigation, route }) => {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Basic Info */}
-        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1EA' }]}>
-            <Ghost size={32} color={theme.colors.primary} />
-          </View>
+        <View style={styles.infoCard}>
           <Text style={[styles.breedName, { color: theme.colors.text }]}>{breed.name}</Text>
           <Text style={[styles.animalType, { color: theme.colors.textLight }]}>{breed.animalType}</Text>
           
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
           
           <View style={styles.statLine}>
-            <Bug size={18} color={theme.colors.primary} />
             <Text style={[styles.statValue, { color: theme.colors.text }]}>{totalAnimals}</Text>
             <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Animals Registered</Text>
           </View>
@@ -73,11 +70,11 @@ const BreedDetailsScreen = ({ navigation, route }) => {
         
         {/* Navigation Button */}
         <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+          style={styles.actionButton}
           onPress={() => navigation.navigate('AnimalList', { breedId: breed.id, initialSearch: breed.name })}
           activeOpacity={0.8}
         >
-          <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? '#1E293B' : '#EEF2FF' }]}>
+          <View style={styles.actionIcon}>
             <ClipboardList size={22} color={theme.colors.primary} />
           </View>
           <View style={styles.actionTextContent}>
@@ -95,39 +92,33 @@ const BreedDetailsScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
   scrollContent: {
     padding: SPACING.lg,
+    maxWidth: 768,
+    width: '100%',
+    alignSelf: 'center',
   },
   infoCard: {
-    borderRadius: 32,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
     padding: 24,
     alignItems: 'center',
-    ...lightTheme.shadow.md,
     marginBottom: 32,
     borderWidth: 1.5,
-  },
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    borderColor: theme.colors.border,
   },
   breedName: {
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: -0.5,
+    fontSize: 22,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   animalType: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontFamily: 'Montserrat_500Medium',
     marginTop: 4,
-    textTransform: 'uppercase',
   },
   divider: {
     height: 1,
@@ -140,48 +131,49 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 22,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   statLabel: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
+    fontFamily: 'Montserrat_600SemiBold',
     marginBottom: 16,
     marginLeft: 4,
+    textTransform: 'uppercase',
   },
   actionButton: {
-    borderRadius: 20,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    ...lightTheme.shadow.sm,
     borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   actionIcon: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    backgroundColor: isDarkMode ? '#1E293B' : '#EEF2FF',
   },
   actionTextContent: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   actionSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '500',
+    fontSize: 14,
+    marginTop: 4,
+    fontFamily: 'Montserrat_400Regular',
   },
   footerInfo: {
     marginTop: 32,
@@ -190,7 +182,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     fontStyle: 'italic',
-    fontWeight: '500',
+    fontFamily: 'Montserrat_400Regular',
   },
   center: {
     flex: 1,

@@ -13,7 +13,7 @@ const FarmSelectionScreen = ({ navigation, route }) => {
     try {
       await setSelectedFarm(farm.id);
       setLoading(false);
-      navigation.replace('Dashboard');
+      navigation.replace('MainDrawer');
     } catch (error) {
       setLoading(false);
       alert('Failed to select farm');
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text,
   },
   subtitle: {
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   farmName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text,
   },
   farmLocation: {

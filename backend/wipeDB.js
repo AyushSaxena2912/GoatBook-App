@@ -1,19 +1,29 @@
-const sequelize = require('./config/database');
-const { User, Employee, Farm, FarmEmployee, Breed, Animal } = require('./models');
+const prisma = require('./config/prisma');
 
 const wipeAndInit = async () => {
   try {
-    console.log('STARTING DATABASE RESET (FORCE=TRUE)...');
-    await sequelize.authenticate();
+    console.log('STARTING DATABASE RESET...');
+    await prisma.$connect();
     console.log('Connection established.');
 
-    // Force sync will DROP all tables and recreate them based on current models
-    await sequelize.sync({ force: true });
+    // Drop all tables and recreate using Prisma
+    // WARNING: This deletes ALL data
+    await prisma.$executeRawUnsafe(`
+      DO $$ DECLARE
+        r RECORD;
+      BEGIN
+        FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+          EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
+        END LOOP;
+      END $$;
+    `);
     
-    console.log('DATABASE RESET SUCCESSFUL. All tables recreated with new schema.');
+    console.log('All tables dropped. Run `npx prisma db push` to recreate schema.');
+    await prisma.$disconnect();
     process.exit(0);
   } catch (error) {
     console.error('DATABASE RESET FAILED:', error);
+    await prisma.$disconnect();
     process.exit(1);
   }
 };

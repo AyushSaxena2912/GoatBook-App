@@ -21,6 +21,7 @@ const GButton = ({ title, onPress, loading, containerStyle, titleStyle, variant 
   const textStyle = [
     styles.text,
     isOutline ? { color: theme.colors.primary } : { color: theme.colors.white },
+    { fontFamily: theme.typography.medium },
     titleStyle
   ];
 
@@ -44,20 +45,25 @@ const GButton = ({ title, onPress, loading, containerStyle, titleStyle, variant 
 
 const styles = StyleSheet.create({
   button: {
-    height: 52,
-    borderRadius: 14,
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
     marginVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   text: {
     fontSize: 16,
-    fontWeight: '800',
     letterSpacing: 0.5,
+    textTransform: 'none',
   },
 });
 

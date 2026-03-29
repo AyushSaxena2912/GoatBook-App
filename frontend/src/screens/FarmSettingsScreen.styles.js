@@ -17,7 +17,7 @@ export default StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '600',
     marginBottom: SPACING.xl,
     letterSpacing: -0.5,
   },

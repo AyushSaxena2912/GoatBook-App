@@ -3,10 +3,12 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const initDB = require('./dbInit');
+const prisma = require('./config/prisma');
 
-// Initialize Database
-initDB();
+// Test DB Connection on startup
+prisma.$connect()
+  .then(() => console.log('Prisma: Connected to PostgreSQL successfully.'))
+  .catch(err => console.error('Prisma: Connection failed:', err.message));
 
 // Middleware
 app.use(cors());
@@ -22,6 +24,7 @@ app.use('/api/weights', require('./routes/weights'));
 app.use('/api/farms', require('./routes/farms'));
 app.use('/api/vaccines', require('./routes/vaccines'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/transactions', require('./routes/transactions'));
 
 // Basic route for testing
 app.get('/', (req, res) => res.send('GoatBook API Running'));

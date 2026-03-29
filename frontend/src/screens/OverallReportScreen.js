@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
@@ -8,6 +8,7 @@ import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
 
 const OverallReportScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -68,14 +69,14 @@ const OverallReportScreen = ({ navigation }) => {
               />
             );
           })}
-          <Circle cx={center} cy={center} r={45} fill={theme.colors.surface} />
+          <Circle cx={center} cy={center} r={45} fill={isDarkMode ? '#000000' : '#FFFFFF'} />
           
           <SvgText
             x={center}
             y={center - 10}
             textAnchor="middle"
             fontSize="16"
-            fontWeight="bold"
+            fontWeight="600"
             fill={theme.colors.text}
           >
             Total
@@ -97,12 +98,12 @@ const OverallReportScreen = ({ navigation }) => {
 
   const StatRow = ({ label, value, color, onPress, half }) => (
     <TouchableOpacity 
-      style={[styles.statRow, { backgroundColor: color, width: half ? '48%' : '100%', ...theme.shadow.sm }]}
+      style={[styles.statRow, { backgroundColor: isDarkMode ? theme.colors.surface : color, borderColor: isDarkMode ? color : 'transparent', borderWidth: isDarkMode ? 1.5 : 0, width: half ? '48%' : '100%' }]}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statLabel, isDarkMode && { color: theme.colors.text }]}>{label}</Text>
+      <Text style={[styles.statValue, isDarkMode && { color: color }]}>{value}</Text>
     </TouchableOpacity>
   );
 
@@ -204,7 +205,7 @@ const OverallReportScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -219,13 +220,16 @@ const styles = StyleSheet.create({
   chartCard: {
     margin: 16,
     padding: 24,
-    borderRadius: 32,
+    borderRadius: 24,
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   chartTitle: {
     alignSelf: 'flex-start',
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 20,
+    fontFamily: 'Montserrat_600SemiBold',
     marginBottom: 20,
     letterSpacing: -0.5,
   },
@@ -254,7 +258,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   listSection: {
     paddingHorizontal: 16,
@@ -274,12 +278,12 @@ const styles = StyleSheet.create({
   statLabel: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Montserrat_600SemiBold',
   },
   statValue: {
     color: 'white',
     fontSize: 24,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
   },
 });
 

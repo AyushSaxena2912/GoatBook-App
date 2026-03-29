@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -9,7 +9,9 @@ import GSelect from '../components/GSelect';
 import api from '../api';
 
 const ProfileSettingsScreen = ({ navigation }) => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -97,7 +99,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.formContainer}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Basic Information</Text>
+            <Text style={styles.sectionTitle}>Basic Information</Text>
             
             <GInput 
               label="Full Name" 
@@ -133,7 +135,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
               containerStyle={{ opacity: 0.7 }}
             />
 
-            <Text style={[styles.sectionTitle, { marginTop: SPACING.xl, color: theme.colors.text }]}>Address Details</Text>
+            <Text style={[styles.sectionTitle, { marginTop: SPACING.xl }]}>Address Details</Text>
             
             <GInput 
               label="Address" 
@@ -179,7 +181,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -201,9 +203,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '900',
+    fontFamily: 'Montserrat_600SemiBold',
     marginBottom: SPACING.lg,
     letterSpacing: -0.5,
+    color: theme.colors.text,
   },
   gap: {
     height: 14,
