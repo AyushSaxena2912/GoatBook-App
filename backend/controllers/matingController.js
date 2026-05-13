@@ -1,6 +1,29 @@
 const prisma = require('../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
+// @desc    Get ALL matings for the farm
+// @route   GET /api/matings
+exports.getAllMatings = async (req, res) => {
+  try {
+    if (!req.farmId) return res.status(400).json({ message: 'No farm selected' });
+
+    const matings = await prisma.matings.findMany({
+      where: { farm_id: req.farmId },
+      orderBy: { mating_date: 'desc' },
+      include: {
+        animals: {
+          select: { tag_number: true, gender: true }
+        }
+      }
+    });
+
+    res.json(matings);
+  } catch (err) {
+    console.error('FETCH ALL MATINGS ERROR:', err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 // @desc    Get all matings for an animal
 // @route   GET /api/matings/animal/:animalId
 exports.getMatingsByAnimal = async (req, res) => {

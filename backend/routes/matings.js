@@ -6,6 +6,7 @@ const protect = require('../middleware/auth');
 router.use(protect);
 
 router.route('/')
+  .get(matingController.getAllMatings)
   .post(matingController.addMating);
 
 router.route('/animal/:animalId')

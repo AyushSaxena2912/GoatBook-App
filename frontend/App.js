@@ -49,6 +49,8 @@ import OverallReportScreen from './src/screens/OverallReportScreen';
 import ReplaceTagScreen from './src/screens/ReplaceTagScreen';
 import AddMatingScreen from './src/screens/AddMatingScreen';
 import AddBreedingScreen from './src/screens/AddBreedingScreen';
+import MatingListScreen from './src/screens/MatingListScreen';
+import BreedingListScreen from './src/screens/BreedingListScreen';
 import LocationMenuScreen from './src/screens/LocationMenuScreen';
 import MassLocationScreen from './src/screens/MassLocationScreen';
 import MassVaccinationScreen from './src/screens/MassVaccinationScreen';
@@ -217,6 +219,8 @@ function AppContent() {
           <Stack.Screen name="ReplaceTag" component={ReplaceTagScreen} />
           <Stack.Screen name="AddMating" component={AddMatingScreen} />
           <Stack.Screen name="AddBreeding" component={AddBreedingScreen} />
+          <Stack.Screen name="MatingList" component={MatingListScreen} />
+          <Stack.Screen name="BreedingList" component={BreedingListScreen} />
           <Stack.Screen name="AnimalList" component={AnimalListScreen} />
           <Stack.Screen name="LocationMenu" component={LocationMenuScreen} />
           <Stack.Screen name="MassLocation" component={MassLocationScreen} />
