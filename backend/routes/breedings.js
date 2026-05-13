@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const breedingController = require('../controllers/breedingController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 
 router.use(protect);
 
