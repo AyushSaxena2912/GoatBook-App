@@ -57,7 +57,6 @@ model animals {
   users_animals_updated_by_user_idTousers users?                          @relation("animals_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
   vaccination_records                     vaccination_records[]
   weights                                 weights[]
-  animal_transactions                     animal_transactions[]
   matings                                 matings[]
   breedings                               breedings[]
 }
