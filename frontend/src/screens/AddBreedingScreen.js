@@ -33,13 +33,17 @@ const AddBreedingScreen = ({ navigation, route }) => {
     setFetchingAnimal(true);
     try {
       const res = await api.get(`/animals/check-tag/${tagInput.trim()}`);
-      if (res.data?.exists && res.data?.animal) {
-        setSelectedAnimal(res.data.animal);
+      if (res.data?.id) {
+        setSelectedAnimal(res.data);
       } else {
         Alert.alert('Not Found', `No animal found with Tag ID "${tagInput}"`);
       }
     } catch (err) {
-      Alert.alert('Not Found', `No animal found with Tag ID "${tagInput}"`);
+      if (err.response?.status === 404) {
+        Alert.alert('Not Found', `No animal found with Tag ID "${tagInput}"`);
+      } else {
+        Alert.alert('Error', 'Failed to search animal. Please try again.');
+      }
     } finally {
       setFetchingAnimal(false);
     }
@@ -114,7 +118,7 @@ const AddBreedingScreen = ({ navigation, route }) => {
                       Tag: {selectedAnimal.tagNumber || selectedAnimal.tag_number}
                     </Text>
                     <Text style={[styles.animalFoundBreed, { color: theme.colors.textMuted }]}>
-                      {selectedAnimal.Breeds?.name || selectedAnimal.breeds?.name || ''} • {selectedAnimal.gender}
+                      {selectedAnimal.breedName || selectedAnimal.Breeds?.name || ''} • {selectedAnimal.gender}
                     </Text>
                   </View>
                 </View>
