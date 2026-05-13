@@ -46,6 +46,8 @@ import VaccinationListScreen from './src/screens/VaccinationListScreen';
 import ReportsMenuScreen from './src/screens/ReportsMenuScreen';
 import OverallReportScreen from './src/screens/OverallReportScreen';
 import ReplaceTagScreen from './src/screens/ReplaceTagScreen';
+import AddMatingScreen from './src/screens/AddMatingScreen';
+import AddBreedingScreen from './src/screens/AddBreedingScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import SideMenu from './src/components/SideMenu';
 
@@ -177,6 +179,8 @@ function AppContent() {
           <Stack.Screen name="ReportsMenu" component={ReportsMenuScreen} />
           <Stack.Screen name="OverallReport" component={OverallReportScreen} />
           <Stack.Screen name="ReplaceTag" component={ReplaceTagScreen} />
+          <Stack.Screen name="AddMating" component={AddMatingScreen} />
+          <Stack.Screen name="AddBreeding" component={AddBreedingScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

@@ -25,6 +25,8 @@ app.use('/api/farms', require('./routes/farms'));
 app.use('/api/vaccines', require('./routes/vaccines'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/transactions', require('./routes/transactions'));
+app.use('/api/matings', require('./routes/matings'));
+app.use('/api/breedings', require('./routes/breedings'));
 
 // Basic route for testing
 app.get('/', (req, res) => res.send('GoatBook API Running'));

@@ -41,6 +41,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [vaccinations, setVaccinations] = useState([]);
   const [vaccinationsLoading, setVaccinationsLoading] = useState(false);
   const [vaccinationExpanded, setVaccinationExpanded] = useState(false);
+  
+  const [matings, setMatings] = useState([]);
+  const [matingsLoading, setMatingsLoading] = useState(false);
+  
+  const [breedings, setBreedings] = useState([]);
+  const [breedingsLoading, setBreedingsLoading] = useState(false);
   const [breedId, setBreedId] = useState(existingAnimal.breedId || '');
   const [color, setColor] = useState(existingAnimal.color || '');
   const [gender, setGender] = useState(existingAnimal.gender || '');
@@ -90,6 +96,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
       if (isEditing) {
         fetchWeights();
         fetchVaccinations();
+        fetchMatings();
+        fetchBreedings();
       }
     }, [])
   );
@@ -115,6 +123,30 @@ const AddAnimalScreen = ({ navigation, route }) => {
       console.error('Fetch weights error:', error);
     } finally {
       setWeightsLoading(false);
+    }
+  };
+
+  const fetchMatings = async () => {
+    try {
+      setMatingsLoading(true);
+      const response = await api.get(`/matings/animal/${existingAnimal.id}`);
+      setMatings(response.data);
+    } catch (error) {
+      console.error('Fetch matings error:', error);
+    } finally {
+      setMatingsLoading(false);
+    }
+  };
+
+  const fetchBreedings = async () => {
+    try {
+      setBreedingsLoading(true);
+      const response = await api.get(`/breedings/animal/${existingAnimal.id}`);
+      setBreedings(response.data);
+    } catch (error) {
+      console.error('Fetch breedings error:', error);
+    } finally {
+      setBreedingsLoading(false);
     }
   };
 
@@ -696,11 +728,37 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
                 {matingExpanded && (
                   <View style={styles.weightContent}>
-                    <TouchableOpacity style={styles.addNewBtn}>
+                    <TouchableOpacity style={styles.addNewBtn} onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal })}>
                       <Plus size={16} color="#FFF" />
                       <Text style={styles.addNewText}>Add New Record</Text>
                     </TouchableOpacity>
-                    <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                    
+                    {matingsLoading ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : matings.length > 0 ? (
+                      <View style={styles.weightList}>
+                        {matings.map((m, idx) => (
+                          <View 
+                            key={m.id} 
+                            style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === matings.length - 1 && { borderBottomWidth: 0 }]}
+                          >
+                            <View style={styles.weightIconBox}>
+                              <Heart size={16} color={theme.colors.primary} />
+                            </View>
+                            <View style={styles.weightInfoBlock}>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{m.mating_type}</Text>
+                              <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(m.mating_date).toLocaleDateString()}</Text>
+                            </View>
+                            <View style={[styles.heightInfoBlock, { minWidth: 100 }]}>
+                              <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Status</Text>
+                              <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{m.status}</Text>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                    )}
                   </View>
                 )}
               </View>
@@ -719,11 +777,37 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
                 {breedingExpanded && (
                   <View style={styles.weightContent}>
-                     <TouchableOpacity style={styles.addNewBtn}>
+                    <TouchableOpacity style={styles.addNewBtn} onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal })}>
                       <Plus size={16} color="#FFF" />
                       <Text style={styles.addNewText}>Add New Record</Text>
                     </TouchableOpacity>
-                    <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+
+                    {breedingsLoading ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : breedings.length > 0 ? (
+                      <View style={styles.weightList}>
+                        {breedings.map((b, idx) => (
+                          <View 
+                            key={b.id} 
+                            style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === breedings.length - 1 && { borderBottomWidth: 0 }]}
+                          >
+                            <View style={styles.weightIconBox}>
+                              <Baby size={16} color={theme.colors.primary} />
+                            </View>
+                            <View style={styles.weightInfoBlock}>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{b.birth_type}</Text>
+                              <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(b.delivery_date).toLocaleDateString()}</Text>
+                            </View>
+                            <View style={[styles.heightInfoBlock, { minWidth: 100 }]}>
+                              <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Male/Female</Text>
+                              <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{b.num_male} / {b.num_female}</Text>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={[styles.noRecordsText, { color: theme.colors.textMuted, fontFamily: theme.typography.regular }]}>No Records found</Text>
+                    )}
                   </View>
                 )}
               </View>

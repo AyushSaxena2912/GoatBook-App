@@ -48,6 +48,8 @@ model animals {
   vaccination_records                     vaccination_records[]
   weights                                 weights[]
   animal_transactions                     animal_transactions[]
+  matings                                 matings[]
+  breedings                               breedings[]
 }
 
 model breeds {
@@ -111,6 +113,8 @@ model farms {
   vaccination_records vaccination_records[]
   vaccines            vaccines[]
   weights             weights[]
+  matings             matings[]
+  breedings           breedings[]
 }
 
 model locations {
@@ -143,7 +147,7 @@ model users {
   reset_password_token                                              String?               @db.VarChar(255)
   reset_password_expires                                            DateTime?             @db.Timestamptz(6)
   created_at                                                        DateTime              @default(now()) @db.Timestamptz(6)
-  updated_at                                                        DateTime              @updatedAt @db.Timestamptz(6)
+  updated_at                                                        DateTime              @default(now()) @updatedAt @db.Timestamptz(6)
   animals_animals_created_by_user_idTousers                         animals[]             @relation("animals_created_by_user_idTousers")
   animals_animals_updated_by_user_idTousers                         animals[]             @relation("animals_updated_by_user_idTousers")
   breeds_breeds_created_by_user_idTousers                           breeds[]              @relation("breeds_created_by_user_idTousers")
@@ -157,6 +161,10 @@ model users {
   vaccines_vaccines_updated_by_user_idTousers                       vaccines[]            @relation("vaccines_updated_by_user_idTousers")
   weights_weights_created_by_user_idTousers                         weights[]             @relation("weights_created_by_user_idTousers")
   weights_weights_updated_by_user_idTousers                         weights[]             @relation("weights_updated_by_user_idTousers")
+  matings_matings_created_by_user_idTousers                         matings[]             @relation("matings_created_by_user_idTousers")
+  matings_matings_updated_by_user_idTousers                         matings[]             @relation("matings_updated_by_user_idTousers")
+  breedings_breedings_created_by_user_idTousers                     breedings[]           @relation("breedings_created_by_user_idTousers")
+  breedings_breedings_updated_by_user_idTousers                     breedings[]           @relation("breedings_updated_by_user_idTousers")
 }
 
 model vaccination_records {
@@ -232,6 +240,7 @@ enum enum_animals_birth_type {
   TWIN
   TRIPLET
   QUADRUPLET
+  OTHERS
 }
 
 enum enum_animals_female_condition {
@@ -299,4 +308,63 @@ model animal_transactions {
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime  @updatedAt @db.Timestamptz(6)
   animals           animals   @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+}
+
+enum enum_mating_type {
+  NATURAL
+  AI
+  ET
+}
+
+enum enum_mating_status {
+  NOT_SUCCESSFUL
+  PREGNANT
+  MISCARRIAGE
+}
+
+model matings {
+  id                                      String             @id @db.Uuid
+  animal_id                               String             @db.Uuid
+  farm_id                                 String             @db.Uuid
+  mating_date                             DateTime           @db.Date
+  mating_type                             enum_mating_type
+  remark                                  String?
+  male_tag_id                             String?            @db.VarChar(255)
+  male_breed                              String?            @db.VarChar(255)
+  semen_id                                String?            @db.VarChar(255)
+  dose                                    String?            @db.VarChar(255)
+  technician                              String?            @db.VarChar(255)
+  time                                    String?            @db.VarChar(255)
+  embryo_id                               String?            @db.VarChar(255)
+  status                                  enum_mating_status @default(NOT_SUCCESSFUL)
+  expected_delivery_date                  DateTime?          @db.Date
+  miscarriage_date                        DateTime?          @db.Date
+  miscarriage_reason                      String?
+  created_by_user_id                      String?            @db.Uuid
+  updated_by_user_id                      String?            @db.Uuid
+  created_at                              DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime           @updatedAt @db.Timestamptz(6)
+  animals                                 animals            @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+  farms                                   farms              @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_matings_created_by_user_idTousers users?             @relation("matings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  users_matings_updated_by_user_idTousers users?             @relation("matings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model breedings {
+  id                                        String                  @id @db.Uuid
+  animal_id                                 String                  @db.Uuid
+  farm_id                                   String                  @db.Uuid
+  delivery_date                             DateTime                @db.Date
+  birth_type                                enum_animals_birth_type
+  num_male                                  Int                     @default(0)
+  num_female                                Int                     @default(0)
+  remark                                    String?
+  created_by_user_id                        String?                 @db.Uuid
+  updated_by_user_id                        String?                 @db.Uuid
+  created_at                                DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                                DateTime                @updatedAt @db.Timestamptz(6)
+  animals                                   animals                 @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+  farms                                     farms                   @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_breedings_created_by_user_idTousers users?                  @relation("breedings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  users_breedings_updated_by_user_idTousers users?                  @relation("breedings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 }
