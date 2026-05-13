@@ -1,0 +1,8 @@
+{
+  "name": "goatbook-root",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install && npx prisma generate"
+  }
+}

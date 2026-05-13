@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, View, TextInput, Text, Animated, Platform, TouchableOpacity } from 'react-native';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, HelpCircle } from 'lucide-react-native';
 import { COLORS, SPACING, lightTheme } from '../theme';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -15,6 +15,9 @@ const GInput = ({
   required,
   placeholder,
   containerStyle,
+  helpAction,
+  leftIcon,
+  rightIcon,
   ...props 
 }) => {
   const { isDarkMode, theme } = useTheme();
@@ -30,26 +33,37 @@ const GInput = ({
     }).start();
   }, [isFocused, value]);
 
-  const labelStyle = {
+  const labelContainerStyle = {
     position: 'absolute',
-    left: 12,
+    left: animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [leftIcon ? 46 : 12, 12],
+    }),
     top: animatedValue.interpolate({
       inputRange: [0, 1],
       outputRange: [14, -10],
     }),
+    zIndex: 10,
+    backgroundColor: (isFocused || value) ? theme.colors.background : 'transparent',
+    paddingHorizontal: (isFocused || value) ? 10 : 0,
+    maxWidth: (isFocused || value) ? '92%' : '90%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    pointerEvents: 'box-none',
+    height: (isFocused || value) ? 20 : 'auto',
+  };
+  
+  const labelTextStyle = {
     fontSize: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [16, 12],
+      outputRange: [15, 12],
     }),
     color: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [theme.colors.textLight, isFocused ? theme.colors.primary : theme.colors.textLight],
+      outputRange: [theme.colors.textLight, error ? theme.colors.error : (isFocused ? theme.colors.primary : theme.colors.textLight)],
     }),
-    backgroundColor: (isFocused || value) ? theme.colors.surface : 'transparent',
-    paddingHorizontal: (isFocused || value) ? 4 : 0,
-    zIndex: 1,
-    fontFamily: theme.typography.medium,
-    maxWidth: '90%',
+    fontFamily: (isFocused || value) ? theme.typography.semiBold : theme.typography.medium,
+    letterSpacing: 0.3,
   };
 
   const inputRef = useRef(null);
@@ -68,16 +82,22 @@ const GInput = ({
           isMultiline && { height: 'auto', minHeight: 80, alignItems: 'flex-start', paddingTop: 16 }
         ]}
       >
-        <Animated.Text style={labelStyle} pointerEvents="none" numberOfLines={1} ellipsizeMode="tail">
-          {label}{required && '*'}
-        </Animated.Text>
+        {leftIcon && (
+          <View style={styles.leftIconWrapper}>
+            {leftIcon}
+          </View>
+        )}
         <TextInput
           ref={inputRef}
           style={StyleSheet.flatten([
             styles.input,
-            isMultiline && { textAlignVertical: 'top', height: 'auto', minHeight: 60, marginTop: 4 },
+            isMultiline && { textAlignVertical: 'top', height: 'auto', minHeight: 60, marginTop: 8 },
             props.style,
-            { color: theme.colors.text, fontFamily: theme.typography.medium },
+            { 
+              color: theme.colors.text, 
+              fontFamily: theme.typography.medium,
+              outlineStyle: Platform.OS === 'web' ? 'none' : undefined 
+            },
           ])}
           value={value}
           onChangeText={onChangeText}
@@ -91,19 +111,57 @@ const GInput = ({
           {...props}
           secureTextEntry={secureTextEntry && !showPassword}
         />
+        {rightIcon && (
+          <View style={styles.rightIconWrapper}>
+            {rightIcon}
+          </View>
+        )}
         {secureTextEntry && (
           <TouchableOpacity 
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeIcon}
           >
             {showPassword ? (
-              <EyeOff size={20} color={theme.colors.textLight} />
+              <EyeOff size={20} color={theme.colors.textMuted} />
             ) : (
-              <Eye size={20} color={theme.colors.textLight} />
+              <Eye size={20} color={theme.colors.textMuted} />
             )}
           </TouchableOpacity>
         )}
       </TouchableOpacity>
+
+      {label ? (
+        <Animated.View style={labelContainerStyle}>
+          <Animated.Text style={labelTextStyle} numberOfLines={1} ellipsizeMode="tail">
+            {label}{required && '*'}
+          </Animated.Text>
+          {helpAction && (
+            <Animated.View style={{
+              marginLeft: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [8, 3],
+              }),
+              transform: [{
+                scale: animatedValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1.1, 0.85],
+                })
+              }],
+              marginTop: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [2, 1],
+              }),
+            }}>
+              <TouchableOpacity 
+                onPress={helpAction}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <HelpCircle size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        </Animated.View>
+      ) : null}
       {error && <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>}
     </View>
   );
@@ -120,14 +178,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 14,
     paddingHorizontal: 12,
-    height: 56,
+    height: 52,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    height: '100%',
+    fontSize: 15,
     textAlignVertical: 'center',
-    paddingTop: Platform.OS === 'ios' ? 0 : 4,
+    paddingTop: Platform.OS === 'android' ? 2 : 0,
+    paddingBottom: 0,
+    includeFontPadding: false,
+    outlineWidth: 0,
   },
   errorText: {
     fontSize: 12,
@@ -136,6 +196,16 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 8,
+  },
+  leftIconWrapper: {
+    paddingRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rightIconWrapper: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -27,7 +27,7 @@ const RegisterScreen = ({ navigation }) => {
   // Function to handle user registration
   const handleRegister = async () => {
     // 1. Basic validation: ensure all mandatory fields have values
-    if (!formData.firstName || !formData.email || !formData.password || !formData.farmName) {
+    if (!formData.firstName || !formData.phone || !formData.password || !formData.farmName) {
       alert('Please fill in required fields');
       return;
     }
@@ -64,12 +64,9 @@ const RegisterScreen = ({ navigation }) => {
       setLoading(false);
       console.error('REGISTER ERROR:', error);
       
-      // 7. Error handling: show backend message or fallback
-      let message = 'Registration failed';
-      if (error.response?.data?.message) {
-        message = error.response.data.message;
-      }
-      alert(message);
+      const msg = error.response?.data?.message || 'Registration failed';
+      const detail = error.response?.data?.error ? ` (Detail: ${error.response.data.error})` : '';
+      alert(`${msg}${detail}`);
     }
   };
 
@@ -92,11 +89,14 @@ const RegisterScreen = ({ navigation }) => {
 
         <View style={styles.titleContainer}>
             <Text style={styles.mainTitle}>Register</Text>
-            <Text style={styles.subTitle}>Start your journey to smarter goat farming.</Text>
+            <Text style={styles.subTitle}>Register as an owner to set up and manage your farm.</Text>
+            <Text style={[styles.subTitle, { fontSize: 13, marginTop: 8, color: theme.colors.textLight, fontFamily: 'Inter_500Medium' }]}>
+                This will be the primary administrative account for your farm.
+            </Text>
         </View>
 
         <View style={styles.form}>
-            <Text style={styles.sectionTitle}>Personal Details</Text>
+            <Text style={styles.sectionTitle}>Farm Owner Details</Text>
             <View style={styles.row}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                     <GInput 
@@ -116,13 +116,12 @@ const RegisterScreen = ({ navigation }) => {
             </View>
             <View style={styles.gap} />
             <GInput 
-                label="Email" 
+                label="Email (Optional)" 
                 value={formData.email} 
                 onChangeText={(v) => updateField('email', v)} 
                 placeholder="example@mail.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                required 
             />
             <View style={styles.gap} />
             <GInput 
@@ -131,6 +130,7 @@ const RegisterScreen = ({ navigation }) => {
                 onChangeText={(v) => updateField('phone', v)} 
                 placeholder="9876543210"
                 keyboardType="phone-pad"
+                required
             />
             <View style={styles.gap} />
             <GInput 
@@ -202,14 +202,14 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   mainTitle: {
     fontSize: 32,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     letterSpacing: -1,
   },
   subTitle: {
     fontSize: 16,
     marginTop: 8,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     color: theme.colors.textLight,
   },
   form: {
@@ -217,11 +217,10 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     marginBottom: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     borderBottomWidth: 1.5,
     borderBottomColor: theme.colors.border,
     paddingBottom: 8,
@@ -243,12 +242,12 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   footerText: {
     fontSize: 15,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     color: theme.colors.textLight,
   },
   link: {
     fontSize: 15,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     textDecorationLine: 'underline',
   }

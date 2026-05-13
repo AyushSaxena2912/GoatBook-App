@@ -229,7 +229,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   chartTitle: {
     alignSelf: 'flex-start',
     fontSize: 20,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 20,
     letterSpacing: -0.5,
   },
@@ -258,7 +258,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
   listSection: {
     paddingHorizontal: 16,
@@ -278,12 +278,12 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   statLabel: {
     color: 'white',
     fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
   statValue: {
     color: 'white',
     fontSize: 24,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
 });
 

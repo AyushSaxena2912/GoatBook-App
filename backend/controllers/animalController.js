@@ -2,6 +2,7 @@ const prisma = require('../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const { deleteImage } = require('../utils/cloudinary');
 
 // Utility to log errors to a temporary file for debugging
 const logError = (error, context) => {
@@ -39,7 +40,7 @@ exports.getAnimals = async (req, res) => {
       gender: a.gender,
       birthDate: a.birth_date,
       birthWeight: a.birth_weight,
-      animalType: a.animal_type,
+      animalType: a.animal_type ? a.animal_type.charAt(0).toUpperCase() + a.animal_type.slice(1).toLowerCase() : 'Goat',
       isBreeder: a.is_breeder,
       isQurbani: a.is_qurbani,
       batchNo: a.batch_no,
@@ -50,12 +51,18 @@ exports.getAnimals = async (req, res) => {
       purchasePrice: a.purchase_price,
       ageInMonths: a.age_in_months,
       femaleCondition: a.female_condition,
+      matingDate: a.mating_date,
+      expectedDeliveryDate: a.expected_delivery_date,
       birthType: a.birth_type,
       status: a.status,
       isReadyForSale: a.is_ready_for_sale,
       salePrice: a.sale_price,
       currentWeight: a.current_weight,
       remark: a.remark,
+      imageUrl: a.image_url,
+      teethStage: a.teeth_stage,
+      purchaseWeight: a.purchase_weight,
+      landingCost: a.landing_cost,
       createdByUserId: a.created_by_user_id,
       updatedByUserId: a.updated_by_user_id,
       createdAt: a.created_at,
@@ -78,8 +85,12 @@ exports.addAnimal = async (req, res) => {
     tagNumber, breedId, gender, color, birthDate, birthWeight, locationId,
     isBreeder, isQurbani, batchNo, acquisitionMethod,
     purchaseDate, purchasePrice, ageInMonths, femaleCondition,
+    matingDate, expectedDeliveryDate,
     birthType, motherTagId, fatherTagId, remark,
-    status, isReadyForSale, currentWeight, salePrice 
+    status, isReadyForSale, currentWeight, salePrice, imageUrl,
+    teethStage, purchaseWeight, landingCost,
+    deathDate, deathReason,
+    soldAt, soldRemark
   } = req.body;
   
   try {
@@ -127,7 +138,7 @@ exports.addAnimal = async (req, res) => {
         id: uuidv4(),
         tag_number: tagNumber,
         breed_id: breedId,
-        gender,
+        gender: gender?.toUpperCase(),
         color,
         birth_date: birthDate ? new Date(birthDate) : null,
         birth_weight: birthWeight || null,
@@ -137,19 +148,29 @@ exports.addAnimal = async (req, res) => {
         is_breeder: finalIsBreeder,
         is_qurbani: finalIsQurbani,
         batch_no: batchNo,
-        acquisition_method: acquisitionMethod || 'BORN',
-        purchase_date: acquisitionMethod === 'PURCHASED' && purchaseDate ? new Date(purchaseDate) : null,
-        purchase_price: acquisitionMethod === 'PURCHASED' ? purchasePrice : null,
-        age_in_months: acquisitionMethod === 'PURCHASED' ? ageInMonths : null,
-        female_condition: gender === 'FEMALE' && acquisitionMethod === 'PURCHASED' ? femaleCondition : null,
+        acquisition_method: acquisitionMethod?.toUpperCase() || 'BORN',
+        purchase_date: (acquisitionMethod?.toUpperCase() === 'PURCHASED') && purchaseDate ? new Date(purchaseDate) : null,
+        purchase_price: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? purchasePrice : null,
+        purchase_weight: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? purchaseWeight : null,
+        landing_cost: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? landingCost : null,
+        age_in_months: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? ageInMonths : null,
+        teeth_stage: (acquisitionMethod?.toUpperCase() === 'PURCHASED' || acquisitionMethod?.toUpperCase() === 'BORN') ? teethStage : null,
+        female_condition: gender?.toUpperCase() === 'FEMALE' ? femaleCondition : null,
+        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED' && matingDate) ? new Date(matingDate) : null,
+        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT' && expectedDeliveryDate) ? new Date(expectedDeliveryDate) : null,
         birth_type: birthType || null,
-        mother_tag_id: acquisitionMethod === 'BORN' ? motherTagId : null,
-        father_tag_id: acquisitionMethod === 'BORN' ? fatherTagId : null,
-        status: status || 'LIVE',
+        mother_tag_id: (acquisitionMethod?.toUpperCase() === 'BORN') ? motherTagId : null,
+        father_tag_id: (acquisitionMethod?.toUpperCase() === 'BORN') ? fatherTagId : null,
+        status: status?.toUpperCase() || 'LIVE',
+        death_date: deathDate ? new Date(deathDate) : null,
+        death_reason: deathReason || null,
+        sold_at: soldAt ? new Date(soldAt) : null,
+        sold_remark: soldRemark || null,
         is_ready_for_sale: isReadyForSale || false,
         current_weight: isReadyForSale ? currentWeight : null,
         sale_price: isReadyForSale ? salePrice : null,
         remark,
+        image_url: imageUrl || null,
         created_at: now,
         updated_at: now
       }
@@ -192,11 +213,23 @@ exports.getAnimal = async (req, res) => {
       motherTagId: animal.mother_tag_id,
       fatherTagId: animal.father_tag_id,
       acquisitionMethod: animal.acquisition_method,
+      femaleCondition: animal.female_condition,
+      matingDate: animal.mating_date,
+      expectedDeliveryDate: animal.expected_delivery_date,
       status: animal.status,
+      deathDate: animal.death_date,
+      deathReason: animal.death_reason,
+      soldAt: animal.sold_at,
+      soldRemark: animal.sold_remark,
       isReadyForSale: animal.is_ready_for_sale,
+      teethStage: animal.teeth_stage,
+      purchaseWeight: animal.purchase_weight,
+      landingCost: animal.landing_cost,
       remark: animal.remark,
+      imageUrl: animal.image_url,
       Breed: animal.breeds,
-      Location: animal.locations
+      Location: animal.locations,
+      animalType: animal.animal_type ? animal.animal_type.charAt(0).toUpperCase() + animal.animal_type.slice(1).toLowerCase() : 'Goat',
     });
   } catch (err) {
     console.error('FETCH ANIMAL ERROR:', err);
@@ -211,8 +244,12 @@ exports.updateAnimal = async (req, res) => {
     tagNumber, breedId, gender, color, birthDate, birthWeight, locationId,
     isBreeder, isQurbani, batchNo, acquisitionMethod,
     purchaseDate, purchasePrice, ageInMonths, femaleCondition,
+    matingDate, expectedDeliveryDate,
     birthType, motherTagId, fatherTagId, remark,
-    status, isReadyForSale, currentWeight, salePrice 
+    status, isReadyForSale, currentWeight, salePrice, imageUrl,
+    teethStage, purchaseWeight, landingCost,
+    deathDate, deathReason,
+    soldAt, soldRemark
   } = req.body;
   
   try {
@@ -230,9 +267,9 @@ exports.updateAnimal = async (req, res) => {
         if (existingTag) return res.status(400).json({ message: 'Tag Number already exists' });
     }
 
-    const currentAcqMethod = acquisitionMethod || animal.acquisition_method;
-    const finalIsBreeder = gender === 'MALE' ? (isBreeder || false) : false;
-    const finalIsQurbani = gender === 'MALE' ? (!finalIsBreeder && isQurbani || false) : false;
+    const currentAcqMethod = (acquisitionMethod?.toUpperCase() || animal.acquisition_method)?.toUpperCase();
+    const finalIsBreeder = gender?.toUpperCase() === 'MALE' ? (isBreeder || false) : false;
+    const finalIsQurbani = gender?.toUpperCase() === 'MALE' ? (!finalIsBreeder && isQurbani || false) : false;
 
     // 3. Commit updates to database
     const updated = await prisma.animals.update({
@@ -240,7 +277,7 @@ exports.updateAnimal = async (req, res) => {
       data: {
         tag_number: tagNumber,
         breed_id: breedId,
-        gender,
+        gender: gender?.toUpperCase(),
         color,
         birth_date: birthDate ? new Date(birthDate) : null,
         birth_weight: birthWeight,
@@ -251,20 +288,38 @@ exports.updateAnimal = async (req, res) => {
         acquisition_method: currentAcqMethod,
         purchase_date: currentAcqMethod === 'PURCHASED' && purchaseDate ? new Date(purchaseDate) : null,
         purchase_price: currentAcqMethod === 'PURCHASED' ? purchasePrice : null,
+        purchase_weight: currentAcqMethod === 'PURCHASED' ? purchaseWeight : null,
+        landing_cost: currentAcqMethod === 'PURCHASED' ? landingCost : null,
         age_in_months: currentAcqMethod === 'PURCHASED' ? ageInMonths : null,
-        female_condition: gender === 'FEMALE' && currentAcqMethod === 'PURCHASED' ? femaleCondition : null,
+        teeth_stage: (currentAcqMethod === 'PURCHASED' || currentAcqMethod === 'BORN') ? teethStage : null,
+        female_condition: gender?.toUpperCase() === 'FEMALE' ? femaleCondition : null,
+        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED' && matingDate) ? new Date(matingDate) : (femaleCondition !== 'MATED' ? null : undefined),
+        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT' && expectedDeliveryDate) ? new Date(expectedDeliveryDate) : (femaleCondition !== 'PREGNANT' ? null : undefined),
         birth_type: birthType || null,
         mother_tag_id: currentAcqMethod === 'BORN' ? motherTagId : null,
         father_tag_id: currentAcqMethod === 'BORN' ? fatherTagId : null,
-        status: status || animal.status,
+        status: status?.toUpperCase() || animal.status,
+        death_date: deathDate ? new Date(deathDate) : (status?.toUpperCase() === 'LIVE' ? null : animal.death_date),
+        death_reason: deathReason !== undefined ? deathReason : (status?.toUpperCase() === 'LIVE' ? null : animal.death_reason),
+        sold_at: soldAt ? new Date(soldAt) : (status?.toUpperCase() === 'LIVE' ? null : animal.sold_at),
+        sold_remark: soldRemark !== undefined ? soldRemark : (status?.toUpperCase() === 'LIVE' ? null : animal.sold_remark),
         is_ready_for_sale: isReadyForSale !== undefined ? isReadyForSale : animal.is_ready_for_sale,
         current_weight: isReadyForSale ? currentWeight : null,
         sale_price: isReadyForSale ? salePrice : null,
         remark,
+        image_url: imageUrl !== undefined ? imageUrl : animal.image_url,
         updated_by_user_id: req.user.id,
         updated_at: new Date()
       }
     });
+
+    // Cleanup Cloudinary image if it was replaced or removed
+    if (imageUrl !== undefined && imageUrl !== animal.image_url) {
+        if (animal.image_url) {
+            // Don't await to avoid slowing down the response, but log errors
+            deleteImage(animal.image_url).catch(err => console.error('Cloudinary Update Cleanup Error:', err));
+        }
+    }
 
     res.json({ id: updated.id, status: updated.status });
   } catch (err) {
@@ -301,10 +356,16 @@ exports.deleteAnimal = async (req, res) => {
     }
 
     await prisma.animals.delete({ where: { id: req.params.id } });
+    
+    // Cleanup Cloudinary image if exists
+    if (animal.image_url) {
+        deleteImage(animal.image_url).catch(err => console.error('Cloudinary Delete Cleanup Error:', err));
+    }
+
     res.json({ message: 'Animal removed successfully' });
   } catch (err) {
     console.error('DELETE ANIMAL ERROR:', err);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Animal API Error (Single)', error: err.message, code: err.code });
   }
 };
 // @desc    Check if a tag exists in the farm
@@ -316,11 +377,9 @@ exports.checkTagExists = async (req, res) => {
         tag_number: req.params.tagNumber, 
         farm_id: req.farmId 
       },
-      select: {
-        id: true,
-        tag_number: true,
-        gender: true,
-        breeds: { select: { name: true } }
+      include: {
+        breeds: { select: { name: true } },
+        locations: { select: { name: true } }
       }
     });
 
@@ -328,10 +387,19 @@ exports.checkTagExists = async (req, res) => {
       return res.status(404).json({ message: 'Tag ID not found in your farm' });
     }
 
-    res.json(animal);
+    // Map to frontend standard
+    res.json({
+      id: animal.id,
+      tagNumber: animal.tag_number,
+      gender: animal.gender,
+      animalType: animal.animal_type ? animal.animal_type.charAt(0).toUpperCase() + animal.animal_type.slice(1).toLowerCase() : 'Goat',
+      breedName: animal.breeds?.name || 'Unknown Breed',
+      currentLocationName: animal.locations?.name || 'Unassigned',
+      ageInMonths: animal.age_in_months || 0
+    });
   } catch (err) {
     console.error('CHECK TAG ERROR:', err);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Animal API Error: Check Tag', error: err.message, code: err.code });
   }
 };
 
@@ -388,6 +456,137 @@ exports.replaceTag = async (req, res) => {
     res.json({ message: `Successfully replaced tag ${oldTagNumber} with ${newTagNumber}` });
   } catch (err) {
     console.error('REPLACE TAG ERROR:', err);
-    res.status(500).json({ message: 'Server Error', error: err.message });
+    res.status(500).json({ message: 'Animal API Error: Replace Tag', error: err.message, code: err.code });
+  }
+};
+
+// @desc    Update location for multiple animals
+// @route   PUT /api/animals/bulk-location
+exports.updateBulkLocation = async (req, res) => {
+  const { animalIds, locationId, remark } = req.body;
+
+  if (!Array.isArray(animalIds) || animalIds.length === 0) {
+    return res.status(400).json({ message: 'Please select at least one animal' });
+  }
+
+  try {
+    // 1. Verify location exists and belongs to farm
+    if (locationId) {
+      const location = await prisma.locations.findFirst({
+        where: { id: locationId, farm_id: req.farmId }
+      });
+      if (!location) return res.status(400).json({ message: 'Invalid location selected' });
+    }
+
+    // 2. Perform bulk update
+    const result = await prisma.animals.updateMany({
+      where: {
+        id: { in: animalIds },
+        farm_id: req.farmId
+      },
+      data: {
+        location_id: locationId || null,
+        remark: remark !== undefined ? remark : undefined,
+        updated_at: new Date(),
+        updated_by_user_id: req.user.id
+      }
+    });
+
+    res.json({ 
+      message: `Successfully updated location for ${result.count} animals`,
+      count: result.count 
+    });
+  } catch (err) {
+    console.error('BULK LOCATION UPDATE ERROR:', err);
+    res.status(500).json({ message: 'Animal API Error (Bulk Location)', error: err.message, code: err.code });
+  }
+};
+
+// @desc    Bulk delete animals
+// @route   DELETE /api/animals/bulk
+exports.deleteAnimalsBulk = async (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'No animal IDs provided' });
+  }
+
+  if (!req.farmId) {
+    return res.status(400).json({ message: 'No farm selected' });
+  }
+
+  // UUID Validation Helper
+  const isUUID = (str) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
+
+  try {
+    // 0. Validate that farm_id and all animal_ids are correct UUID formats
+    if (!isUUID(req.farmId)) {
+       throw new Error(`Invalid Farm ID format: ${req.farmId}`);
+    }
+
+    const validIds = ids.filter(id => isUUID(id));
+    if (validIds.length === 0) {
+       return res.status(400).json({ message: 'None of the provided IDs are valid animal UUIDs' });
+    }
+
+    // 1. Fetch only animals that belong to this farm
+    const animalsToDelete = await prisma.animals.findMany({
+      where: {
+        id: { in: validIds },
+        farm_id: req.farmId
+      },
+      select: { id: true, tag_number: true, image_url: true }
+    });
+
+    if (animalsToDelete.length === 0) {
+      return res.status(404).json({ message: 'No matching animals found for your farm.' });
+    }
+
+    const manageableIds = animalsToDelete.map(a => a.id);
+    const tagNumbers = animalsToDelete.map(a => a.tag_number);
+
+    // 2. Integrity Check: Ensure none of these animals are parents to other livestock (using tag_number)
+    // We use count as it's more definitive and avoids casting issues in findFirst OR blocks
+    const childCount = await prisma.animals.count({
+      where: {
+        farm_id: req.farmId,
+        OR: [
+          { mother_tag_id: { in: tagNumbers } },
+          { father_tag_id: { in: tagNumbers } }
+        ]
+      }
+    });
+
+    if (childCount > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete these animals because some are parents to ${childCount} other livestock in the system.` 
+      });
+    }
+
+    // 3. Batch delete all related data (if not cascaded) and the animals themselves
+    await prisma.animals.deleteMany({
+      where: {
+        id: { in: manageableIds }
+      }
+    });
+
+    // Bulk cleanup Cloudinary images
+    animalsToDelete.forEach(a => {
+        if (a.image_url) {
+            deleteImage(a.image_url).catch(err => console.error('Cloudinary Bulk Cleanup Error:', err));
+        }
+    });
+
+    res.json({ 
+      message: `Successfully deleted ${animalsToDelete.length} animals.`,
+      deletedCount: animalsToDelete.length
+    });
+  } catch (err) {
+    console.error('BULK DELETE ANIMALS ERROR:', err);
+    res.status(500).json({ 
+      message: 'Animal API Error (Bulk Delete)', 
+      error: err.message,
+      code: err.code 
+    });
   }
 };

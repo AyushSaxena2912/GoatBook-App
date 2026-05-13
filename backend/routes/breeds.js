@@ -3,6 +3,7 @@ const router = express.Router();
 const breedController = require('../controllers/breedController');
 const auth = require('../middleware/auth');
 
+router.post('/bulk-delete', auth, breedController.bulkDeleteBreeds);
 router.get('/', auth, breedController.getBreeds);
 router.post('/', auth, breedController.addBreed);
 router.put('/:id', auth, breedController.updateBreed);

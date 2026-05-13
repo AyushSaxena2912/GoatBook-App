@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
@@ -7,57 +7,52 @@ import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import GDatePicker from '../components/GDatePicker';
-import { Plus, X, Search, CheckCircle2 } from 'lucide-react-native';
+import { Scan, X, Search, CheckCircle2, Info, Calendar } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AddVaccinationScreen = ({ navigation, route }) => {
-  const { isDarkMode, theme } = useTheme();
-  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+  const insets = useSafeAreaInsets();
+  const { theme, isDarkMode } = useTheme();
+  const styles = useMemo(() => getStyles(theme, insets), [theme, insets]);
+  
   const existingRecord = route.params?.record;
   const isEditing = !!existingRecord;
-  const mode = route.params?.mode || (isEditing ? 'single' : 'single');
-  const isMass = mode === 'mass';
 
-  const [date, setDate] = useState(existingRecord?.date || new Date().toISOString().split('T')[0]);
+  // Form State
+  const [date, setDate] = useState(existingRecord?.date ? new Date(existingRecord.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
   const [vaccineId, setVaccineId] = useState(existingRecord?.vaccineId || '');
-  const [daysBetween, setDaysBetween] = useState('0');
-  const [validTill, setValidTill] = useState(existingRecord?.validTill || '');
+  const [nextDueDate, setNextDueDate] = useState(existingRecord?.nextDueDate ? new Date(existingRecord.nextDueDate).toISOString().split('T')[0] : '');
   const [remark, setRemark] = useState(existingRecord?.remark || '');
-  const [tagInput, setTagInput] = useState('');
-  const [selectedAnimals, setSelectedAnimals] = useState(existingRecord?.animal ? [existingRecord.animal] : []);
+  const [tagNumber, setTagNumber] = useState('');
+  const [animal, setAnimal] = useState(existingRecord?.animal || null);
   
   // UI Data
   const [vaccines, setVaccines] = useState([]);
-  const [allAnimals, setAllAnimals] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       fetchVaccines();
-      fetchAnimals();
-      
-      if (!isEditing && route.params?.preSelectedAnimal) {
-        setSelectedAnimals([route.params.preSelectedAnimal]);
-      }
-    }, [route.params, isEditing])
+    }, [])
   );
 
-  // Auto-fill daysBetween from selected vaccine
+  // Auto-calculate next due date
   useEffect(() => {
-    if (vaccineId) {
+    if (vaccineId && date) {
       const selected = vaccines.find(v => v.value === vaccineId);
-      if (selected) {
-        setDaysBetween(selected.daysBetween.toString());
-        
-        // Auto-calculate validTill if daysBetween > 0
-        if (selected.daysBetween > 0) {
-          const baseDate = new Date(date);
-          baseDate.setDate(baseDate.getDate() + selected.daysBetween);
-          setValidTill(baseDate.toISOString().split('T')[0]);
-        }
+      if (selected && selected.daysBetween > 0) {
+        const baseDate = new Date(date);
+        baseDate.setDate(baseDate.getDate() + selected.daysBetween);
+        setNextDueDate(baseDate.toISOString().split('T')[0]);
+      } else {
+        setNextDueDate('');
       }
     }
   }, [vaccineId, date, vaccines]);
@@ -68,63 +63,51 @@ const AddVaccinationScreen = ({ navigation, route }) => {
       setVaccines(response.data.map(v => ({ 
         label: v.name, 
         value: v.id, 
-        daysBetween: v.daysBetween 
+        daysBetween: v.daysBetween,
+        dose: v.doseMl,
+        route: v.applicationRoute
       })));
     } catch (error) {
       console.error('Fetch vaccines error:', error);
     }
   };
 
-  const fetchAnimals = async () => {
-    try {
-      const response = await api.get('/animals');
-      setAllAnimals(response.data);
-    } catch (error) {
-      console.error('Fetch animals error:', error);
-    }
-  };
-
-  const handleAddAnimalByTag = () => {
-    if (!tagInput.trim()) return;
-    
+  const handleSearchAnimal = async () => {
+    if (!tagNumber.trim()) return;
     setSearching(true);
-    const animal = allAnimals.find(a => a.tagNumber === tagInput.trim());
-
-    if (animal) {
-      if (!selectedAnimals.find(a => a.id === animal.id)) {
-        if (!isMass) {
-          setSelectedAnimals([animal]); // single mode only one
-        } else {
-          setSelectedAnimals([...selectedAnimals, animal]);
-        }
-        setTagInput('');
-      } else {
-        Alert.alert('Duplicate!', 'Animal already added to the list.');
-      }
-    } else {
-      Alert.alert('Not Found!', `No animal with tag ${tagInput} found.`);
+    try {
+      const response = await api.get(`/animals/check-tag/${tagNumber.trim()}`);
+      setAnimal(response.data);
+    } catch (error) {
+      Alert.alert('Not Found', 'No animal found with this Tag ID');
+      setAnimal(null);
+    } finally {
+      setSearching(false);
     }
-    setSearching(false);
   };
 
-  const removeAnimal = (id) => {
-    setSelectedAnimals(selectedAnimals.filter(a => a.id !== id));
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/vaccines/records/${existingRecord.id}`);
+      setDeleting(false);
+      setShowDeleteModal(false);
+      setSuccessMessage('Vaccination record deleted');
+      setShowSuccessModal(true);
+    } catch (error) {
+      setDeleting(false);
+      setShowDeleteModal(false);
+      Alert.alert('Error', 'Failed to delete record');
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteModal(true);
   };
 
   const handleSave = async () => {
-    let currentSelected = [...selectedAnimals];
-
-    // AUTO-ADD: If user typed a tag but forgot to click 'ADD', try to find it now
-    if (tagInput.trim() && currentSelected.length === 0) {
-      const animal = allAnimals.find(a => a.tagNumber === tagInput.trim());
-      if (animal) {
-        currentSelected = [animal];
-        setSelectedAnimals(currentSelected); // Update state for UI
-      }
-    }
-
-    if (!vaccineId || currentSelected.length === 0 || !date) {
-      Alert.alert('Error', isEditing ? 'Please leave at least one animal' : 'Please fill all required fields and select at least one animal');
+    if (!animal || !vaccineId || !date) {
+      Alert.alert('Validation', 'Please select an animal, vaccine, and date');
       return;
     }
 
@@ -133,334 +116,414 @@ const AddVaccinationScreen = ({ navigation, route }) => {
       if (isEditing) {
         await api.put(`/vaccines/records/${existingRecord.id}`, {
           date,
-          validTill: validTill || null,
+          nextDueDate: nextDueDate || null,
           remark
         });
       } else {
         await api.post('/vaccines/records', {
           vaccineId,
-          animalIds: currentSelected.map(a => a.id),
+          animalIds: [animal.id],
           date,
-          validTill: validTill || null,
+          nextDueDate: nextDueDate || null,
           remark,
-          creationMode: isMass ? 'MASS' : 'SINGLE'
+          creationMode: 'SINGLE'
         });
       }
       setLoading(false);
-      Alert.alert('Success', isEditing ? 'Vaccination record updated' : 'Vaccination recorded successfully', [
-        { text: 'OK', onPress: () => navigation.navigate('VaccinationList') }
-      ]);
+      setSuccessMessage(isEditing ? 'Success! Record updated' : 'Success! Vaccination recorded');
+      setShowSuccessModal(true);
     } catch (error) {
       setLoading(false);
-      const msg = error.response?.data?.message || 'Failed to save record';
-      Alert.alert('Error', msg);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to save record');
     }
   };
 
-  const handleDelete = async () => {
-    Alert.alert('Delete Record', 'Are you sure you want to remove this vaccination record?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Delete', 
-        style: 'destructive', 
-        onPress: async () => {
-          try {
-            setDeleting(true);
-            await api.delete(`/vaccines/records/${existingRecord.id}`);
-            setDeleting(false);
-            navigation.navigate('VaccinationList');
-          } catch (error) {
-            setDeleting(false);
-            Alert.alert('Error', 'Failed to delete record');
-          }
-        }
-      }
-    ]);
+  const handleSuccessDone = () => {
+    setShowSuccessModal(false);
+    navigation.goBack();
   };
+
+  const selectedVaccine = vaccines.find(v => v.value === vaccineId);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title={isEditing ? "Edit Vaccination" : (isMass ? "Add Mass Vaccination" : "Add Vaccination")} 
+        title={isEditing ? "Edit Record" : "Add Vaccination"} 
         onBack={() => navigation.goBack()} 
+        leftAlign={true}
       />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={styles.flex}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.formCard}>
-            <GDatePicker 
-              label="Date*" 
-              value={date} 
-              onDateChange={setDate}
-              required
-            />
-
-            <GSelect 
-              label="Vaccine Name*" 
-              value={vaccineId} 
-              onSelect={setVaccineId}
-              options={vaccines}
-              placeholder="Select vaccine..."
-              required
-              disabled={isEditing}
-            />
-
-            <View style={styles.inlineStats}>
-              <View style={styles.statBox}>
-                <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Given Every</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{daysBetween}</Text>
+        <View style={{ flex: 1 }}>
+          <ScrollView 
+            contentContainerStyle={styles.content} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Identify Animal</Text>
+              <View style={styles.inputRow}>
+                <View style={{ flex: 1 }}>
+                  <GInput 
+                    label="Scan/Enter Tag ID" 
+                    value={tagNumber} 
+                    onChangeText={setTagNumber}
+                    rightIcon={tagNumber ? (
+                      <TouchableOpacity onPress={() => {setTagNumber(''); setAnimal(null);}}>
+                        <X size={18} color={theme.colors.textMuted} />
+                      </TouchableOpacity>
+                    ) : null}
+                    disabled={isEditing}
+                    editable={!isEditing}
+                  />
                 </View>
-                <Text style={[styles.statSuffix, { color: theme.colors.textLight }]}>Days</Text>
+                {!isEditing && (
+                  <TouchableOpacity 
+                    style={[styles.findBtn, { backgroundColor: theme.colors.primary }]}
+                    onPress={handleSearchAnimal}
+                    disabled={searching}
+                  >
+                    {searching ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.findBtnText}>Find</Text>}
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {animal && (
+                <View style={[styles.animalCard, { backgroundColor: theme.colors.primary + '08', borderColor: theme.colors.primary + '20' }]}>
+                  <View style={styles.animalCardHeader}>
+                    <Text style={[styles.animalTitle, { color: theme.colors.primary }]}>#{animal.tagNumber}</Text>
+                    <Text style={[styles.animalBreed, { color: theme.colors.textLight }]}>{animal.breedName}</Text>
+                  </View>
+                  <Text style={[styles.animalMeta, { color: theme.colors.textLight }]}>
+                    {animal.gender} • {animal.ageInMonths} Months • Current: {animal.currentLocationName}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Administration Details</Text>
+              <GDatePicker 
+                label="Vaccination Date*" 
+                value={date} 
+                onDateChange={setDate}
+                containerStyle={{ marginBottom: 16 }}
+              />
+              
+              <GSelect 
+                label="Select Vaccine*" 
+                value={vaccineId} 
+                onSelect={setVaccineId}
+                options={vaccines}
+                placeholder="Choose from Catalog"
+                disabled={isEditing}
+              />
+
+              {selectedVaccine && (
+                <View style={[styles.detailsBox, { borderColor: theme.colors.border + '30' }]}>
+                  <View style={styles.detailItem}>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Dose</Text>
+                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{selectedVaccine.dose || 0} ml</Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Route</Text>
+                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{selectedVaccine.route || 'N/A'}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Next Appointment</Text>
+              <GDatePicker 
+                label="Next Due Date" 
+                value={nextDueDate} 
+                onDateChange={setNextDueDate}
+                placeholder="Auto-calculated"
+              />
+              <View style={[styles.infoBox, { backgroundColor: theme.colors.primary + '08', borderColor: theme.colors.primary + '20' }]}>
+                <Info size={16} color={theme.colors.primary} />
+                <Text style={[styles.infoText, { color: theme.colors.textLight }]}>
+                  Setting a due date will trigger a notification {selectedVaccine?.daysBetween || ''} days after this administration.
+                </Text>
               </View>
             </View>
 
-            <GDatePicker 
-              label="Vaccine valid till" 
-              value={validTill} 
-              onDateChange={setValidTill}
-              placeholder="Auto-calculated if cyclic"
-            />
-
-            <GInput 
-              label="Remark" 
-              value={remark} 
-              onChangeText={setRemark} 
-              placeholder="Add notes..."
-              multiline
-              style={{ minHeight: 60, paddingTop: 10, color: theme.colors.text }}
-            />
-
-            {!isEditing && (
-              <>
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                  {isMass ? "Animals to Vaccinate" : "Select Animal"}
-                </Text>
-
-                <View style={styles.tagInputRow}>
-                  <GInput 
-                    containerStyle={styles.tagInputBox}
-                    value={tagInput} 
-                    onChangeText={setTagInput} 
-                    placeholder="Scan or Enter Tag Id*"
-                    keyboardType="default"
-                  />
-                  <TouchableOpacity 
-                    style={[styles.addTagBtn, { backgroundColor: theme.colors.primary }]} 
-                    onPress={handleAddAnimalByTag}
-                    disabled={searching}
-                  >
-                    {searching ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.addTagBtnText}>ADD</Text>}
-                  </TouchableOpacity>
-                </View>
-
-                {selectedAnimals.length > 0 && (
-                  <View style={styles.selectedContainer}>
-                    {selectedAnimals.map(animal => (
-                      <View key={animal.id} style={styles.animalChip}>
-                        <CheckCircle2 size={16} color={theme.colors.success} />
-                        <Text style={styles.chipText}>{animal.tagNumber}</Text>
-                        <TouchableOpacity onPress={() => removeAnimal(animal.id)}>
-                          <X size={16} color={theme.colors.textLight} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
-            )}
-
-            {isEditing && (
-              <View style={styles.editInfoSection}>
-                <Text style={[styles.editInfoLabel, { color: theme.colors.textLight }]}>Animal Tag</Text>
-                <View style={styles.editInfoValue}>
-                  <CheckCircle2 size={16} color={theme.colors.success} />
-                  <Text style={[styles.editTagText, { color: theme.colors.text }]}>{existingRecord?.animal?.tagNumber}</Text>
-                </View>
-              </View>
-            )}
-
-            {isMass && selectedAnimals.length === 0 && (
-              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>No animals selected. Add animals by tag number or scan.</Text>
-            )}
-          </View>
-
-          <View style={styles.footer}>
-            {isEditing ? (
-              <View style={styles.buttonRow}>
-                <View style={styles.halfBtn}>
-                  <GButton 
-                    title="DELETE" 
-                    variant="outline"
-                    onPress={handleDelete} 
-                    loading={deleting}
-                    containerStyle={{ borderColor: theme.colors.error }}
-                    titleStyle={{ color: theme.colors.error }}
-                  />
-                </View>
-                <View style={styles.halfBtn}>
-                  <GButton 
-                    title="SAVE" 
-                    onPress={handleSave} 
-                    loading={loading}
-                  />
-                </View>
-              </View>
-            ) : (
-              <GButton 
-                title="SAVE RECORD" 
-                onPress={handleSave} 
-                loading={loading}
+            <View style={styles.section}>
+              <GInput 
+                label="Remarks (Optional)" 
+                value={remark} 
+                onChangeText={setRemark} 
+                placeholder="Condition of animal, lot number, etc."
+                multiline
+                numberOfLines={3}
               />
-            )}
-          </View>
-        </ScrollView>
+            </View>
+
+            <View style={{ height: 120 }} />
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
+
+      {/* Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowDeleteModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Delete Record</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to remove this vaccination record permanently? This action cannot be undone.
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setShowDeleteModal(false)} style={styles.modalBtn}>
+                <Text style={styles.modalCancelText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDelete} style={styles.modalBtn} disabled={deleting}>
+                {deleting ? (
+                  <ActivityIndicator size="small" color={theme.colors.error} />
+                ) : (
+                  <Text style={styles.modalDeleteText}>DELETE</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleSuccessDone}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={handleSuccessDone}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Success</Text>
+            <Text style={styles.modalMessage}>{successMessage}</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={handleSuccessDone} style={styles.modalBtn}>
+                <Text style={styles.modalCancelText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Fixed Footer */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        {isEditing ? (
+          <View style={styles.footerColumn}>
+            <GButton 
+              title="Update Record" 
+              onPress={handleSave} 
+              loading={loading}
+              containerStyle={{ marginBottom: 12 }}
+            />
+            <TouchableOpacity 
+              style={[styles.deleteOutlineBtn, { borderColor: theme.colors.error + '30' }]}
+              onPress={handleDelete}
+              disabled={loading || deleting}
+            >
+              <Text style={[styles.deleteOutlineBtnText, { color: theme.colors.error }]}>Delete Record</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <GButton 
+            title="Save Vaccination" 
+            onPress={handleSave} 
+            loading={loading}
+          />
+        )}
+      </View>
     </View>
   );
 };
 
-const getStyles = (theme, isDarkMode) => StyleSheet.create({
+const getStyles = (theme, insets) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
+  content: {
     padding: SPACING.lg,
-    paddingBottom: 40,
+    paddingTop: SPACING.md,
+    paddingBottom: 100,
   },
-  formCard: {
-    paddingBottom: SPACING.md,
-  },
-  inlineStats: {
-    marginBottom: SPACING.md,
-  },
-  statBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    backgroundColor: isDarkMode ? '#1A1A1A' : '#F8FAFC',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  statLabel: {
-    fontSize: 14,
-    marginRight: 8,
-    fontFamily: 'Montserrat_600SemiBold',
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: isDarkMode ? theme.colors.primary + '33' : '#F1F5F9',
-  },
-  badgeText: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
-    color: theme.colors.primary,
-  },
-  statSuffix: {
-    fontSize: 14,
-    marginLeft: 8,
-    fontFamily: 'Montserrat_600SemiBold',
+  section: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Montserrat_600SemiBold',
-    marginVertical: SPACING.lg,
-    letterSpacing: -0.5,
+    fontSize: 13,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.5,
+    marginBottom: 16,
+    paddingLeft: 4,
+    color: theme.colors.primary,
   },
-  tagInputRow: {
+  inputRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  tagInputBox: {
-    flex: 1,
-    marginRight: 10,
-    marginBottom: 0,
-  },
-  addTagBtn: {
+  findBtn: {
     height: 56,
-    paddingHorizontal: 24,
-    borderRadius: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addTagBtnText: {
-    color: '#FFFFFF',
-    fontFamily: 'Montserrat_600SemiBold',
+  findBtnText: {
+    color: '#FFF',
     fontSize: 14,
+    fontFamily: 'Inter_700Bold',
   },
-  selectedContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: SPACING.md,
-  },
-  animalChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: isDarkMode ? '#1A1A1A' : '#F0F9FF',
-    borderColor: isDarkMode ? theme.colors.primary + '66' : theme.colors.border,
-  },
-  chipText: {
-    marginHorizontal: 8,
-    fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
-    color: isDarkMode ? theme.colors.white : theme.colors.primary,
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 24,
-    fontFamily: 'Montserrat_500Medium',
-  },
-  footer: {
-    marginTop: 20,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  halfBtn: {
-    width: '48%',
-  },
-  editInfoSection: {
-    marginTop: 24,
+  animalCard: {
+    marginTop: 16,
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1.5,
-    backgroundColor: isDarkMode ? theme.colors.surface : '#F8FAFC',
-    borderColor: theme.colors.border,
+    borderWidth: 1.2,
+    borderStyle: 'dashed',
   },
-  editInfoLabel: {
-    fontSize: 12,
-    fontFamily: 'Montserrat_600SemiBold',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  editInfoValue: {
+  animalCardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  editTagText: {
-    fontSize: 22,
-    fontFamily: 'Montserrat_600SemiBold',
-    marginLeft: 10,
+  animalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+  },
+  animalBreed: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  animalMeta: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+  },
+  detailsBox: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    marginBottom: 12,
+  },
+  detailItem: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 15,
+    fontFamily: 'Inter_700Bold',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 14,
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 20,
+  },
+  footer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    ...SHADOW.large,
+  },
+  footerColumn: {
+    width: '100%',
+  },
+  deleteOutlineBtn: {
+    height: 54,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderStyle: 'dashed',
+    marginBottom: 8,
+  },
+  deleteOutlineBtnText: {
+    fontSize: 15,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 24,
+    ...SHADOW.large,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+    marginBottom: 16,
+  },
+  modalMessage: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    color: theme.colors.textLight,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 20,
+  },
+  modalBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    color: '#1A73E8',
+    letterSpacing: 0.5,
+  },
+  modalDeleteText: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    color: '#1A73E8',
+    letterSpacing: 0.5,
   },
 });
 

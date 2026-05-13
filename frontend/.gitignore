@@ -39,3 +39,14 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Logs
+**/*.log
+
+# Duplicate files from macOS/mistakes
+package-lock *.json
+node_modules 2/
+node_modules 3/
+hs_err_pid*
+replay_pid*
+

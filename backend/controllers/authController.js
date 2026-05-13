@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const { hashPassword, comparePassword } = require('../utils/password');
 const { Resend } = require('resend');
 const { v4: uuidv4 } = require('uuid');
+const { seedBreeds } = require('../seed_breeds');
+const { seedVaccines } = require('../seed_vaccines');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -12,28 +14,31 @@ exports.register = async (req, res) => {
   const { name, email, phone, password, farmName, farmLocation } = req.body;
 
   // Basic validation to ensure required fields are present
-  if (!email || !password || !name || !farmName) {
-    return res.status(400).json({ message: 'Name, email/phone, password, and farm name are required' });
+  if (!phone || !password || !name || !farmName) {
+    return res.status(400).json({ message: 'Name, phone, password, and farm name are required' });
   }
 
   try {
+    console.log('--- Register Attempt ---', { name, email, phone, farmName });
     // 1. Check if user already exists by either email or phone for uniqueness
     const existingUser = await prisma.users.findFirst({
       where: {
         OR: [
-          { email },
-          { phone: phone || '' }
-        ]
+          email ? { email } : null,
+          { phone }
+        ].filter(Boolean)
       }
     });
-    
+
     if (existingUser) {
-      if (existingUser.email === email) {
+      console.log('User already exists:', existingUser.id);
+      if (email && existingUser.email === email) {
         return res.status(400).json({ message: 'User with this email already exists' });
       } else {
         return res.status(400).json({ message: 'User with this phone number already exists' });
       }
     }
+    console.log('User check passed, starting transaction...');
 
     // Encrypt password before saving
     const hashedPassword = await hashPassword(password);
@@ -46,13 +51,14 @@ exports.register = async (req, res) => {
         data: {
           id: uuidv4(),
           name,
-          email,
+          email: email || null,
           phone,
           password: hashedPassword,
           created_at: now,
           updated_at: now
         }
       });
+      console.log('User created:', user.id);
 
       // 3. Every owner is also an employee record with type 'OWNER'
       const employee = await tx.employees.create({
@@ -65,6 +71,7 @@ exports.register = async (req, res) => {
           updated_at: now
         }
       });
+      console.log('Employee created:', employee.id);
 
       // 4. Initialize the farm for the new owner
       const farm = await tx.farms.create({
@@ -78,7 +85,11 @@ exports.register = async (req, res) => {
           updated_at: now
         }
       });
+      console.log('Farm created:', farm.id);
 
+      // seeding default breeds and vaccines for the farm (Isolated)
+      await seedBreeds(farm.id, tx);
+      await seedVaccines(farm.id, tx);
       // 5. Explicitly link the owner (employee) to the newly created farm
       await tx.farm_employees.create({
         data: {
@@ -90,6 +101,7 @@ exports.register = async (req, res) => {
           updated_at: now
         }
       });
+      console.log('Farm-Employee link created.');
 
       return { user, farm };
     });
@@ -158,6 +170,10 @@ exports.login = async (req, res) => {
 
     const employeeProfile = user.employees?.[0];
 
+    if (employeeProfile?.state === 'Terminated') {
+      return res.status(403).json({ message: 'Access Denied: Your account has been terminated.' });
+    }
+
     // Create session token
     const token = jwt.sign(
       { id: user.id },
@@ -212,7 +228,7 @@ exports.forgotPassword = async (req, res) => {
 
     // Generate random 6-digit code for reset
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Store reset code and set 1-hour expiration
     await prisma.users.update({
       where: { id: user.id },

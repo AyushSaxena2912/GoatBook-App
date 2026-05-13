@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { COLORS, SPACING, SHADOW, lightTheme } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
-import { Ghost, Bug, Edit, ArrowRight, ClipboardList } from 'lucide-react-native';
+import { Ghost, Bug, Edit, ArrowRight, ClipboardList, MapPin, ChevronRight, SearchX, Plus, XCircle, Tag } from 'lucide-react-native';
 import api from '../api';
+import GAlert from '../components/GAlert';
 import { useFocusEffect } from '@react-navigation/native';
 
 const BreedDetailsScreen = ({ navigation, route }) => {
@@ -13,6 +14,10 @@ const BreedDetailsScreen = ({ navigation, route }) => {
   const { breedId } = route.params;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'info' });
+
+  const showAlert = (title, message, type = 'info') => setAlertConfig({ visible: true, title, message, type });
+  const hideAlert = () => setAlertConfig({ ...alertConfig, visible: false });
 
   useFocusEffect(
     useCallback(() => {
@@ -28,10 +33,17 @@ const BreedDetailsScreen = ({ navigation, route }) => {
       setLoading(false);
     } catch (error) {
       console.error('Fetch breed details error:', error);
-      alert('Failed to load breed record');
-      navigation.goBack();
+      showAlert('Load Failed', 'Could not retrieve breed record. Please try again.', 'error');
     }
   };
+
+  const { breed, totalAnimals, distribution } = data || {};
+  const allAnimals = useMemo(() => {
+    if (!distribution) return [];
+    return distribution.flatMap(loc => 
+      loc.animals.map(a => ({ ...a, locationName: loc.locationName }))
+    );
+  }, [distribution]);
 
   if (loading || !data) {
     return (
@@ -41,52 +53,100 @@ const BreedDetailsScreen = ({ navigation, route }) => {
     );
   }
 
-  const { breed, totalAnimals } = data;
-
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader 
-        title="Breed Record" 
+      <GAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={() => {
+          hideAlert();
+          if (alertConfig.title === 'Load Failed') navigation.goBack();
+        }}
+      />
+
+      <GHeader
+        title="Breed Record"
         onBack={() => navigation.goBack()}
-        rightIcon={<Edit color={theme.colors.white} size={22} />}
-        onRightPress={() => navigation.navigate('EditBreed', { breed })}
+        leftAlign={true}
+        rightIcon={!breed.isDefault && <Edit color={theme.colors.white} size={22} />}
+        onRightPress={() => !breed.isDefault && navigation.navigate('EditBreed', { breed })}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Basic Info */}
+        {/* Simple Centered Card - BACK TO ORIGINAL */}
         <View style={styles.infoCard}>
           <Text style={[styles.breedName, { color: theme.colors.text }]}>{breed.name}</Text>
           <Text style={[styles.animalType, { color: theme.colors.textLight }]}>{breed.animalType}</Text>
-          
+
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-          
+
           <View style={styles.statLine}>
             <Text style={[styles.statValue, { color: theme.colors.text }]}>{totalAnimals}</Text>
             <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Animals Registered</Text>
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Management Actions</Text>
-        
-        {/* Navigation Button */}
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('AnimalList', { breedId: breed.id, initialSearch: breed.name })}
-          activeOpacity={0.8}
-        >
-          <View style={styles.actionIcon}>
-            <ClipboardList size={22} color={theme.colors.primary} />
-          </View>
-          <View style={styles.actionTextContent}>
-            <Text style={[styles.actionTitle, { color: theme.colors.text }]}>View Herd List</Text>
-            <Text style={[styles.actionSubtitle, { color: theme.colors.textLight }]}>See all {breed.name} animals on this farm</Text>
-          </View>
-          <ArrowRight size={20} color={theme.colors.textMuted} />
-        </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Herd List</Text>
 
-        <View style={styles.footerInfo}>
-             <Text style={[styles.footerText, { color: theme.colors.textMuted }]}>Total registered animals updated in real-time.</Text>
-        </View>
+        {allAnimals && allAnimals.length > 0 ? (
+          allAnimals.map((animal) => (
+            <TouchableOpacity
+              key={animal.id}
+              style={[styles.animalCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              onPress={() => navigation.navigate('EditAnimal', { animal })}
+              activeOpacity={0.7}
+            >
+              {/* Thumbnail */}
+              {animal.imageUrl ? (
+                <Image source={{ uri: animal.imageUrl }} style={styles.animalThumbnail} />
+              ) : (
+                <View style={[styles.animalThumbnail, { backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{ fontSize: 10, color: theme.colors.textMuted, textAlign: 'center' }}>No Image</Text>
+                </View>
+              )}
+
+              {/* Main Info */}
+              <View style={styles.animalInfo}>
+                <View style={styles.tagWrapper}>
+                  <Tag size={16} color={theme.colors.textLight} style={{ marginRight: 6 }} />
+                  <Text style={[styles.tagNumber, { color: theme.colors.text }]}>{animal.tagNumber}</Text>
+                </View>
+                <Text style={[styles.breedGenderText, { color: theme.colors.textLight }]}>
+                  {breed.name} • {animal.gender ? animal.gender.charAt(0).toUpperCase() + animal.gender.slice(1).toLowerCase() : ''}
+                </Text>
+                <View style={[styles.locationTag, { backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }]}>
+                  <MapPin size={12} color={theme.colors.textLight} style={styles.locIcon} />
+                  <Text style={[styles.locationNameTag, { color: theme.colors.textLight }]}>
+                    {animal.locationName ? (animal.locationName.charAt(0).toUpperCase() + animal.locationName.slice(1).toLowerCase()) : ''}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Status & Action */}
+              <View style={[styles.statusBadge, styles[`status${animal.status?.toUpperCase() || 'LIVE'}`]]}>
+                <Text style={styles.statusText}>
+                  {animal.status ? animal.status.charAt(0).toUpperCase() + animal.status.slice(1).toLowerCase() : 'Live'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <SearchX size={48} color={theme.colors.border} />
+            <Text style={[styles.emptyText, { color: theme.colors.textLight }]}>No animals registered for this breed.</Text>
+            <TouchableOpacity
+              style={[styles.quickAddButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => navigation.navigate('AddAnimal', { breedId: breed.id })}
+            >
+              <Plus size={18} color="white" strokeWidth={3} />
+              <Text style={styles.quickAddText}>Add First Animal</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
       </ScrollView>
     </View>
   );
@@ -113,11 +173,11 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   breedName: {
     fontSize: 22,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
   animalType: {
     fontSize: 15,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     marginTop: 4,
   },
   divider: {
@@ -132,62 +192,124 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   statValue: {
     fontSize: 22,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
   statLabel: {
     fontSize: 14,
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: 'Inter_400Regular',
   },
   sectionTitle: {
     fontSize: 13,
-    fontFamily: 'Montserrat_600SemiBold',
-    marginBottom: 16,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 12,
     marginLeft: 4,
-    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  actionButton: {
-    borderRadius: 12,
-    backgroundColor: theme.colors.surface,
-    padding: 16,
+  locationTag: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  locIcon: {
+    marginRight: 4,
+  },
+  locationNameTag: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  animalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-    backgroundColor: isDarkMode ? '#1E293B' : '#EEF2FF',
+  animalThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    marginRight: 14,
   },
-  actionTextContent: {
+  animalInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
-  actionTitle: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
-  },
-  actionSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    fontFamily: 'Montserrat_400Regular',
-  },
-  footerInfo: {
-    marginTop: 32,
+  tagWrapper: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 2,
   },
-  footerText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    fontFamily: 'Montserrat_400Regular',
+  tagNumber: {
+    fontSize: 17,
+    fontFamily: 'Inter_700Bold',
   },
+  breedGenderText: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+    color: 'white',
+  },
+  statusLIVE: { backgroundColor: '#10B981' },
+  statusSOLD: { backgroundColor: '#3B82F6' },
+  statusDEAD: { backgroundColor: '#EF4444' },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+  footerInfo: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.border,
+  },
+  emptyText: {
+    fontSize: 14,
+    marginTop: 12,
+    marginBottom: 20,
+    fontFamily: 'Inter_500Medium',
+  },
+  quickAddButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  quickAddText: {
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
 });
 

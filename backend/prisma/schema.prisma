@@ -1,12 +1,11 @@
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "library"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model animals {
@@ -36,10 +35,21 @@ model animals {
   sale_price                              Decimal?                        @db.Decimal(10, 2)
   current_weight                          Decimal?                        @db.Decimal(6, 2)
   remark                                  String?
+  teeth_stage                             String?                         @db.VarChar(255)
+  purchase_weight                         Decimal?                        @db.Decimal(6, 2)
+  landing_cost                            Decimal?                        @db.Decimal(10, 2)
   created_by_user_id                      String?                         @db.Uuid
   updated_by_user_id                      String?                         @db.Uuid
   created_at                              DateTime                        @default(now()) @db.Timestamptz(6)
   updated_at                              DateTime                        @updatedAt @db.Timestamptz(6)
+  image_url                               String?
+  death_date                              DateTime?                       @db.Date
+  death_reason                            String?
+  sold_at                                 DateTime?                       @db.Date
+  sold_remark                             String?
+  expected_delivery_date                  DateTime?                       @db.Date
+  mating_date                             DateTime?                       @db.Date
+  animal_transactions                     animal_transactions[]
   breeds                                  breeds                          @relation(fields: [breed_id], references: [id], onDelete: Cascade)
   users_animals_created_by_user_idTousers users?                          @relation("animals_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   farms                                   farms                           @relation(fields: [farm_id], references: [id], onDelete: Cascade)
@@ -56,17 +66,21 @@ model breeds {
   id                                     String    @id @db.Uuid
   name                                   String    @db.VarChar(255)
   animal_type                            String?   @default("Goat") @db.VarChar(255)
-  category                               String?   @db.VarChar(255)
   farm_id                                String?   @db.Uuid
-  is_default                             Boolean   @default(false)
   created_by_user_id                     String?   @db.Uuid
   updated_by_user_id                     String?   @db.Uuid
   created_at                             DateTime  @default(now()) @db.Timestamptz(6)
   updated_at                             DateTime  @updatedAt @db.Timestamptz(6)
+  category                               String?   @db.VarChar(255)
+  is_default                             Boolean   @default(false)
+  origin                                 String?   @default("indian") @db.VarChar(50)
+
   animals                                animals[]
   users_breeds_created_by_user_idTousers users?    @relation("breeds_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   farms                                  farms?    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
   users_breeds_updated_by_user_idTousers users?    @relation("breeds_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+
+  @@index([origin])
 }
 
 model employees {
@@ -77,6 +91,7 @@ model employees {
   updated_by_user_id String?                      @db.Uuid
   created_at         DateTime                     @default(now()) @db.Timestamptz(6)
   updated_at         DateTime                     @updatedAt @db.Timestamptz(6)
+  state              String                       @default("Working") @db.VarChar(50)
   users              users                        @relation(fields: [user_id], references: [id], onDelete: Cascade)
   farm_employees     farm_employees[]
   farms              farms[]
@@ -139,8 +154,8 @@ model locations {
 model users {
   id                                                                String                @id @db.Uuid
   name                                                              String                @db.VarChar(255)
-  email                                                             String                @unique @db.VarChar(255)
-  phone                                                             String?               @db.VarChar(255)
+  email                                                             String?               @unique @db.VarChar(255)
+  phone                                                             String                @unique @db.VarChar(255)
   password                                                          String                @db.VarChar(255)
   created_by_user_id                                                String?               @db.Uuid
   updated_by_user_id                                                String?               @db.Uuid
@@ -148,6 +163,8 @@ model users {
   reset_password_expires                                            DateTime?             @db.Timestamptz(6)
   created_at                                                        DateTime              @default(now()) @db.Timestamptz(6)
   updated_at                                                        DateTime              @default(now()) @updatedAt @db.Timestamptz(6)
+  profile_photo_url                                                 String?
+  push_token                                                        String?               @db.VarChar(511)
   animals_animals_created_by_user_idTousers                         animals[]             @relation("animals_created_by_user_idTousers")
   animals_animals_updated_by_user_idTousers                         animals[]             @relation("animals_updated_by_user_idTousers")
   breeds_breeds_created_by_user_idTousers                           breeds[]              @relation("breeds_created_by_user_idTousers")
@@ -191,19 +208,19 @@ model vaccination_records {
 model vaccines {
   id                                       String                  @id @db.Uuid
   name                                     String                  @db.VarChar(255)
-  disease_name                             String?                 @db.VarChar(255)
-  dose_ml                                  Decimal?                @db.Decimal(6, 2)
-  application_route                        String?                 @db.VarChar(255)
-  immunity_duration_days                   Int?
-  next_due_duration_days                   Int?
   days_between                             Int                     @default(0)
   remark                                   String?
   farm_id                                  String?                 @db.Uuid
-  is_default                               Boolean                 @default(false)
   created_by_user_id                       String?                 @db.Uuid
   updated_by_user_id                       String?                 @db.Uuid
   created_at                               DateTime                @default(now()) @db.Timestamptz(6)
   updated_at                               DateTime                @updatedAt @db.Timestamptz(6)
+  application_route                        String?                 @db.VarChar(255)
+  disease_name                             String?                 @db.VarChar(255)
+  dose_ml                                  Decimal?                @db.Decimal(6, 2)
+  immunity_duration_days                   Int?
+  is_default                               Boolean                 @default(false)
+  next_due_duration_days                   Int?
   vaccination_records                      vaccination_records[]
   vaccination_schedules                    vaccination_schedules[]
   users_vaccines_created_by_user_idTousers users?                  @relation("vaccines_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
@@ -222,12 +239,50 @@ model weights {
   remark                                  String?
   created_by_user_id                      String?  @db.Uuid
   updated_by_user_id                      String?  @db.Uuid
-  created_at                                 DateTime @default(now()) @db.Timestamptz(6)
-  updated_at                                 DateTime @updatedAt @db.Timestamptz(6)
+  created_at                              DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime @updatedAt @db.Timestamptz(6)
   animals                                 animals  @relation(fields: [animal_id], references: [id], onDelete: Cascade)
   users_weights_created_by_user_idTousers users?   @relation("weights_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   farms                                   farms    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
   users_weights_updated_by_user_idTousers users?   @relation("weights_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model vaccination_schedules {
+  id              String   @id @db.Uuid
+  vaccine_id      String   @db.Uuid
+  start_day       Int      @default(0)
+  repetition_days Int
+  duration_days   Int?
+  is_default      Boolean  @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  vaccines        vaccines @relation(fields: [vaccine_id], references: [id], onDelete: Cascade)
+}
+
+model animal_transactions {
+  id                String    @id @db.Uuid
+  animal_id         String    @db.Uuid
+  tag_number        String    @db.VarChar(255)
+  teeth_stage       String?   @db.VarChar(255)
+  purchase_weight   Decimal?  @db.Decimal(6, 2)
+  purchase_rate     Decimal?  @db.Decimal(10, 2)
+  purchase_date     DateTime? @db.Date
+  landing_cost      Decimal?  @db.Decimal(10, 2)
+  weight_difference Decimal?  @db.Decimal(6, 2)
+  sale_date         DateTime? @db.Date
+  sale_rate         Decimal?  @db.Decimal(10, 2)
+  sale_weight       Decimal?  @db.Decimal(6, 2)
+  stay_days         Int?
+  per_day_expense   Decimal?  @db.Decimal(10, 2)
+  total_expense     Decimal?  @db.Decimal(10, 2)
+  cost_of_goat      Decimal?  @db.Decimal(10, 2)
+  sale_price        Decimal?  @db.Decimal(10, 2)
+  discount          Decimal?  @db.Decimal(10, 2)
+  net_sale_price    Decimal?  @db.Decimal(10, 2)
+  profit_loss       Decimal?  @db.Decimal(10, 2)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  animals           animals   @relation(fields: [animal_id], references: [id], onDelete: Cascade)
 }
 
 enum enum_animals_acquisition_method {
@@ -265,6 +320,9 @@ enum enum_employees_employee_type {
   EMPLOYEE
   BUTCHER
   AGENT
+  MANAGER
+  SUPERVISOR
+  VETERINARIAN
 }
 
 enum enum_vaccination_records_creation_mode {
@@ -272,42 +330,16 @@ enum enum_vaccination_records_creation_mode {
   MASS
 }
 
-model vaccination_schedules {
-  id                                       String                  @id @db.Uuid
-  vaccine_id                               String                  @db.Uuid
-  start_day                                Int                     @default(0)
-  repetition_days                          Int
-  duration_days                            Int?
-  is_default                               Boolean                 @default(false)
-  created_at                               DateTime                @default(now()) @db.Timestamptz(6)
-  updated_at                               DateTime                @updatedAt @db.Timestamptz(6)
-  vaccines                                 vaccines                @relation(fields: [vaccine_id], references: [id], onDelete: Cascade)
-}
-
-model animal_transactions {
-  id                String    @id @db.Uuid
-  animal_id         String    @db.Uuid
-  tag_number        String    @db.VarChar(255)
-  teeth_stage       String?   @db.VarChar(255)
-  purchase_weight   Decimal?  @db.Decimal(6, 2)
-  purchase_rate     Decimal?  @db.Decimal(10, 2)
-  purchase_date     DateTime? @db.Date
-  landing_cost      Decimal?  @db.Decimal(10, 2)
-  weight_difference Decimal?  @db.Decimal(6, 2)
-  sale_date         DateTime? @db.Date
-  sale_rate         Decimal?  @db.Decimal(10, 2)
-  sale_weight       Decimal?  @db.Decimal(6, 2)
-  stay_days         Int?
-  per_day_expense   Decimal?  @db.Decimal(10, 2)
-  total_expense     Decimal?  @db.Decimal(10, 2)
-  cost_of_goat      Decimal?  @db.Decimal(10, 2)
-  sale_price        Decimal?  @db.Decimal(10, 2)
-  discount          Decimal?  @db.Decimal(10, 2)
-  net_sale_price    Decimal?  @db.Decimal(10, 2)
-  profit_loss       Decimal?  @db.Decimal(10, 2)
-  created_at        DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
-  animals           animals   @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+model reminders {
+  id                 String   @id @db.Uuid
+  user_id            String   @db.Uuid
+  animal_id          String?  @db.Uuid
+  vaccine_record_id  String?  @db.Uuid
+  title              String   @db.VarChar(255)
+  message            String
+  remind_at          DateTime @db.Timestamptz(6)
+  status             String   @default("PENDING") @db.VarChar(20)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
 }
 
 enum enum_mating_type {

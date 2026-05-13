@@ -3,24 +3,29 @@
     "name": "GoatBook",
     "slug": "GoatBook",
     "version": "1.1.0",
-    "orientation": "portrait",
+    "sdkVersion": "54.0.0",
     "icon": "./assets/icon.png",
+    "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "newArchEnabled": true
     },
     "android": {
       "package": "com.goatwala.farm",
       "versionCode": 2,
+      "newArchEnabled": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/splash-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,12 +33,21 @@
     "plugins": [
       "expo-secure-store",
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your farm profile and animals.",
+          "cameraPermission": "The app accesses your camera to let you take photos of your livestock and profile."
+        }
+      ],
+      "expo-notifications"
     ],
     "extra": {
       "eas": {
-        "projectId": "dd8f4208-4b63-4651-9e04-dbbb71d2c706"
+        "projectId": "fbdd2a91-3947-442f-b555-79a7f85473d9"
       }
-    }
+    },
+    "owner": "ayush20001"
   }
 }

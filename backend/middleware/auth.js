@@ -24,11 +24,23 @@ module.exports = async (req, res, next) => {
       return res.status(401).json({ message: 'User or Employee profile not found' });
     }
 
+    // Security Check: Block terminated employees immediately
+    if (employeeProfile.state === 'Terminated') {
+      return res.status(403).json({ message: 'Access Revoked: Your account has been terminated by the Farm Owner.' });
+    }
+
     req.user = user;
     req.employee = employeeProfile;
 
     // If a farmId is provided, verify the employee belongs to that farm
     if (farmId) {
+      // Basic UUID validation to prevent Prisma crashes on invalid header values
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(farmId)) {
+        console.warn(`AUTH: Invalid Farm ID provided in header: ${farmId}`);
+        return res.status(400).json({ message: 'Invalid Farm ID format' });
+      }
+
       const membership = await prisma.farm_employees.findFirst({
         where: { farm_id: farmId, employee_id: employeeProfile.id }
       });
@@ -41,6 +53,17 @@ module.exports = async (req, res, next) => {
 
     next();
   } catch (err) {
-    res.status(401).json({ message: 'Token is not valid' });
+    console.error('AUTH MIDDLEWARE ERROR:', err);
+    
+    // Distinguish between JWT errors and Database/Internal errors
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Session expired or invalid, please login again' });
+    }
+    
+    // If it's a Prisma connection error or other internal issue, return 500
+    res.status(500).json({ 
+      message: 'Server connectivity issue, please try again in a moment', 
+      error: err.message 
+    });
   }
 };

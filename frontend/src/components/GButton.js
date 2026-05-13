@@ -4,14 +4,15 @@ import { COLORS, SPACING } from '../theme';
 
 import { useTheme } from '../theme/ThemeContext';
 
-const GButton = ({ title, onPress, loading, containerStyle, titleStyle, variant = 'primary' }) => {
+const GButton = ({ title, label, onPress, loading, containerStyle, titleStyle, variant = 'primary', outline }) => {
   const { theme } = useTheme();
-  const isOutline = variant === 'outline';
+  const displayTitle = title || label;
+  const isOutline = variant === 'outline' || outline;
   const isSecondary = variant === 'secondary';
 
   const buttonStyle = [
     styles.button,
-    isOutline && { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: theme.colors.primary },
+    isOutline && { backgroundColor: theme.colors.surface, borderWidth: 1.5, borderColor: theme.colors.primary, elevation: 0, shadowOpacity: 0 },
     !isOutline && isSecondary && { backgroundColor: theme.colors.secondary },
     !isOutline && !isSecondary && { backgroundColor: theme.colors.primary },
     containerStyle,
@@ -36,7 +37,7 @@ const GButton = ({ title, onPress, loading, containerStyle, titleStyle, variant 
         <ActivityIndicator color={isOutline ? theme.colors.primary : theme.colors.white} />
       ) : (
         <Text style={textStyle}>
-          {title}
+          {displayTitle}
         </Text>
       )}
     </TouchableOpacity>
@@ -45,17 +46,14 @@ const GButton = ({ title, onPress, loading, containerStyle, titleStyle, variant 
 
 const styles = StyleSheet.create({
   button: {
-    height: 56,
-    borderRadius: 16,
+    minHeight: 52,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
     marginVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 3,
   },
   buttonDisabled: {
     opacity: 0.6,

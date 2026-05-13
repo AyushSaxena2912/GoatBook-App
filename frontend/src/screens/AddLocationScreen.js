@@ -1,27 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { COLORS, SPACING } from '../theme';
+import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import api from '../api';
+import { Scan, HelpCircle, X, Tag, MapPin, Info } from 'lucide-react-native';
+import { SPACING, SHADOW } from '../theme';
 
 const AddLocationScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
-  const isEditing = !!route.params?.location;
-  const existingLocation = route.params?.location;
 
-  const [code, setCode] = useState(isEditing ? existingLocation.code : '');
-  const [name, setName] = useState(isEditing ? existingLocation.name : '');
-  const [type, setType] = useState(isEditing ? existingLocation.type : 'Internal Location');
-  const [parentLocationId, setParentLocationId] = useState(isEditing ? existingLocation.parentLocationId : null);
+  const [tagNumber, setTagNumber] = useState('');
+  const [animal, setAnimal] = useState(null);
+  const [locationId, setLocationId] = useState(null);
+  const [newLocationName, setNewLocationName] = useState('');
+  const [remark, setRemark] = useState('');
   
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     fetchLocations();
@@ -30,156 +30,189 @@ const AddLocationScreen = ({ navigation, route }) => {
   const fetchLocations = async () => {
     try {
       const response = await api.get('/locations');
-      // Filter out current location if editing to prevent circular parent
-      const filtered = isEditing 
-        ? response.data.filter(loc => loc.id !== existingLocation.id)
-        : response.data;
-        
-      setLocations([
-        { label: 'None (Root Location)', value: null },
-        ...filtered.map(loc => ({ label: loc.displayName || loc.name, value: loc.id }))
-      ]);
+      setLocations(response.data.map(loc => ({ 
+        label: loc.displayName || loc.name, 
+        value: loc.id 
+      })));
     } catch (error) {
       console.error('Fetch locations error:', error);
     }
   };
 
+  const handleSearchAnimal = async () => {
+    if (!tagNumber) {
+      Alert.alert('Validation', 'Please enter a Tag ID');
+      return;
+    }
+    setSearching(true);
+    try {
+      const response = await api.get(`/animals/check-tag/${tagNumber}`);
+      setAnimal(response.data);
+      setSearching(false);
+    } catch (error) {
+      setSearching(false);
+      setAnimal(null);
+      Alert.alert('Not Found', 'Animal with this Tag ID not found in your farm.');
+    }
+  };
+
   const handleSave = async () => {
-    if (!code || !name || !type) {
-      alert('Please fill in Code, Name and Type');
+    if (!animal) {
+      Alert.alert('Required', 'Please add an animal by searching its Tag ID first.');
+      return;
+    }
+
+    if (!locationId && !newLocationName) {
+      Alert.alert('Required', 'Please select an existing shed or enter a name for a new one.');
       return;
     }
 
     setLoading(true);
     try {
-      const payload = { code, name, type, parentLocationId };
-      if (isEditing) {
-        await api.put(`/locations/${existingLocation.id}`, payload);
-      } else {
-        await api.post('/locations', payload);
+      let targetLocationId = locationId;
+
+      if (newLocationName) {
+        const locRes = await api.post('/locations', {
+          name: newLocationName,
+          code: newLocationName.toUpperCase().substring(0, 5),
+          type: 'Internal Location'
+        });
+        targetLocationId = locRes.data.id;
       }
+
+      await api.put(`/animals/${animal.id}`, {
+        locationId: targetLocationId,
+        remark: remark
+      });
+
       setLoading(false);
+      Alert.alert('Success', 'Location assigned successfully');
       navigation.goBack();
     } catch (error) {
       setLoading(false);
-      const message = error.response?.data?.message || 'Failed to save location';
-      alert(message);
+      const message = error.response?.data?.message || 'Failed to assign location';
+      Alert.alert('Error', message);
     }
-  };
-
-  const handleDelete = async () => {
-    Alert.alert(
-      'Delete Location',
-      'Are you sure? Metadata and history for this location will be lost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive', 
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await api.delete(`/locations/${existingLocation.id}`);
-              setDeleting(false);
-              navigation.goBack();
-            } catch (error) {
-              setDeleting(false);
-              const msg = error.response?.data?.message || 'Failed to delete';
-              alert(msg);
-            }
-          } 
-        }
-      ]
-    );
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title={isEditing ? "Edit Location" : "Add Location"} 
+        title="Add Location/Shed" 
         onBack={() => navigation.goBack()} 
+        leftAlign={true}
       />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.formContainer}>
-            <GInput 
-              label="Location Code" 
-              value={code} 
-              onChangeText={setCode} 
-              placeholder="e.g. WH-A1"
-              required 
-            />
-            
-            <View style={styles.gap} />
-            
-            <GInput 
-              label="Location Name" 
-              value={name} 
-              onChangeText={setName} 
-              placeholder="e.g. Warehouse Alpha"
-              required 
-            />
-            
-            <View style={styles.gap} />
-            
-            <GSelect 
-              label="Location Type" 
-              value={type} 
-              onSelect={setType}
-              options={[
-                { label: 'Internal Location (Stable/Pen)', value: 'Internal Location' },
-                { label: 'Customer Location (Sold)', value: 'Customer Location' },
-                { label: 'Vendor Location (Sourced)', value: 'Vendor Location' },
-                { label: 'Virtual Location (Adjustment)', value: 'Virtual Location' },
-                { label: 'Loss Location (Death/Theft)', value: 'Loss Location' }
-              ]}
-              required
-            />
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.formArea}>
+            {/* Tag ID Search Row */}
+            <View style={styles.inputRow}>
+              <View style={styles.inputFlex}>
+                <GInput 
+                  label="Enter Tag ID*" 
+                  value={tagNumber} 
+                  onChangeText={(val) => {
+                    setTagNumber(val);
+                    if (!val) setAnimal(null);
+                  }} 
+                  required 
+                  rightIcon={tagNumber ? (
+                    <TouchableOpacity onPress={() => {setTagNumber(''); setAnimal(null);}}>
+                        <X size={18} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  ) : null}
+                />
+              </View>
+              <TouchableOpacity 
+                style={[styles.addBtn, { backgroundColor: theme.colors.primary }]}
+                onPress={handleSearchAnimal}
+                activeOpacity={0.8}
+                disabled={searching}
+              >
+                <Text style={styles.addBtnText}>{searching ? '...' : 'Add'}</Text>
+              </TouchableOpacity>
+            </View>
 
-            <View style={styles.gap} />
-
-            <GSelect 
-              label="Parent Location" 
-              value={parentLocationId} 
-              onSelect={setParentLocationId}
-              options={locations}
-              placeholder="Root Level"
-            />
-          </View>
-
-          <View style={styles.footer}>
-            {isEditing ? (
-              <View style={styles.buttonRow}>
-                <View style={styles.halfBtn}>
-                  <GButton 
-                    title="Delete" 
-                    variant="outline" 
-                    onPress={handleDelete}
-                    loading={deleting}
-                  />
-                </View>
-                <View style={styles.halfBtn}>
-                  <GButton 
-                    title="Save Changes" 
-                    onPress={handleSave}
-                    loading={loading}
-                  />
+            {/* Animal Card (Preview) */}
+            {animal && (
+              <View style={[styles.animalCard, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.cardAccent} />
+                <View style={styles.animalCardContent}>
+                  <View style={styles.animalHeader}>
+                    <View style={styles.tagBadgeMain}>
+                       <Tag size={14} color={theme.colors.primary} />
+                       <Text style={[styles.animalTitle, { color: theme.colors.text }]}>#{animal.tagNumber}</Text>
+                    </View>
+                    <Text style={[styles.animalBreed, { color: theme.colors.textLight }]}>{animal.breedName}</Text>
+                  </View>
+                  <View style={styles.animalMetaRow}>
+                    <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{animal.gender}</Text>
+                    <View style={styles.dot} />
+                    <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{animal.ageInMonths} Months</Text>
+                    <View style={styles.dot} />
+                    <View style={styles.currentLocBadge}>
+                        <MapPin size={10} color={theme.colors.primary} />
+                        <Text style={[styles.currentLocText, { color: theme.colors.primary }]}>{animal.currentLocationName}</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
-            ) : (
-              <GButton 
-                title="Create Location" 
-                onPress={handleSave}
-                loading={loading}
-              />
             )}
+            
+
+            {/* Location Selectors */}
+            <GSelect 
+              label="Existing Location/Shed" 
+              placeholder="Select from your sheds"
+              value={locationId} 
+              onSelect={(val) => {
+                setLocationId(val);
+                if (val) setNewLocationName('');
+              }}
+              options={locations}
+              rightIcon={<HelpCircle size={18} color={theme.colors.textMuted} />}
+            />
+            
+            <GInput 
+              label="Add New Location" 
+              placeholder="E.g. Shed B - North"
+              value={newLocationName} 
+              onChangeText={(val) => {
+                setNewLocationName(val);
+                if (val) setLocationId(null);
+              }} 
+              rightIcon={<HelpCircle size={18} color={theme.colors.textMuted} />}
+            />
+
+            <GInput 
+              label="Remark" 
+              placeholder="Reason for movement (Optional)"
+              value={remark} 
+              onChangeText={setRemark} 
+              multiline
+              numberOfLines={3}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Fixed Footer */}
+      <View style={[styles.footer, { paddingBottom: Platform.OS === 'ios' ? 34 : 16 }]}>
+        <GButton 
+          title="Submit" 
+          onPress={handleSave}
+          loading={loading}
+          containerStyle={styles.submitBtn}
+        />
+      </View>
     </View>
   );
 };
@@ -192,28 +225,117 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: SPACING.lg,
-    flexGrow: 1,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: 40,
   },
-  formContainer: {
-    marginTop: SPACING.md,
-    paddingTop: 8,
-    backgroundColor: 'transparent',
+  formArea: {
+    gap: 12,
   },
-  gap: {
-    height: 16,
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  footer: {
-    marginTop: 'auto',
-    paddingVertical: SPACING.xl,
+  inputFlex: {
+    flex: 1,
   },
-  buttonRow: {
+  addBtn: {
+    height: 52,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  addBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  animalCard: {
+    borderRadius: 16,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    marginTop: 12,
+    ...SHADOW.small,
+  },
+  cardAccent: {
+    width: 6,
+    backgroundColor: theme.colors.primary,
+  },
+  animalCardContent: {
+    padding: 16,
+    flex: 1,
+  },
+  animalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  halfBtn: {
-    width: '48%',
+  tagBadgeMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
+  animalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+  },
+  animalBreed: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    opacity: 0.7,
+  },
+  animalMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  metaItem: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: theme.colors.textMuted,
+  },
+  currentLocBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.primary + '10',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  currentLocText: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.border + '15',
+    marginVertical: 20,
+  },
+  spacer: {
+    height: 12,
+  },
+  footer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  submitBtn: {
+    height: 54,
+    borderRadius: 14,
+  }
 });
 
 export default AddLocationScreen;

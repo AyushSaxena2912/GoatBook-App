@@ -29,16 +29,16 @@ const storage = {
   }
 };
 
-// For Production: Replace with your Render URL
-// For Development: Use your PC's IP address
-const BASE_URL = 'https://goatbookapp.onrender.com/api'; 
+// Backend URL configuration
+// Using Render backend (Production) exclusively as requested.
+const BASE_URL = 'https://goatbookapp-production.up.railway.app/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 150000, // Increased to 150s for Render + Neon cold starts
 });
 
 export const setAuthToken = async (token) => {
@@ -69,5 +69,20 @@ api.interceptors.request.use(async (config) => {
   if (farmId) config.headers['X-Farm-ID'] = farmId;
   return config;
 });
+
+// Response interceptor to handle auth failures (like after a DB wipe)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      console.warn('AUTH: Session expired or invalid. Clearing storage.');
+      await storage.deleteItem('token');
+      await storage.deleteItem('selectedFarmId');
+      // Note: Ideally you would navigate to Login here, but clearing storage 
+      // will trigger state changes in most AuthContext implementations.
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

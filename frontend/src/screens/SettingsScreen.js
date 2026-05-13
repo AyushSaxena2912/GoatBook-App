@@ -118,7 +118,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   cardTitle: {
     fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     textAlign: 'center',
     letterSpacing: -0.2,
     color: theme.colors.text,

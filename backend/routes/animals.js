@@ -8,7 +8,9 @@ router.post('/', auth, animalController.addAnimal);
 router.get('/:id', auth, animalController.getAnimal);
 router.get('/check-tag/:tagNumber', auth, animalController.checkTagExists);
 router.post('/replace-tag', auth, animalController.replaceTag);
+router.put('/bulk-location', auth, animalController.updateBulkLocation);
 router.put('/:id', auth, animalController.updateAnimal);
+router.delete('/bulk', auth, animalController.deleteAnimalsBulk);
 router.delete('/:id', auth, animalController.deleteAnimal);
 
 module.exports = router;

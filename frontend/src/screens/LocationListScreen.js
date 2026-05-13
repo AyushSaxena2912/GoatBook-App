@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform, SafeAreaView } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, MapPin, X, SearchX } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, LayoutGrid, SearchX, X, MapPin } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
+import { SPACING, SHADOW } from '../theme';
+import GInput from '../components/GInput';
 
 const LocationListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -13,10 +14,9 @@ const LocationListScreen = ({ navigation }) => {
   const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const searchInputRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -30,10 +30,9 @@ const LocationListScreen = ({ navigation }) => {
     } else {
       const q = searchQuery.toLowerCase();
       const filtered = locations.filter(loc => 
-        loc.name.toLowerCase().includes(q) ||
-        loc.code.toLowerCase().includes(q) ||
-        (loc.displayName && loc.displayName.toLowerCase().includes(q)) ||
-        loc.type.toLowerCase().includes(q)
+        loc.name?.toLowerCase().includes(q) ||
+        loc.displayName?.toLowerCase().includes(q) ||
+        loc.code?.toLowerCase().includes(q)
       );
       setFilteredLocations(filtered);
     }
@@ -52,102 +51,105 @@ const LocationListScreen = ({ navigation }) => {
     }
   };
 
-  const toggleSearch = () => {
-    if (isSearching) {
-      setSearchQuery('');
-      Animated.timing(searchBarTranslateY, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setIsSearching(false));
+  const handleSearchPress = () => {
+    setIsSearchVisible(!isSearchVisible);
+    if (!isSearchVisible) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
-      setIsSearching(true);
-      Animated.timing(searchBarTranslateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      setSearchQuery('');
     }
   };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity 
-      style={styles.locationCard}
+      style={[styles.locationCard, { backgroundColor: theme.colors.surface }]}
       onPress={() => navigation.navigate('LocationDetails', { locationId: item.id })}
       activeOpacity={0.7}
     >
-      <View style={styles.locationInfo}>
-        <Text style={[styles.locationName, { color: theme.colors.text }]} numberOfLines={1}>{item.displayName || item.name}</Text>
-        <Text style={[styles.locationMeta, { color: theme.colors.textLight }]}>{item.code} • {item.type}</Text>
+      <View style={[styles.iconBox, { backgroundColor: theme.colors.primary + '10' }]}>
+        <LayoutGrid size={24} color={theme.colors.primary} />
       </View>
-      <ChevronRight size={20} color={theme.colors.textMuted} />
+      <View style={styles.locationInfo}>
+        <Text style={[styles.locationName, { color: theme.colors.text }]} numberOfLines={1}>
+          {item.displayName || item.name}
+        </Text>
+        <View style={styles.metaRow}>
+           <View style={[styles.metaBadge, { backgroundColor: theme.colors.background }]}>
+              <Text style={[styles.metaText, { color: theme.colors.textLight }]}>
+                {item.animalCount || 0} Animals
+              </Text>
+           </View>
+           <View style={styles.dot} />
+           <Text style={[styles.locationCode, { color: theme.colors.textMuted }]}>
+             {item.code || 'SHED'}
+           </Text>
+        </View>
+      </View>
+      <View style={[styles.chevronWrapper, { backgroundColor: theme.colors.background }]}>
+        <ChevronRight size={18} color={theme.colors.textMuted} />
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Location List" 
-        onMenu={() => navigation.openDrawer()} 
+        title="Shed List" 
         onBack={() => navigation.goBack()}
-        rightIcon={isSearching ? <X color={theme.colors.white} size={24} /> : <Search color={theme.colors.white} size={24} />}
-        onRightPress={toggleSearch}
+        leftAlign={true}
+        rightIcon={isSearchVisible ? <X size={24} color="#FFF" /> : <Search size={24} color="#FFF" />}
+        onRightPress={handleSearchPress}
       />
 
-      {isSearching && (
-        <Animated.View style={[styles.searchBarContainer, { transform: [{ translateY: searchBarTranslateY }] }]}>
-          <View style={styles.searchInner}>
-            <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search code, name or type..."
-              placeholderTextColor={theme.colors.textMuted}
+      <View style={styles.content}>
+        {isSearchVisible && (
+          <View style={styles.searchContainer}>
+            <GInput 
+              ref={searchInputRef}
+              placeholder="Search by name or code..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              autoFocus
+              leftIcon={<Search size={20} color={theme.colors.textMuted} />}
+              containerStyle={styles.searchBar}
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <X size={18} color={theme.colors.textLight} />
-              </TouchableOpacity>
-            )}
           </View>
-        </Animated.View>
-      )}
-      
-      {!isSearching && (
-        <View style={styles.actionRow}>
-          <TouchableOpacity 
-            style={[styles.addButton, { backgroundColor: theme.colors.primary, ...theme.shadow.sm }]}
-            onPress={() => navigation.navigate('AddLocation')}
-          >
-            <Plus color={theme.colors.white} size={20} style={styles.plusIcon} />
-            <Text style={styles.addButtonText}>Add Location</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        )}
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredLocations}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-                <SearchX size={64} color={theme.colors.border} />
-                <Text style={[styles.noRecords, { color: theme.colors.text }]}>No Locations Found</Text>
-                <Text style={[styles.emptyDesc, { color: theme.colors.textLight }]}>Add stables, pens, or sections to organize your farm.</Text>
-            </View>
-          }
-          contentContainerStyle={[styles.listContent, isSearching && { paddingTop: 20 }]}
-          keyboardShouldPersistTaps="handled"
-        />
-      )}
-    </View>
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredLocations}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                  <View style={[styles.emptyIconWrapper, { backgroundColor: theme.colors.surface }]}>
+                    <SearchX size={48} color={theme.colors.textMuted} />
+                  </View>
+                  <Text style={[styles.noRecords, { color: theme.colors.text }]}>No records found</Text>
+                  <Text style={[styles.emptyDesc, { color: theme.colors.textLight }]}>
+                    Your farm locations will appear here once added.
+                  </Text>
+              </View>
+            }
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          />
+        )}
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        onPress={() => navigation.navigate('CreateLocation')}
+        activeOpacity={0.8}
+      >
+        <Plus color="#FFF" size={32} />
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 };
 
@@ -155,98 +157,120 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
   },
-  searchBarContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: theme.colors.surface,
-    zIndex: 5,
-  },
-  searchInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
-    backgroundColor: theme.colors.background,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
+  content: {
     flex: 1,
-    fontSize: 15,
-    paddingVertical: 8,
-    fontFamily: 'Montserrat_500Medium',
   },
-  actionRow: {
-    padding: 16,
-    paddingBottom: 8,
-    alignItems: 'flex-end',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  searchContainer: {
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 14,
   },
-  plusIcon: {
-    marginRight: 8,
-  },
-  addButtonText: {
-    color: 'white',
-    fontFamily: 'Montserrat_600SemiBold',
-    fontSize: 14,
+  searchBar: {
+    marginVertical: 0,
+    ...SHADOW.small,
   },
   listContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 16,
+    paddingBottom: 120,
   },
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: theme.colors.surface,
+    borderRadius: 22,
     padding: 16,
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
+    marginBottom: 16,
+    ...SHADOW.small,
+  },
+  iconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   locationInfo: {
     flex: 1,
   },
   locationName: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 17,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 6,
   },
-  locationMeta: {
-    fontSize: 14,
-    marginTop: 4,
-    fontFamily: 'Montserrat_500Medium',
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  metaBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  metaText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: theme.colors.textMuted,
+  },
+  locationCode: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+  },
+  chevronWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyContainer: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 80,
+    justifyContent: 'center',
+    paddingTop: 100,
     paddingHorizontal: 40,
   },
+  emptyIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    ...SHADOW.small,
+  },
   noRecords: {
-    fontSize: 18,
-    fontFamily: 'Montserrat_500Medium',
-    marginTop: 16,
+    fontSize: 19,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 8,
   },
   emptyDesc: {
     textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-    fontFamily: 'Montserrat_400Regular',
+    lineHeight: 22,
+    fontFamily: 'Inter_400Regular',
+    opacity: 0.7,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  fab: {
+    position: 'absolute',
+    right: 24,
+    bottom: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOW.large,
+  }
 });
 
 export default LocationListScreen;

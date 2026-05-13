@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 export const lightTheme = {
   colors: {
     primary: '#F95004',
@@ -17,19 +19,28 @@ export const lightTheme = {
     black: '#000000',
   },
   typography: {
-    regular: 'Montserrat_400Regular',
-    medium: 'Montserrat_500Medium',
-    semiBold: 'Montserrat_600SemiBold',
-    bold: 'Montserrat_600SemiBold',
-    extraBold: 'Montserrat_700Bold',
+    regular: 'Inter_400Regular',
+    medium: 'Inter_500Medium',
+    semiBold: 'Inter_600SemiBold',
+    bold: 'Inter_600SemiBold',
+    extraBold: 'Inter_700Bold',
   },
   spacing: {
     xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40,
   },
   shadow: {
-    sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
-    md: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
-    lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 8 },
+    sm: Platform.select({
+      web: { boxShadow: '0px 1px 2px rgba(0,0,0,0.05)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 }
+    }),
+    md: Platform.select({
+      web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.08)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 }
+    }),
+    lg: Platform.select({
+      web: { boxShadow: '0px 10px 20px rgba(0,0,0,0.1)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 8 }
+    }),
   }
 };
 
@@ -54,9 +65,18 @@ export const darkTheme = {
   typography: lightTheme.typography,
   spacing: lightTheme.spacing,
   shadow: {
-    sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 3 },
-    md: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 6 },
-    lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.6, shadowRadius: 16, elevation: 12 },
+    sm: Platform.select({
+      web: { boxShadow: '0px 2px 4px rgba(0,0,0,0.4)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 3 }
+    }),
+    md: Platform.select({
+      web: { boxShadow: '0px 6px 8px rgba(0,0,0,0.5)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 6 }
+    }),
+    lg: Platform.select({
+      web: { boxShadow: '0px 12px 16px rgba(0,0,0,0.6)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.6, shadowRadius: 16, elevation: 12 }
+    }),
   }
 };
 

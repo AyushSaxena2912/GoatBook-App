@@ -16,6 +16,7 @@ import GButton from '../components/GButton';
 import api from '../api';
 import { getStyles } from './ReplaceTagScreen.styles';
 import { Tag, ArrowRight, CheckCircle2 } from 'lucide-react-native';
+import GAlert from '../components/GAlert';
 
 const ReplaceTagScreen = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
@@ -26,20 +27,17 @@ const ReplaceTagScreen = ({ navigation }) => {
   const [animal, setAnimal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
-  const handleCheckTag = async () => {
-    if (!existingTag) {
-      Alert.alert('Error', 'Please enter an existing Tag ID');
-      return;
-    }
+  const handleCheckTag = async (tag) => {
+    const tagToSearch = tag || existingTag;
+    if (!tagToSearch) return;
 
     setLoading(true);
     try {
-      const response = await api.get(`/animals/check-tag/${existingTag}`);
+      const response = await api.get(`/animals/check-tag/${tagToSearch}`);
       setAnimal(response.data);
     } catch (error) {
-      const message = error.response?.data?.message || 'Tag ID not found in your farm';
-      Alert.alert('Not Found', message);
       setAnimal(null);
     } finally {
       setLoading(false);
@@ -59,14 +57,12 @@ const ReplaceTagScreen = ({ navigation }) => {
 
     setSubmitting(true);
     try {
-      const response = await api.post('/animals/replace-tag', {
+      await api.post('/animals/replace-tag', {
         oldTagNumber: existingTag,
         newTagNumber: newTag
       });
       
-      Alert.alert('Success', response.data.message, [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      setSuccessVisible(true);
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to replace Tag ID';
       Alert.alert('Error', message);
@@ -80,6 +76,7 @@ const ReplaceTagScreen = ({ navigation }) => {
       <GHeader 
         title="Replace Tag ID" 
         onBack={() => navigation.goBack()} 
+        leftAlign={true}
       />
 
       <KeyboardAvoidingView 
@@ -90,83 +87,79 @@ const ReplaceTagScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.card}>
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <GInput 
-                  label="Existing Tag Id*"
-                  value={existingTag}
-                  onChangeText={(val) => {
-                    setExistingTag(val);
-                    if (animal) setAnimal(null); // Reset if editing
-                  }}
-                  placeholder="Enter old tag number"
-                  autoCapitalize="characters"
-                  editable={!loading && !submitting}
-                />
-              </View>
-              <TouchableOpacity 
-                style={[
-                  styles.addBtn,
-                  (loading || submitting) && styles.btnDisabled
-                ]}
-                onPress={handleCheckTag}
-                disabled={loading || submitting}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFF" size="small" />
-                ) : (
-                  <>
-                    <View style={styles.plusCircle}>
-                      <Text style={styles.plusText}>+</Text>
-                    </View>
-                    <Text style={styles.addBtnText}>Add</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+          <GInput 
+            label="Existing Tag ID"
+            value={existingTag}
+            onChangeText={(val) => {
+              setExistingTag(val);
+              // We can still auto-fetch details in background if needed
+              if (val.length >= 3) handleCheckTag(val);
+            }}
+            placeholder="Search old tag ID"
+            autoCapitalize="characters"
+            required
+            editable={!submitting}
+          />
+
+          {existingTag.length >= 3 && !loading && !animal && (
+            <View style={{ marginTop: 8, paddingHorizontal: 4 }}>
+              <Text style={{ color: theme.colors.textMuted, fontSize: 13, fontFamily: theme.typography.medium }}>
+                No animal found with this Tag ID
+              </Text>
             </View>
+          )}
 
-            {animal && (
-              <View style={styles.animalPreview}>
-                <View style={styles.divider} />
-                <View style={styles.animalInfoRow}>
-                  <View style={styles.animalIconBox}>
-                    <Tag color={theme.colors.primary} size={24} />
-                  </View>
-                  <View style={styles.animalDetails}>
-                    <Text style={styles.animalTag}>{animal.tag_number}</Text>
-                    <Text style={styles.animalSubInfo}>
-                      {animal.breeds?.name || 'Unknown Breed'} • {animal.gender}
-                    </Text>
-                  </View>
-                  <CheckCircle2 color={theme.colors.success || '#10B981'} size={24} />
+          {animal && (
+            <View style={styles.animalPreview}>
+              <View style={styles.animalInfoRow}>
+                <View style={styles.animalIconBox}>
+                  <Tag color={theme.colors.primary} size={22} />
                 </View>
-
-                <View style={styles.replacementSection}>
-                  <GInput 
-                    label="Replace with New Tag ID*"
-                    value={newTag}
-                    onChangeText={setNewTag}
-                    placeholder="Enter new tag number"
-                    autoCapitalize="characters"
-                    editable={!submitting}
-                  />
+                <View style={styles.animalDetails}>
+                  <Text style={styles.animalTag}>{animal.tag_number}</Text>
+                  <Text style={styles.animalSubInfo}>
+                    {animal.breeds?.name || 'Unknown Breed'} • {animal.gender}
+                  </Text>
                 </View>
+                <CheckCircle2 color={theme.colors.success || '#10B981'} size={22} />
               </View>
-            )}
+            </View>
+          )}
+
+          <View style={{ marginTop: 12 }}>
+            <GInput 
+              label="New Tag ID"
+              value={newTag}
+              onChangeText={setNewTag}
+              placeholder="Enter new tag ID"
+              autoCapitalize="characters"
+              required
+              editable={!submitting}
+            />
           </View>
         </ScrollView>
 
-        {animal && (
-          <View style={styles.footer}>
-            <GButton 
-              title="Replace"
-              onPress={handleReplaceTag}
-              loading={submitting}
-            />
-          </View>
-        )}
+        <View style={styles.footer}>
+          <GButton 
+            title="Replace Tag"
+            onPress={handleReplaceTag}
+            loading={submitting}
+            disabled={!existingTag || !newTag}
+          />
+        </View>
       </KeyboardAvoidingView>
+
+      <GAlert 
+        visible={successVisible}
+        title="Tag Replaced!"
+        message={`Successfully replaced ${existingTag} with ${newTag}.`}
+        type="success"
+        confirmText="Done"
+        onClose={() => {
+          setSuccessVisible(false);
+          navigation.goBack();
+        }}
+      />
     </View>
   );
 };

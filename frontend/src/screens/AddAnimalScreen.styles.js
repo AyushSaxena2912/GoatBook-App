@@ -1,10 +1,32 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { SPACING } from '../theme';
 
-export const getStyles = (theme, isDarkMode) => StyleSheet.create({
+export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  header: {
+    backgroundColor: theme.colors.primary,
+    paddingTop: Platform.OS === 'ios' ? insets.top : (RNStatusBar.currentHeight || insets.top || 24),
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    minHeight: 50,
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    color: '#FFF',
   },
   flex: {
     flex: 1,
@@ -12,16 +34,17 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 140, // Increased to clear fixed footer
   },
   sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     marginBottom: SPACING.md,
+    letterSpacing: 0.5,
   },
   formContainer: {
-    marginTop: 0,
+    marginTop: 4,
   },
   row: {
     flexDirection: 'row',
@@ -33,8 +56,12 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     marginHorizontal: 4,
   },
   footer: {
-    marginTop: SPACING.xl,
-    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    ...theme.shadow.lg, // Added shadow for floating effect
   },
   buttonRow: {
     flexDirection: 'row',
@@ -46,7 +73,7 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   maleLabel: {
     fontSize: 14,
     color: theme.colors.text,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     marginRight: 12,
   },
   checkboxContainer: {
@@ -69,14 +96,37 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 14,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     color: theme.colors.text,
   },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: 'Inter_700Bold',
+  },
+  statusChevron: {
+    marginLeft: 4,
+  },
   weightSection: {
-    marginTop: SPACING.xl,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    marginBottom: 12,
     borderWidth: 1.5,
+    borderRadius: 16,
     borderColor: theme.colors.border,
     overflow: 'hidden',
   },
@@ -89,28 +139,29 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   weightContent: {
-    padding: SPACING.md,
-    alignItems: 'center',
+    padding: 16,
+    paddingTop: 8,
+    alignItems: 'stretch',
   },
   addNewBtn: {
     backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
     alignSelf: 'flex-end',
     marginBottom: SPACING.md,
   },
   addNewText: {
     color: '#FFF',
-    fontFamily: 'Montserrat_600SemiBold',
-    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
     marginLeft: 6,
   },
   noRecordsText: {
     color: theme.colors.textMuted,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     fontSize: 13,
     marginTop: 20,
     marginBottom: 20,
@@ -139,12 +190,12 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   weightKg: {
     fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.text,
   },
   weightDate: {
     fontSize: 12,
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: 'Inter_400Regular',
     color: theme.colors.textLight,
   },
   heightInfoBlock: {
@@ -152,12 +203,12 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   weightLabel: {
     fontSize: 10,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.textLight,
   },
   weightValue: {
     fontSize: 12,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.text,
   },
   sectionDivider: {
@@ -173,7 +224,7 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   readyLabel: {
     fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
   },
   statusBadge: {
@@ -191,13 +242,13 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    color: theme.colors.text,
+    color: '#FFF',
     fontSize: 12,
-    fontFamily: 'Montserrat_600SemiBold',
-    textTransform: 'uppercase',
+    fontFamily: 'Inter_600SemiBold',
   },
   readyToSellCard: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 16,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: theme.colors.border,
@@ -211,13 +262,103 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     marginBottom: 12,
   },
   readyTitle: {
-    fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
-    letterSpacing: 1,
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.5,
   },
   readyOptions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+  },
+  photoCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    backgroundColor: theme.colors.surface,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  photoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  photoTitle: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.5,
+  },
+  photoContent: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#F9FAFB',
+  },
+  photoPlaceholder: {
+    flex: 1,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#F9FAFB',
+  },
+  iconGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  imageActions: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+  },
+  imageActionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+    marginBottom: 12,
+  },
+  modalOptionText: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.text,
+  },
+  statusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
 });

@@ -40,8 +40,13 @@ exports.getWeights = async (req, res) => {
 exports.addWeight = async (req, res) => {
   const { tagNumber, weight, height, date, remark } = req.body;
   try {
-    if (!tagNumber || !weight) {
+    if (!tagNumber || weight === undefined || weight === null) {
       return res.status(400).json({ message: 'Tag Number and Weight value are required' });
+    }
+
+    const numericWeight = parseFloat(weight);
+    if (isNaN(numericWeight)) {
+      return res.status(400).json({ message: 'Weight must be a valid number' });
     }
 
     // 1. Verify that an animal with this tag exists in the current farm's inventory
@@ -58,10 +63,10 @@ exports.addWeight = async (req, res) => {
       data: {
         id: uuidv4(), 
         animal_id: animal.id, 
-        farm_id: req.farmId,
+        farm_id: req.farmId || animal.farm_id, 
         tag_number: tagNumber, 
-        weight, 
-        height: height || null,
+        weight: numericWeight, 
+        height: height ? parseFloat(height) : null,
         date: date ? new Date(date) : now, 
         remark,
         created_by_user_id: req.user.id, 
@@ -89,22 +94,44 @@ exports.updateWeight = async (req, res) => {
       return res.status(404).json({ message: 'Weight record not found' });
     }
 
+    const data = {
+      remark,
+      updated_by_user_id: req.user.id,
+      updated_at: new Date()
+    };
+
+    if (weight !== undefined && weight !== null) {
+      const numericWeight = parseFloat(weight);
+      if (isNaN(numericWeight)) {
+        return res.status(400).json({ message: 'Weight must be a valid number' });
+      }
+      data.weight = numericWeight;
+    }
+
+    if (height !== undefined) {
+      if (height === null || height === '') {
+        data.height = null;
+      } else {
+        const numericHeight = parseFloat(height);
+        if (!isNaN(numericHeight)) {
+          data.height = numericHeight;
+        }
+      }
+    }
+
+    if (date) {
+      data.date = new Date(date);
+    }
+
     const updated = await prisma.weights.update({
       where: { id: req.params.id },
-      data: { 
-        weight, 
-        height, 
-        date: date ? new Date(date) : record.date, 
-        remark, 
-        updated_by_user_id: req.user.id, 
-        updated_at: new Date() 
-      }
+      data
     });
 
     res.json(updated);
   } catch (err) {
     console.error('UPDATE WEIGHT ERROR:', err);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 

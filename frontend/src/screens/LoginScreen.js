@@ -5,6 +5,7 @@ import { useTheme } from '../theme/ThemeContext';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import api, { setAuthToken, setSelectedFarm } from '../api';
+import { registerForPushNotificationsAsync } from '../utils/notificationService';
 
 const LoginScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -15,7 +16,7 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert('Please enter your email and password');
+      alert('Please enter your Phone/Email and password');
       return;
     }
 
@@ -27,11 +28,15 @@ const LoginScreen = ({ navigation }) => {
       await setAuthToken(token);
       
       if (farms && farms.length > 1) {
-        setLoading(false);
         navigation.replace('FarmSelection', { farms });
       } else if (farms && farms.length === 1) {
         await setSelectedFarm(farms[0].id);
-        setLoading(false);
+        
+        // Register for push notifications after login/farm selection
+        registerForPushNotificationsAsync().catch(err => 
+          console.error('Failed to register for push notifications:', err)
+        );
+
         try {
           navigation.replace('MainDrawer');
         } catch (navError) {
@@ -58,7 +63,7 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.formWrapper}>
             <View style={styles.titleContainer}>
                 <Text style={styles.mainTitle}>Login</Text>
-                <Text style={styles.subTitle}>Login to Goatwala Farm APP!</Text>
+                <Text style={styles.subTitle}>Login to your account and manage your farm.</Text>
             </View>
 
             <View style={styles.form}>
@@ -124,14 +129,14 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   mainTitle: {
     fontSize: 32,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     letterSpacing: -1,
   },
   subTitle: {
     fontSize: 16,
     marginTop: 8,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     color: theme.colors.textLight,
   },
   form: {
@@ -145,7 +150,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   forgotText: {
     fontSize: 14,
     color: theme.colors.primary,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
   loginBtn: {
     marginTop: 10,
@@ -158,12 +163,12 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   footerText: {
     fontSize: 15,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     color: theme.colors.textLight,
   },
   link: {
     fontSize: 15,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     textDecorationLine: 'underline',
   }

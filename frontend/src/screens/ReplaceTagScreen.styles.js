@@ -10,20 +10,14 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
-  },
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
     padding: 20,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    minHeight: 200,
+    paddingTop: 30,
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     width: '100%',
+    marginBottom: 20,
   },
   inputWrapper: {
     flex: 1,
@@ -34,10 +28,10 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    height: 52, // Match GInput height
-    borderRadius: 8,
-    marginBottom: 0, // Align with input
+    paddingHorizontal: 20,
+    height: 52, 
+    borderRadius: 14,
+    marginTop: 4,
   },
   btnDisabled: {
     opacity: 0.6,
@@ -60,7 +54,7 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   addBtnText: {
     color: '#FFF',
-    fontFamily: theme.typography.semiBold || 'Montserrat_600SemiBold',
+    fontFamily: theme.typography.semiBold || 'Inter_600SemiBold',
     fontSize: 15,
   },
   animalPreview: {
@@ -93,12 +87,12 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   animalTag: {
     fontSize: 17,
-    fontFamily: theme.typography.semiBold || 'Montserrat_600SemiBold',
+    fontFamily: theme.typography.semiBold || 'Inter_600SemiBold',
     color: theme.colors.text,
   },
   animalSubInfo: {
     fontSize: 13,
-    fontFamily: theme.typography.medium || 'Montserrat_500Medium',
+    fontFamily: theme.typography.medium || 'Inter_500Medium',
     color: theme.colors.textMuted || '#94A3B8',
     marginTop: 2,
   },

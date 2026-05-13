@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { COLORS, SPACING, SHADOW, lightTheme } from '../theme';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
-import { MapPin, Bug, Edit, ArrowRight, Info, Users } from 'lucide-react-native';
+import { MapPin, Edit, ArrowRight, Info, Users, LayoutGrid, Tag } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
+import { SPACING, SHADOW } from '../theme';
 
 const LocationDetailsScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
@@ -46,48 +46,60 @@ const LocationDetailsScreen = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Location Record" 
+        title="Shed Records" 
         onBack={() => navigation.goBack()}
-        rightIcon={<Edit color={theme.colors.white} size={22} />}
+        rightIcon={<Edit color="#FFF" size={22} />}
         onRightPress={() => navigation.navigate('EditLocation', { location })}
+        leftAlign={true}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Info Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.pathRow}>
-             <MapPin size={24} color={theme.colors.primary} />
-             <Text style={[styles.locationTitle, { color: theme.colors.text }]}>{location.displayName || location.name}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Dashboard Header Card */}
+        <View style={[styles.dashboardCard, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.locationHeader}>
+             <View style={[styles.locationIconWrapper, { backgroundColor: theme.colors.primary + '10' }]}>
+                <MapPin size={24} color={theme.colors.primary} />
+             </View>
+             <View style={styles.locationNameWrapper}>
+                <Text style={[styles.locationTitle, { color: theme.colors.text }]}>
+                  {location.displayName || location.name}
+                </Text>
+                <Text style={[styles.locationCode, { color: theme.colors.textMuted }]}>
+                  Code: {location.code || 'N/A'}
+                </Text>
+             </View>
           </View>
-          <Text style={[styles.locationSubtitle, { color: theme.colors.textLight }]}>{location.code} • {location.type}</Text>
           
-          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-          
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={[styles.statNum, { color: theme.colors.text }]}>{totalAnimals}</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Animals</Text>
+          <View style={styles.statsContainer}>
+            <View style={[styles.statBox, { backgroundColor: theme.colors.background }]}>
+              <Users size={18} color={theme.colors.primary} />
+              <View>
+                <Text style={[styles.statNum, { color: theme.colors.text }]}>{totalAnimals}</Text>
+                <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Livestock</Text>
+              </View>
             </View>
-            <View style={[styles.verticalDivider, { backgroundColor: theme.colors.border }]} />
-            <View style={styles.statBox}>
-              <Text style={[styles.statNum, { color: theme.colors.text }]}>{distribution.length}</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Breeds</Text>
+            <View style={[styles.statBox, { backgroundColor: theme.colors.background }]}>
+              <Tag size={18} color={theme.colors.primary} />
+              <View>
+                <Text style={[styles.statNum, { color: theme.colors.text }]}>{distribution.length}</Text>
+                <Text style={[styles.statLabel, { color: theme.colors.textLight }]}>Breeds</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Livestock at this Location</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Livestock Distribution</Text>
         
         {distribution.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Info size={40} color={theme.colors.border} />
-            <Text style={[styles.emptyText, { color: theme.colors.textLight }]}>No animals found in this location.</Text>
+          <View style={[styles.emptyContainer, { backgroundColor: theme.colors.surface }]}>
+            <Info size={40} color={theme.colors.textMuted} />
+            <Text style={[styles.emptyText, { color: theme.colors.textLight }]}>No animals currently assigned to this shed.</Text>
           </View>
         ) : (
           distribution.map((item, index) => (
             <TouchableOpacity 
               key={index} 
-              style={styles.breedRow}
+              style={[styles.breedCard, { backgroundColor: theme.colors.surface }]}
               onPress={() => navigation.navigate('AnimalList', { 
                 breedId: item.breedId, 
                 locationId: location.id,
@@ -95,14 +107,22 @@ const LocationDetailsScreen = ({ navigation, route }) => {
               })}
               activeOpacity={0.7}
             >
-              <View style={[styles.breedIndicator, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1EA' }]}>
-                 <Text style={[styles.indicatorText, { color: theme.colors.primary }]}>{item.breedName[0]}</Text>
+              <View style={[styles.breedIcon, { backgroundColor: theme.colors.primary + '05' }]}>
+                 <Text style={[styles.breedLetter, { color: theme.colors.primary }]}>
+                   {item.breedName[0].toUpperCase()}
+                 </Text>
               </View>
               <View style={styles.breedInfo}>
                 <Text style={[styles.breedName, { color: theme.colors.text }]}>{item.breedName}</Text>
-                <Text style={[styles.animalCount, { color: theme.colors.textLight }]}>{item.count} {item.count === 1 ? 'Animal' : 'Animals'}</Text>
+                <View style={styles.breedMetaBadge}>
+                   <Text style={[styles.breedMetaText, { color: theme.colors.primary }]}>
+                     {item.count} {item.count === 1 ? 'Goat' : 'Goats'}
+                   </Text>
+                </View>
               </View>
-              <ArrowRight size={18} color={theme.colors.textMuted} />
+              <View style={styles.arrowBox}>
+                <ArrowRight size={18} color={theme.colors.textMuted} />
+              </View>
             </TouchableOpacity>
           ))
         )}
@@ -117,112 +137,127 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    maxWidth: 768,
-    width: '100%',
-    alignSelf: 'center',
+    paddingBottom: 40,
   },
-  infoCard: {
-    borderRadius: 12,
-    backgroundColor: theme.colors.surface,
-    padding: 24,
-    marginBottom: 32,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
+  dashboardCard: {
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 28,
+    ...SHADOW.small,
   },
-  pathRow: {
+  locationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
+    marginBottom: 24,
+  },
+  locationIconWrapper: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationNameWrapper: {
+    flex: 1,
   },
   locationTitle: {
     fontSize: 20,
-    fontFamily: 'Montserrat_600SemiBold',
-    flex: 1,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
   },
-  locationSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    marginLeft: 36,
-    fontFamily: 'Montserrat_500Medium',
+  locationCode: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    marginTop: 2,
+    opacity: 0.6,
   },
-  divider: {
-    height: 1,
-    marginVertical: 20,
-  },
-  statsRow: {
+  statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    gap: 12,
   },
   statBox: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    gap: 12,
   },
   statNum: {
-    fontSize: 22,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
   },
   statLabel: {
     fontSize: 11,
-    fontFamily: 'Montserrat_500Medium',
-  },
-  verticalDivider: {
-    width: 1.5,
-    height: 30,
+    fontFamily: 'Inter_500Medium',
+    opacity: 0.7,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
     marginBottom: 16,
     marginLeft: 4,
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  breedRow: {
-    borderRadius: 12,
-    backgroundColor: theme.colors.surface,
-    padding: 16,
+  breedCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
+    ...SHADOW.small,
   },
-  breedIndicator: {
+  breedIcon: {
     width: 48,
     height: 48,
-    borderRadius: 8,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  indicatorText: {
-    fontSize: 18,
-    fontFamily: 'Montserrat_600SemiBold',
+  breedLetter: {
+    fontSize: 20,
+    fontFamily: 'Inter_700Bold',
   },
   breedInfo: {
     flex: 1,
   },
   breedName: {
     fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 4,
   },
-  animalCount: {
-    fontSize: 14,
-    marginTop: 4,
-    fontFamily: 'Montserrat_500Medium',
+  breedMetaBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.primary + '10',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  breedMetaText: {
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+  },
+  arrowBox: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
     borderRadius: 24,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
+    ...SHADOW.small,
   },
   emptyText: {
     marginTop: 12,
     textAlign: 'center',
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: 'Inter_400Regular',
+    opacity: 0.7,
+    lineHeight: 20,
   },
   center: {
     flex: 1,

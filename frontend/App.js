@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, LogBox } from 'react-native';
+import { View, ActivityIndicator, LogBox, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -8,12 +8,12 @@ import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
 import * as Font from 'expo-font';
 import { 
-  Montserrat_400Regular, 
-  Montserrat_500Medium, 
-  Montserrat_600SemiBold, 
-  Montserrat_700Bold, 
-  Montserrat_800ExtraBold 
-} from '@expo-google-fonts/montserrat';
+  Inter_400Regular, 
+  Inter_500Medium, 
+  Inter_600SemiBold, 
+  Inter_700Bold, 
+  Inter_800ExtraBold 
+} from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 
 import LoginScreen from './src/screens/LoginScreen';
@@ -34,7 +34,8 @@ import FarmSelectionScreen from './src/screens/FarmSelectionScreen';
 import LocationListScreen from './src/screens/LocationListScreen';
 import AddLocationScreen from './src/screens/AddLocationScreen';
 import LocationDetailsScreen from './src/screens/LocationDetailsScreen';
-import BreedDetailsScreen from './src/screens/BreedDetailsScreen';
+import CreateLocationScreen from './src/screens/CreateLocationScreen';
+
 import AddWeightScreen from './src/screens/AddWeightScreen';
 import WeightListScreen from './src/screens/WeightListScreen';
 import FarmSettingsScreen from './src/screens/FarmSettingsScreen';
@@ -48,8 +49,12 @@ import OverallReportScreen from './src/screens/OverallReportScreen';
 import ReplaceTagScreen from './src/screens/ReplaceTagScreen';
 import AddMatingScreen from './src/screens/AddMatingScreen';
 import AddBreedingScreen from './src/screens/AddBreedingScreen';
+import LocationMenuScreen from './src/screens/LocationMenuScreen';
+import MassLocationScreen from './src/screens/MassLocationScreen';
+import MassVaccinationScreen from './src/screens/MassVaccinationScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import SideMenu from './src/components/SideMenu';
+import { registerForPushNotificationsAsync } from './src/utils/notifications';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -88,41 +93,71 @@ function AppContent() {
 
   const loadResources = async () => {
     try {
+      console.log("Loading fonts...");
       await Font.loadAsync({
-        Montserrat_400Regular,
-        Montserrat_500Medium,
-        Montserrat_600SemiBold,
-        Montserrat_700Bold,
-        Montserrat_800ExtraBold,
+        'Inter_400Regular': Inter_400Regular,
+        'Inter_500Medium': Inter_500Medium,
+        'Inter_600SemiBold': Inter_600SemiBold,
+        'Inter_700Bold': Inter_700Bold,
+        'Inter_800ExtraBold': Inter_800ExtraBold,
       });
+      console.log("Fonts loaded.");
       setFontsLoaded(true);
-      await checkSession();
     } catch (e) {
-      console.warn(e);
+      console.warn('RESOURCES LOADING FAILED:', e);
+      // Fallback: try to show app anyway
+      setFontsLoaded(true); 
     } finally {
-      if (fontsLoaded) {
-        await SplashScreen.hideAsync();
-      }
+      console.log("Checking session...");
+      await checkSession();
+      console.log("Session checked, hiding splash screen...");
+      await SplashScreen.hideAsync();
     }
   };
 
   useEffect(() => {
     if (fontsLoaded && initialRoute) {
       SplashScreen.hideAsync();
+      
+      // If user is logged in, register for push notifications
+      if (initialRoute === 'MainDrawer') {
+        registerForPushNotificationsAsync().catch(err => 
+          console.error('Push Registration Error:', err)
+        );
+      }
     }
   }, [fontsLoaded, initialRoute]);
 
   const checkSession = async () => {
     try {
-      const token = await SecureStore.getItemAsync('token');
-      const farmId = await SecureStore.getItemAsync('selectedFarmId');
+      console.log("Inside checkSession");
       
+      const sessionPromise = (async () => {
+        let token, farmId;
+        if (Platform.OS === 'web') {
+          token = localStorage.getItem('token');
+          farmId = localStorage.getItem('selectedFarmId');
+        } else {
+          token = await SecureStore.getItemAsync('token');
+          farmId = await SecureStore.getItemAsync('selectedFarmId');
+        }
+        return { token, farmId };
+      })();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Session check timeout')), 3000)
+      );
+
+      const { token, farmId } = await Promise.race([sessionPromise, timeoutPromise]);
+
+      console.log("Token:", token, "FarmId:", farmId);
       if (token && farmId) {
         setInitialRoute('MainDrawer');
       } else {
         setInitialRoute('Login');
       }
     } catch (e) {
+      console.error("Error in checkSession:", e);
       setInitialRoute('Login');
     }
   };
@@ -139,7 +174,7 @@ function AppContent() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <StatusBar style="auto" />
-        <Stack.Navigator 
+        <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{
             headerShown: false,
@@ -150,10 +185,10 @@ function AppContent() {
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-          
+
           {/* Main App (Drawer) */}
           <Stack.Screen name="MainDrawer" component={MainDrawer} />
-          
+
           {/* Detail/Modal Screens outside Drawer but in same stack */}
           <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
@@ -166,9 +201,10 @@ function AppContent() {
           <Stack.Screen name="EditEmployee" component={AddEmployeeScreen} />
           <Stack.Screen name="FarmSelection" component={FarmSelectionScreen} />
           <Stack.Screen name="AddLocation" component={AddLocationScreen} />
-          <Stack.Screen name="EditLocation" component={AddLocationScreen} />
+          <Stack.Screen name="EditLocation" component={CreateLocationScreen} />
+          <Stack.Screen name="CreateLocation" component={CreateLocationScreen} />
           <Stack.Screen name="LocationDetails" component={LocationDetailsScreen} />
-          <Stack.Screen name="BreedDetails" component={BreedDetailsScreen} />
+
           <Stack.Screen name="AddWeight" component={AddWeightScreen} />
           <Stack.Screen name="WeightList" component={WeightListScreen} />
           <Stack.Screen name="FarmSettings" component={FarmSettingsScreen} />
@@ -181,6 +217,10 @@ function AppContent() {
           <Stack.Screen name="ReplaceTag" component={ReplaceTagScreen} />
           <Stack.Screen name="AddMating" component={AddMatingScreen} />
           <Stack.Screen name="AddBreeding" component={AddBreedingScreen} />
+          <Stack.Screen name="AnimalList" component={AnimalListScreen} />
+          <Stack.Screen name="LocationMenu" component={LocationMenuScreen} />
+          <Stack.Screen name="MassLocation" component={MassLocationScreen} />
+          <Stack.Screen name="MassVaccination" component={MassVaccinationScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

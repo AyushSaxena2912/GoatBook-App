@@ -3,23 +3,30 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
+    "presync": "node ../scripts/sync-ip.js",
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "npm run presync && nodemon server.js",
     "build": "npx prisma generate",
     "postinstall": "npx prisma generate"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "GoatBook Backend API",
   "dependencies": {
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
+    "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "prisma": "5.22.0",
+    "node-cron": "^4.2.1",
+    "prisma": "^5.22.0",
     "resend": "^6.9.4",
     "uuid": "^13.0.0"
   },

@@ -1,59 +1,88 @@
-const prisma = require('./config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
-const goatBreeds = [
-  'Jamunapari', 'Beetal', 'Barbari', 'Sirohi', 'Sojat', 'Jakhrana',
-  'Osmanabadi', 'Surti', 'Zalawadi', 'Tellicherry', 'Mehsana',
-  'Gohilwadi', 'Marwari', 'Changthangi (Pashmina Goat)', 'Chegu', 'Gaddi',
-  'African Boer', 'Damascus', 'Saanen'
+const defaultBreeds = [
+  // 🐐 Goat - Indian
+  { name: "Jamunapari", type: "Goat", origin: "indian" },
+  { name: "Beetal", type: "Goat", origin: "indian" },
+  { name: "Barbari", type: "Goat", origin: "indian" },
+  { name: "Sirohi", type: "Goat", origin: "indian" },
+  { name: "Sojat", type: "Goat", origin: "indian" },
+  { name: "Jakhrana", type: "Goat", origin: "indian" },
+  { name: "Osmanabadi", type: "Goat", origin: "indian" },
+  { name: "Surti", type: "Goat", origin: "indian" },
+  { name: "Zalawadi", type: "Goat", origin: "indian" },
+  { name: "Tellicherry", type: "Goat", origin: "indian" },
+  { name: "Mehsana", type: "Goat", origin: "indian" },
+  { name: "Gohilwadi", type: "Goat", origin: "indian" },
+  { name: "Marwari", type: "Goat", origin: "indian" },
+  { name: "Changthangi (Pashmina Goat)", type: "Goat", origin: "indian" },
+  { name: "Chegu", type: "Goat", origin: "indian" },
+  { name: "Gaddi", type: "Goat", origin: "indian" },
+
+  // 🐐 Goat - Exotic
+  { name: "African Boer", type: "Goat", origin: "exotic" },
+  { name: "Damascus", type: "Goat", origin: "exotic" },
+  { name: "Saanen", type: "Goat", origin: "exotic" },
+
+  // 🐑 Sheep - Indian
+  { name: "Muzaffarnagari", type: "Sheep", origin: "indian" },
+  { name: "Rampur Bushair", type: "Sheep", origin: "indian" },
+  { name: "Chokla (Shekhawati)", type: "Sheep", origin: "indian" },
+  { name: "Patanwadi (Desi)", type: "Sheep", origin: "indian" },
+  { name: "Marwari", type: "Sheep", origin: "indian" },
+  { name: "Magra", type: "Sheep", origin: "indian" },
+  { name: "Pugal", type: "Sheep", origin: "indian" },
+  { name: "Mandal", type: "Sheep", origin: "indian" },
+  { name: "Chamba", type: "Sheep", origin: "indian" },
+  { name: "Nellore", type: "Sheep", origin: "indian" },
+  { name: "Madgyal (Deccani type)", type: "Sheep", origin: "indian" },
+  { name: "Deccani", type: "Sheep", origin: "indian" },
+  { name: "Bellary", type: "Sheep", origin: "indian" },
+  { name: "Mecheri", type: "Sheep", origin: "indian" },
+  { name: "Ramnad White", name: "Ramnad White", type: "Sheep", origin: "indian" },
+  { name: "Kilakarsal", type: "Sheep", origin: "indian" },
+  { name: "Tiruchy Black", type: "Sheep", origin: "indian" },
+  { name: "Kenguri", type: "Sheep", origin: "indian" },
+  { name: "Jaisalmeri", type: "Sheep", origin: "indian" },
+  { name: "Chokla Sonadi", type: "Sheep", origin: "indian" },
+  { name: "Kheri", type: "Sheep", origin: "indian" },
+  { name: "Bikaneri (Magra Type)", type: "Sheep", origin: "indian" }
 ];
 
-const sheepBreeds = [
-  'Muzaffarnagari', 'Rampur Bushair', 'Chokla (Shekhawati)', 'Patanwadi (Desi)',
-  'Marwari', 'Magra', 'Pugal', 'Mandal', 'Chamba', 'Nellore',
-  'Madgyal (Deccani type)', 'Deccani', 'Bellary', 'Mecheri', 'Ramnad White',
-  'Kilakarsal', 'Tiruchy Black', 'Kenguri', 'Jaisalmeri', 'Chokla Sonadi',
-  'Kheri', 'Bikaneri (Magra Type)'
-];
+/**
+ * Seeds default breeds for a specific farm.
+ * @param {string} farmId - The UUID of the farm to seed for.
+ * @param {object} tx - (Optional) Prisma transaction client.
+ */
+async function seedBreeds(farmId, tx) {
+  const prisma = tx || require('./config/prisma');
+  const now = new Date();
 
-async function seedBreeds() {
+  console.log(`--- SEEDING REFINED BREEDS FOR FARM: ${farmId} ---`);
+
+  // Prepare data for bulk insert
+  const breedData = defaultBreeds.map(breed => ({
+    id: uuidv4(),
+    name: breed.name,
+    animal_type: breed.type,
+    origin: breed.origin,
+    farm_id: farmId,
+    is_default: true,
+    created_at: now,
+    updated_at: now
+  }));
+
   try {
-    await prisma.$connect();
-    console.log('Connected to DB');
-
-    const farms = await prisma.farms.findMany();
-    if (farms.length === 0) {
-      console.log('No farms found to seed breeds for. Create a farm first.');
-      process.exit(0);
-    }
-
-    let count = 0;
-    const now = new Date();
-    for (const farm of farms) {
-      for (const breedName of goatBreeds) {
-        const exists = await prisma.breeds.findFirst({ where: { name: breedName, farm_id: farm.id } });
-        if (!exists) {
-          await prisma.breeds.create({ data: { id: uuidv4(), name: breedName, animal_type: 'Goat', farm_id: farm.id, created_at: now, updated_at: now } });
-          count++;
-        }
-      }
-      for (const breedName of sheepBreeds) {
-        const exists = await prisma.breeds.findFirst({ where: { name: breedName, farm_id: farm.id } });
-        if (!exists) {
-          await prisma.breeds.create({ data: { id: uuidv4(), name: breedName, animal_type: 'Sheep', farm_id: farm.id, created_at: now, updated_at: now } });
-          count++;
-        }
-      }
-    }
-    
-    console.log(`Successfully seeded ${count} new breeds across ${farms.length} farms.`);
-    await prisma.$disconnect();
-    process.exit(0);
+    const result = await prisma.breeds.createMany({
+      data: breedData,
+      skipDuplicates: true
+    });
+    console.log(`Successfully seeded ${result.count} breeds for farm ${farmId}.`);
+    return result;
   } catch (error) {
-    console.error('Error seeding breeds:', error);
-    await prisma.$disconnect();
-    process.exit(1);
+    console.error(`Error seeding breeds for farm ${farmId}:`, error);
+    throw error;
   }
 }
 
-seedBreeds();
+module.exports = { seedBreeds, defaultBreeds };

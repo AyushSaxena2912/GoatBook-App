@@ -136,14 +136,14 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   mainTitle: {
     fontSize: 32,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     letterSpacing: -1,
   },
   subTitle: {
     fontSize: 16,
     marginTop: 8,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     color: theme.colors.textLight,
   },
   form: {

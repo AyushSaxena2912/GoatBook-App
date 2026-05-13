@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/ThemeContext';
 import { ArrowLeft, Menu, Sun, Moon } from 'lucide-react-native';
@@ -14,14 +15,15 @@ import { ArrowLeft, Menu, Sun, Moon } from 'lucide-react-native';
  * - onRightPress: Action for the right icon
  * - subTitle: Small text below the title
  */
-const GHeader = ({ title, onBack, onMenu, rightIcon, onRightPress, subTitle }) => {
+const GHeader = ({ title, onBack, onMenu, rightIcon, onRightPress, subTitle, leftAlign }) => {
   const { theme, isDarkMode, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.primary, ...theme.shadow.md }]}>
       <StatusBar style="light" backgroundColor={theme.colors.primary} translucent={true} />
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.headerContent}>
+        <View style={[styles.headerContent, { paddingTop: insets.top + (Platform.OS === 'web' ? 15 : 10), paddingBottom: 15 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {/* Logic: Prioritize Back button over Menu button to prevent overlap */}
             {onBack ? (
@@ -37,8 +39,8 @@ const GHeader = ({ title, onBack, onMenu, rightIcon, onRightPress, subTitle }) =
             )}
           </View>
           
-          <View style={styles.titleContainer}>
-            <Text style={[styles.title, { color: theme.colors.white }]} numberOfLines={1}>{title}</Text>
+          <View style={[styles.titleContainer, leftAlign && { alignItems: 'flex-start', marginLeft: 8 }]}>
+            <Text style={[styles.title, { color: theme.colors.white }, leftAlign && { textAlign: 'left' }]} numberOfLines={1}>{title}</Text>
             {subTitle && <Text style={[styles.subTitle, { color: 'rgba(255,255,255,0.8)' }]}>{subTitle}</Text>}
           </View>
           
@@ -64,12 +66,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   headerContent: {
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   backButton: {
     width: 44,
@@ -86,13 +86,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.5,
     textAlign: 'center',
   },
   subTitle: {
     fontSize: 11,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: 'Inter_500Medium',
     marginTop: -2,
     opacity: 0.9,
     textTransform: 'uppercase',

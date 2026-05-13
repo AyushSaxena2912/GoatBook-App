@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated, Modal, FlatList, SafeAreaView, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
-import { ChevronDown, X, AlertCircle } from 'lucide-react-native';
+import { ChevronDown, X, AlertCircle, HelpCircle } from 'lucide-react-native';
 
 const GSelect = ({ 
   label, 
@@ -12,7 +12,10 @@ const GSelect = ({
   error, 
   required,
   placeholder = '',
-  containerStyle
+  containerStyle,
+  helpAction,
+  rightIcon,
+  disabled = false
 }) => {
   const { isDarkMode, theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
@@ -26,26 +29,34 @@ const GSelect = ({
     }).start();
   }, [value, modalVisible]);
 
-  const labelStyle = {
+  const labelContainerStyle = {
     position: 'absolute',
     left: 12,
     top: animatedValue.interpolate({
       inputRange: [0, 1],
       outputRange: [14, -10],
     }),
+    zIndex: 10,
+    backgroundColor: (value || modalVisible) ? theme.colors.background : 'transparent',
+    paddingHorizontal: (value || modalVisible) ? 10 : 0,
+    maxWidth: (value || modalVisible) ? '92%' : '90%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    pointerEvents: 'box-none',
+    height: (value || modalVisible) ? 20 : 'auto',
+  };
+
+  const labelTextStyle = {
     fontSize: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [16, 12],
+      outputRange: [15, 12],
     }),
     color: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [theme.colors.textLight, error ? theme.colors.error : theme.colors.primary],
+      outputRange: [theme.colors.textLight, error ? theme.colors.error : (modalVisible ? theme.colors.primary : theme.colors.textLight)],
     }),
-    backgroundColor: (value || modalVisible) ? theme.colors.surface : 'transparent',
-    paddingHorizontal: (value || modalVisible) ? 4 : 0,
-    zIndex: 1,
-    fontWeight: (value || modalVisible) ? '700' : '500',
-    maxWidth: '90%',
+    fontFamily: (value || modalVisible) ? theme.typography.semiBold : (theme.typography.medium || 'System'),
+    letterSpacing: 0.3,
   };
 
   const selectedOption = options.find(opt => opt.value === value);
@@ -54,35 +65,76 @@ const GSelect = ({
     <View style={[styles.container, containerStyle]}>
       <TouchableOpacity 
         activeOpacity={0.7}
-        onPress={() => setModalVisible(true)}
+        onPress={() => !disabled && setModalVisible(true)}
         style={[
           styles.inputWrapper, 
           { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-          error && { borderColor: theme.colors.error, borderWidth: 2 },
-          modalVisible && { borderColor: theme.colors.primary, borderWidth: 2 }
+          error && { borderColor: theme.colors.error },
+          modalVisible && { borderColor: theme.colors.primary },
+          disabled && { opacity: 0.6, backgroundColor: isDarkMode ? '#111' : '#F3F4F6' }
         ]}
       >
-        <Animated.Text style={labelStyle} pointerEvents="none" numberOfLines={1} ellipsizeMode="tail">
-          {label}{required && '*'}
-        </Animated.Text>
-        
-        {value || modalVisible ? (
-          <Text 
-            style={[styles.valueText, { color: theme.colors.text }, !value && { color: theme.colors.textMuted }]} 
-            numberOfLines={1}
-          >
-            {selectedOption?.label || placeholder}
-          </Text>
-        ) : <View style={{ flex: 1 }} />}
+        <Text 
+          style={[
+            styles.valueText, 
+            { 
+              color: value ? theme.colors.text : theme.colors.textMuted,
+              opacity: (value || modalVisible) ? 1 : 0 
+            }
+          ]} 
+          numberOfLines={1}
+        >
+          {selectedOption?.label || placeholder}
+        </Text>
 
         <View style={styles.iconContainer}>
+          {rightIcon && (
+            <View style={{ marginRight: 8 }}>
+              {rightIcon}
+            </View>
+          )}
           {error ? (
             <AlertCircle size={20} color={theme.colors.error} />
           ) : (
-            <ChevronDown size={20} color={theme.colors.textLight} />
+            <ChevronDown size={20} color={theme.colors.textMuted} />
           )}
         </View>
       </TouchableOpacity>
+
+      <Animated.View style={labelContainerStyle}>
+        <Animated.Text 
+          style={labelTextStyle} 
+          numberOfLines={1} 
+          ellipsizeMode="tail"
+        >
+          {label}{required && '*'}
+        </Animated.Text>
+        {helpAction && (
+          <Animated.View style={{
+            marginLeft: animatedValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: [5, 2],
+            }),
+            transform: [{
+              scale: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1.1, 0.85],
+              })
+            }],
+            marginTop: animatedValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: [2, 1],
+            }),
+          }}>
+            <TouchableOpacity 
+              onPress={helpAction}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <HelpCircle size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </Animated.View>
 
       {error ? (
         <View style={styles.errorContainer}>
@@ -101,11 +153,11 @@ const GSelect = ({
           activeOpacity={1} 
           onPress={() => setModalVisible(false)}
         >
-          <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
-              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Choose {label}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <X size={24} color={theme.colors.text} />
+          <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface, pointerEvents: 'box-none' }]}>
+            <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
+              <Text style={[styles.modalTitle, { color: theme.colors.white }]}>Select {label}</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
+                <X size={24} color={theme.colors.white} />
               </TouchableOpacity>
             </View>
             
@@ -153,18 +205,23 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 14,
     paddingHorizontal: 12,
-    height: 56,
+    height: 52,
   },
   valueText: {
-    fontSize: 16,
+    fontSize: 15,
     flex: 1,
     marginRight: 8,
     fontWeight: '500',
   },
   iconContainer: {
-    width: 24,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalCloseBtn: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
   },
   errorContainer: {
     flexDirection: 'row',
@@ -188,11 +245,10 @@ const styles = StyleSheet.create({
     ...lightTheme.shadow.lg,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    padding: 16,
     alignItems: 'center',
-    padding: 24,
-    borderBottomWidth: 1,
+    justifyContent: 'center',
+    position: 'relative',
   },
   modalTitle: {
     fontSize: 20,
@@ -207,7 +263,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
 });

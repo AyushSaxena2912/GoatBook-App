@@ -19,3 +19,13 @@ Thumbs.db
 
 # Database
 postgresql_data/
+
+# Logs
+**/*.log
+
+# Duplicate files from macOS/mistakes
+package-lock *.json
+node_modules [0-9]*/
+hs_err_pid*
+replay_pid*
+

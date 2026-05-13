@@ -8,6 +8,8 @@ import GButton from '../components/GButton';
 import GDatePicker from '../components/GDatePicker';
 import { Scan, Info } from 'lucide-react-native';
 import api from '../api';
+import { useFocusEffect } from '@react-navigation/native';
+import GAlert from '../components/GAlert';
 
 const AddWeightScreen = ({ route, navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -21,6 +23,7 @@ const AddWeightScreen = ({ route, navigation }) => {
   const [animalInfo, setAnimalInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetchingAnimal, setFetchingAnimal] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   useEffect(() => {
     if (initialTag) {
@@ -74,14 +77,12 @@ const AddWeightScreen = ({ route, navigation }) => {
 
       await api.post('/weights', {
         tagNumber,
-        weight,
-        height,
+        weight: parseFloat(weight),
+        height: height ? parseFloat(height) : null,
         date,
         remark
       });
-      Alert.alert('Success', 'Weight record added successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      setSuccessVisible(true);
     } catch (error) {
       console.error('Add weight error:', error);
       const msg = error.response?.data?.message || 'Failed to add weight record';
@@ -96,9 +97,10 @@ const AddWeightScreen = ({ route, navigation }) => {
       <GHeader 
         title="Add Weight" 
         onBack={() => navigation.goBack()} 
+        leftAlign={true}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.formCard}>
           <View style={styles.row}>
             <View style={styles.flex}>
@@ -108,7 +110,6 @@ const AddWeightScreen = ({ route, navigation }) => {
                 onChangeText={handleTagChange} 
                 placeholder="2912"
                 required
-                rightIcon={<Scan size={20} color={theme.colors.primary} />}
               />
             </View>
           </View>
@@ -134,49 +135,70 @@ const AddWeightScreen = ({ route, navigation }) => {
             </View>
           )}
 
-          <GDatePicker 
-            label="Date" 
-            value={date} 
-            onDateChange={setDate}
-            placeholder="09-09-2025"
-            required
-          />
+          <View style={styles.row}>
+            <GDatePicker 
+              label="Date" 
+              value={date} 
+              onDateChange={setDate}
+              placeholder="09-09-2025"
+              required
+            />
+          </View>
 
-          <GInput 
-            label="Weight" 
-            value={weight} 
-            onChangeText={setWeight} 
-            keyboardType="decimal-pad"
-            placeholder="55"
-            required
-          />
+          <View style={styles.row}>
+            <GInput 
+              label="Weight" 
+              value={weight} 
+              onChangeText={setWeight} 
+              keyboardType="decimal-pad"
+              placeholder="55"
+              required
+            />
+          </View>
 
-          <GInput 
-            label="Height" 
-            value={height} 
-            onChangeText={setHeight} 
-            keyboardType="decimal-pad"
-            placeholder="5"
-          />
+          <View style={styles.row}>
+            <GInput 
+              label="Height" 
+              value={height} 
+              onChangeText={setHeight} 
+              keyboardType="decimal-pad"
+              placeholder="5"
+            />
+          </View>
 
-          <GInput 
-            label="Remark" 
-            value={remark} 
-            onChangeText={setRemark} 
-            placeholder="New!"
-            multiline
-            numberOfLines={3}
-            style={{ color: theme.colors.text }}
-          />
+          <View style={styles.row}>
+            <GInput 
+              label="Remark" 
+              value={remark} 
+              onChangeText={setRemark} 
+              placeholder="New!"
+              multiline
+              numberOfLines={3}
+              style={{ color: theme.colors.text }}
+            />
+          </View>
         </View>
+      </ScrollView>
 
+      <View style={styles.footer}>
         <GButton 
-          title="SUBMIT RECORD" 
+          title="Submit Record" 
           onPress={handleSubmit} 
           loading={loading}
-          containerStyle={styles.submitBtn}
         />
-      </ScrollView>
+      </View>
+
+      <GAlert 
+        visible={successVisible}
+        title="Success!"
+        message={`Weight record for Tag ${tagNumber} has been saved successfully.`}
+        type="success"
+        confirmText="Excellent"
+        onClose={() => {
+          setSuccessVisible(false);
+          navigation.goBack();
+        }}
+      />
     </View>
   );
 };
@@ -187,10 +209,10 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   formCard: {
-    paddingBottom: SPACING.md,
+    paddingBottom: 10,
   },
   row: {
     flexDirection: 'row',
@@ -208,7 +230,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: theme.typography.regular,
   },
   animalDetailCard: {
     padding: 16,
@@ -225,15 +247,19 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    fontFamily: 'Montserrat_500Medium',
+    fontFamily: theme.typography.medium,
     marginLeft: 10,
   },
   detailValue: {
     fontSize: 14,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: theme.typography.semiBold,
   },
-  submitBtn: {
-    marginTop: 10,
+  footer: {
+    padding: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    paddingBottom: Platform.OS === 'ios' ? 30 : SPACING.lg,
   },
 });
 export default AddWeightScreen;

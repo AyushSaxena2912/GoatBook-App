@@ -7,6 +7,7 @@ import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import api from '../api';
+import GAlert from '../components/GAlert';
 
 const AddBreedScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
@@ -16,28 +17,48 @@ const AddBreedScreen = ({ navigation, route }) => {
 
   const [name, setName] = useState(isEditing ? existingBreed.name : '');
   const [animalType, setAnimalType] = useState(isEditing ? existingBreed.animalType : 'Goat');
+  const [origin, setOrigin] = useState(isEditing ? (existingBreed.origin || 'indian') : 'indian');
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const isSystemBreed = isEditing && existingBreed.isDefault;
+  const animalCount = existingBreed?.animalCount || 0;
+  const canDelete = isEditing && !isSystemBreed && animalCount === 0;
+
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'error'
+  });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ visible: true, title, message, type });
+  };
+
+  const hideAlert = () => {
+    setAlertConfig(prev => ({ ...prev, visible: false }));
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      alert('Please enter a breed name');
+      showAlert('Input Required', 'Please enter a breed name to proceed.', 'warning');
       return;
     }
 
     setLoading(true);
     try {
       if (isEditing) {
-        await api.put(`/breeds/${existingBreed.id}`, { name, animalType });
+        await api.put(`/breeds/${existingBreed.id}`, { name, animalType, origin });
       } else {
-        await api.post('/breeds', { name, animalType });
+        await api.post('/breeds', { name, animalType, origin });
       }
       setLoading(false);
       navigation.goBack();
     } catch (error) {
       setLoading(false);
       const message = error.response?.data?.message || 'Something went wrong';
-      alert(message);
+      const title = message.includes('system breed') ? 'System Protection' : 'Action Failed';
+      showAlert(title, message, 'error');
     }
   };
 
@@ -50,12 +71,20 @@ const AddBreedScreen = ({ navigation, route }) => {
     } catch (error) {
       setDeleting(false);
       const message = error.response?.data?.message || 'Failed to delete breed';
-      alert(message);
+      showAlert('Deletion Error', message, 'error');
     }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <GAlert 
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={hideAlert}
+      />
+
       <GHeader 
         title={isEditing ? "Edit Breed" : "Add New Breed"} 
         onBack={() => navigation.goBack()} 
@@ -73,10 +102,10 @@ const AddBreedScreen = ({ navigation, route }) => {
               onSelect={setAnimalType}
               options={[
                 { label: 'Goat', value: 'Goat' },
-                { label: 'Sheep', value: 'Sheep' },
-                { label: 'Other', value: 'Other' }
+                { label: 'Sheep', value: 'Sheep' }
               ]}
               required
+              disabled={isSystemBreed}
             />
             
             <View style={styles.gap} />
@@ -87,6 +116,21 @@ const AddBreedScreen = ({ navigation, route }) => {
               onChangeText={setName} 
               placeholder="e.g. Boer, Sirohi, Khassi"
               required 
+              editable={!isSystemBreed}
+            />
+
+            <View style={styles.gap} />
+
+            <GSelect 
+              label="Origin" 
+              value={origin} 
+              onSelect={setOrigin}
+              options={[
+                { label: 'Indian', value: 'indian' },
+                { label: 'Exotic', value: 'exotic' }
+              ]}
+              required
+              disabled={isSystemBreed}
             />
           </View>
 
@@ -97,15 +141,28 @@ const AddBreedScreen = ({ navigation, route }) => {
             </Text>
           </View>
 
-          <View style={styles.footer}>
-            {isEditing ? (
+        </ScrollView>
+        <View style={styles.footer}>
+          {isEditing && animalCount > 0 && (
+            <View style={[styles.warningContainer, { backgroundColor: isDarkMode ? '#1A1A1A' : '#FFF5F5', borderColor: '#FEB2B2' }]}>
+              <Text style={[styles.warningText, { color: '#C53030' }]}>
+                Cannot delete — this breed is used by {animalCount} {animalCount === 1 ? 'animal' : 'animals'}
+              </Text>
+            </View>
+          )}
+
+          {isEditing ? (
+            !isSystemBreed && (
               <View style={styles.buttonRow}>
-                <View style={[styles.halfWidth, { marginRight: 8 }]}>
+                <View style={[styles.halfWidth, { marginRight: 12 }]}>
                   <GButton 
                     title="Delete" 
                     onPress={handleDelete} 
                     variant="outline"
                     loading={deleting}
+                    disabled={!canDelete}
+                    buttonStyle={!canDelete && { borderColor: theme.colors.border, opacity: 0.5 }}
+                    textStyle={!canDelete && { color: theme.colors.textMuted }}
                   />
                 </View>
                 <View style={styles.halfWidth}>
@@ -113,18 +170,19 @@ const AddBreedScreen = ({ navigation, route }) => {
                     title="Save Changes" 
                     onPress={handleSubmit} 
                     loading={loading}
+                    buttonStyle={{ backgroundColor: theme.colors.primary }}
                   />
                 </View>
               </View>
-            ) : (
-              <GButton 
-                title="Create Breed" 
-                onPress={handleSubmit} 
-                loading={loading}
-              />
-            )}
-          </View>
-        </ScrollView>
+            )
+          ) : (
+            <GButton 
+              title="Create Breed" 
+              onPress={handleSubmit} 
+              loading={loading}
+            />
+          )}
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -140,6 +198,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     flexGrow: 1,
+    paddingBottom: 20, // Space for footer transition
   },
   formSection: {
     marginBottom: SPACING.xl,
@@ -159,15 +218,17 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   note: {
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: 'Inter_400Regular',
   },
   noteBold: {
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Inter_600SemiBold',
   },
   footer: {
-    marginTop: 'auto',
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.lg,
+    padding: SPACING.lg,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -176,6 +237,18 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   halfWidth: {
     flex: 1,
+  },
+  warningContainer: {
+    padding: SPACING.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  warningText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
   },
 });
 

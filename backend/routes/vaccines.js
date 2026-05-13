@@ -5,7 +5,10 @@ const auth = require('../middleware/auth');
 
 // --- Vaccine Definitions ---
 router.get('/', auth, vaccineController.getVaccines);
+router.get('/upcoming', auth, vaccineController.getUpcomingBoosters);
 router.post('/', auth, vaccineController.createVaccine);
+router.put('/:id', auth, vaccineController.updateVaccine);
+router.delete('/:id', auth, vaccineController.deleteVaccine);
 
 // --- Vaccination Records ---
 router.get('/records', auth, vaccineController.getVaccinationRecords);
