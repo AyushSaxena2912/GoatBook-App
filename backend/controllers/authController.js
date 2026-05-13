@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { seedBreeds } = require('../seed_breeds');
 const { seedVaccines } = require('../seed_vaccines');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_123456789');
 
 // @desc    Owner Registration Flow (Email + Phone + Password)
 // @route   POST api/auth/register
