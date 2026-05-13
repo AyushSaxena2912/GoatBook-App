@@ -31,7 +31,7 @@ const storage = {
 
 // Backend URL configuration
 // Using Render backend (Production) exclusively as requested.
-const BASE_URL = 'https://goatbookapp-production.up.railway.app/api';
+const BASE_URL = 'https://goatbookapp.onrender.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
