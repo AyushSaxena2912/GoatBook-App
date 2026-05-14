@@ -1342,10 +1342,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <View style={styles.weightContent}>
                       <TouchableOpacity 
                         style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal })}
+                        onPress={() => navigation.navigate('MatingList', { prefillTag: existingAnimal.tag_number, autoOpenAdd: true })}
                       >
                         <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Add New Record</Text>
+                        <Text style={styles.addNewText}>Manage Matings</Text>
                       </TouchableOpacity>
                       
                       {matingsLoading ? (

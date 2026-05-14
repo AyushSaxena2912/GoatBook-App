@@ -449,9 +449,9 @@ const BreedingListScreen = ({ navigation, route }) => {
                   </View>
                 </View>
                 
-                <View style={styles.row}>
+                <View style={[styles.row, { zIndex: 999 }]}>
                   {/* Birth Type */}
-                  <View style={styles.halfWidth}>
+                  <View style={[styles.halfWidth, { zIndex: 999 }]}>
                     <Text style={styles.inputLabel}>Birth Type</Text>
                     <TouchableOpacity 
                       style={styles.dropdownButton}
@@ -467,7 +467,7 @@ const BreedingListScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
                     
                     {showBirthTypeDropdown && (
-                      <View style={[styles.dropdownMenu, { zIndex: 100 }]}>
+                      <View style={[styles.dropdownMenu, { zIndex: 1000 }]}>
                         {BIRTH_TYPES.map((b) => (
                           <TouchableOpacity 
                             key={b.value} 

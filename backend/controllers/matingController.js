@@ -96,7 +96,9 @@ exports.addMating = async (req, res) => {
 // @route   PUT /api/matings/:id
 exports.updateMating = async (req, res) => {
   const { 
-    status, expected_delivery_date, miscarriage_date, miscarriage_reason, remark
+    mating_date, mating_type, male_tag_id, male_breed, semen_id, dose, 
+    technician, time, embryo_id, status, 
+    expected_delivery_date, miscarriage_date, miscarriage_reason, remark
   } = req.body;
 
   try {
@@ -109,11 +111,20 @@ exports.updateMating = async (req, res) => {
     const updated = await prisma.matings.update({
       where: { id: req.params.id },
       data: {
-        status,
-        expected_delivery_date: expected_delivery_date ? new Date(expected_delivery_date) : existing.expected_delivery_date,
-        miscarriage_date: miscarriage_date ? new Date(miscarriage_date) : existing.miscarriage_date,
-        miscarriage_reason: miscarriage_reason || existing.miscarriage_reason,
-        remark: remark || existing.remark,
+        mating_date: mating_date ? new Date(mating_date) : existing.mating_date,
+        mating_type: mating_type || existing.mating_type,
+        male_tag_id: male_tag_id !== undefined ? male_tag_id : existing.male_tag_id,
+        male_breed: male_breed !== undefined ? male_breed : existing.male_breed,
+        semen_id: semen_id !== undefined ? semen_id : existing.semen_id,
+        dose: dose !== undefined ? dose : existing.dose,
+        technician: technician !== undefined ? technician : existing.technician,
+        time: time !== undefined ? time : existing.time,
+        embryo_id: embryo_id !== undefined ? embryo_id : existing.embryo_id,
+        status: status || existing.status,
+        expected_delivery_date: expected_delivery_date ? new Date(expected_delivery_date) : null,
+        miscarriage_date: miscarriage_date ? new Date(miscarriage_date) : null,
+        miscarriage_reason: miscarriage_reason !== undefined ? miscarriage_reason : existing.miscarriage_reason,
+        remark: remark !== undefined ? remark : existing.remark,
         updated_by_user_id: req.user.id
       }
     });
