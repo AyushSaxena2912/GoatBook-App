@@ -1342,10 +1342,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <View style={styles.weightContent}>
                       <TouchableOpacity 
                         style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('MatingList', { prefillTag: existingAnimal.tag_number, autoOpenAdd: true, timestamp: Date.now() })}
+                        onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal })}
                       >
                         <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Manage Matings</Text>
+                        <Text style={styles.addNewText}>Add New Record</Text>
                       </TouchableOpacity>
                       
                       {matingsLoading ? (
@@ -1364,10 +1364,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
                                 <Text style={[styles.weightKg, { color: theme.colors.text }]}>{m.mating_type}</Text>
                                 <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(m.mating_date).toLocaleDateString()}</Text>
                               </View>
-                              <View style={[styles.heightInfoBlock, { minWidth: 100 }]}>
+                              <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
                                 <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Status</Text>
                                 <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{m.status}</Text>
                               </View>
+                              <TouchableOpacity onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal, editItem: m })} style={{ padding: 8 }}>
+                                <Edit2 size={16} color={theme.colors.textMuted} />
+                              </TouchableOpacity>
                             </View>
                           ))}
                         </View>
@@ -1399,10 +1402,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <View style={styles.weightContent}>
                       <TouchableOpacity 
                         style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('BreedingList', { prefillTag: existingAnimal.tag_number, autoOpenAdd: true, timestamp: Date.now() })}
+                        onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal })}
                       >
                         <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Manage Breedings</Text>
+                        <Text style={styles.addNewText}>Add New Record</Text>
                       </TouchableOpacity>
                       
                       {breedingsLoading ? (
@@ -1421,10 +1424,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
                                 <Text style={[styles.weightKg, { color: theme.colors.text }]}>{b.birth_type}</Text>
                                 <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(b.delivery_date).toLocaleDateString()}</Text>
                               </View>
-                              <View style={[styles.heightInfoBlock, { minWidth: 100 }]}>
+                              <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
                                 <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Male/Female</Text>
                                 <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{b.num_male} / {b.num_female}</Text>
                               </View>
+                              <TouchableOpacity onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal, editItem: b })} style={{ padding: 8 }}>
+                                <Edit2 size={16} color={theme.colors.textMuted} />
+                              </TouchableOpacity>
                             </View>
                           ))}
                         </View>
