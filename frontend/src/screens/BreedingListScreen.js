@@ -48,15 +48,17 @@ const BreedingListScreen = ({ navigation, route }) => {
   const [showBirthTypeDropdown, setShowBirthTypeDropdown] = useState(false);
   const [activeGenderDropdown, setActiveGenderDropdown] = useState(null); // stores index of kid
 
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+
   // Handle pre-filled search if navigating from Animal detail
   useEffect(() => {
-    if (route.params?.prefillTag) {
+    if (route.params?.prefillTag && !isSearching) {
       setSearchTag(route.params.prefillTag);
-      handleSearch(route.params.prefillTag);
+      handleSearch(route.params.prefillTag, route.params?.autoOpenAdd);
     }
   }, [route.params?.prefillTag]);
 
-  const handleSearch = async (tagToSearch = searchTag) => {
+  const handleSearch = async (tagToSearch = searchTag, shouldAutoOpen = false) => {
     if (!tagToSearch.trim()) {
       Alert.alert('Error', 'Please enter a Tag ID');
       return;
@@ -72,6 +74,10 @@ const BreedingListScreen = ({ navigation, route }) => {
       if (res.data && res.data.id) {
         setAnimal(res.data);
         fetchAnimalBreedings(res.data.id);
+        if (shouldAutoOpen && !hasAutoOpened) {
+          setHasAutoOpened(true);
+          openAddModal();
+        }
       } else {
         Alert.alert('Not Found', 'No animal found with this Tag ID');
       }

@@ -1399,7 +1399,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <View style={styles.weightContent}>
                       <TouchableOpacity 
                         style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('BreedingList', { prefillTag: existingAnimal.tag_number })}
+                        onPress={() => navigation.navigate('BreedingList', { prefillTag: existingAnimal.tag_number, autoOpenAdd: true })}
                       >
                         <Plus size={14} color="#FFF" />
                         <Text style={styles.addNewText}>Manage Breedings</Text>
