@@ -13,6 +13,7 @@ router.route('/animal/:animalId')
   .get(breedingController.getBreedingsByAnimal);
 
 router.route('/:id')
+  .put(breedingController.updateBreeding)
   .delete(breedingController.deleteBreeding);
 
 module.exports = router;

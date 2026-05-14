@@ -389,6 +389,7 @@ model breedings {
   birth_type                                enum_animals_birth_type
   num_male                                  Int                     @default(0)
   num_female                                Int                     @default(0)
+  kids_details                              Json?
   remark                                    String?
   created_by_user_id                        String?                 @db.Uuid
   updated_by_user_id                        String?                 @db.Uuid

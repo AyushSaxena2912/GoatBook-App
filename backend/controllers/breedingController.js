@@ -42,36 +42,71 @@ exports.getBreedingsByAnimal = async (req, res) => {
   }
 };
 
-// @desc    Add a breeding (delivery) record
-// @route   POST /api/breedings
 exports.addBreeding = async (req, res) => {
-  const { animal_id, delivery_date, birth_type, num_male, num_female, remark } = req.body;
+  const { animal_id, delivery_date, birth_type, num_male, num_female, remark, kids } = req.body;
   try {
     if (!req.farmId) return res.status(400).json({ message: 'No farm selected' });
 
-    const breeding = await prisma.breedings.create({
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create breeding record and save kids_details
+      const breeding = await tx.breedings.create({
+        data: {
+          id: uuidv4(),
+          animal_id,
+          farm_id: req.farmId,
+          delivery_date: new Date(delivery_date),
+          birth_type,
+          num_male: num_male || 0,
+          num_female: num_female || 0,
+          kids_details: kids ? kids : null,
+          remark,
+          created_by_user_id: req.user.id
+        }
+      });
+
+      // 2. Reset female condition
+      await tx.animals.update({
+        where: { id: animal_id },
+        data: { female_condition: 'NONE' }
+      });
+
+      return breeding;
+    });
+
+    res.status(201).json(result);
+  } catch (err) {
+    console.error('ADD BREEDING ERROR:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Update a breeding record
+// @route   PUT /api/breedings/:id
+exports.updateBreeding = async (req, res) => {
+  const { delivery_date, birth_type, num_male, num_female, remark, kids } = req.body;
+  try {
+    const existing = await prisma.breedings.findFirst({
+      where: { id: req.params.id, farm_id: req.farmId }
+    });
+
+    if (!existing) return res.status(404).json({ message: 'Breeding record not found' });
+    
+    const updated = await prisma.breedings.update({
+      where: { id: req.params.id },
       data: {
-        id: uuidv4(),
-        animal_id,
-        farm_id: req.farmId,
-        delivery_date: new Date(delivery_date),
-        birth_type,
-        num_male: num_male || 0,
-        num_female: num_female || 0,
-        remark,
-        created_by_user_id: req.user.id
+        delivery_date: delivery_date ? new Date(delivery_date) : existing.delivery_date,
+        birth_type: birth_type || existing.birth_type,
+        num_male: num_male !== undefined ? num_male : existing.num_male,
+        num_female: num_female !== undefined ? num_female : existing.num_female,
+        kids_details: kids !== undefined ? kids : existing.kids_details,
+        remark: remark !== undefined ? remark : existing.remark,
+        updated_by_user_id: req.user.id
       }
     });
 
-    // Reset female condition to NONE after a successful delivery
-    await prisma.animals.update({
-      where: { id: animal_id },
-      data: { female_condition: 'NONE' }
-    });
-
-    res.status(201).json(breeding);
+    res.json(updated);
   } catch (err) {
-    console.error('ADD BREEDING ERROR:', err);
+    console.error('UPDATE BREEDING ERROR:', err);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
