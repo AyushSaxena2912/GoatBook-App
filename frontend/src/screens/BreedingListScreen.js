@@ -413,6 +413,18 @@ const BreedingListScreen = ({ navigation, route }) => {
 
               <ScrollView style={styles.modalScroll}>
                 <View style={styles.row}>
+                  {/* Mother Tag ID */}
+                  <View style={styles.halfWidth}>
+                    <Text style={styles.inputLabel}>Mother Tag ID</Text>
+                    <View style={[styles.inputContainer, { backgroundColor: theme.colors.background }]}>
+                      <TextInput
+                        style={[styles.input, { color: theme.colors.textMuted }]}
+                        value={animal?.tag_number || searchTag || ''}
+                        editable={false}
+                      />
+                    </View>
+                  </View>
+
                   {/* Delivery Date */}
                   <View style={styles.halfWidth}>
                     <Text style={styles.inputLabel}>Delivery Date*</Text>
@@ -435,7 +447,9 @@ const BreedingListScreen = ({ navigation, route }) => {
                       />
                     )}
                   </View>
-                  
+                </View>
+                
+                <View style={styles.row}>
                   {/* Birth Type */}
                   <View style={styles.halfWidth}>
                     <Text style={styles.inputLabel}>Birth Type</Text>
