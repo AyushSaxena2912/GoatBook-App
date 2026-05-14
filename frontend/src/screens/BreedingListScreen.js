@@ -221,10 +221,13 @@ const BreedingListScreen = ({ navigation, route }) => {
     const kidLabels = ['First', 'Second', 'Third', 'Fourth'];
     const labelPrefix = kidLabels[index] || `${index + 1}th`;
 
+    // Calculate zIndex to ensure dropdowns overlap subsequent rows
+    const sectionZIndex = 100 - (index * 10);
+
     return (
-      <View key={index} style={styles.kidSection}>
-        <View style={styles.row}>
-          <View style={styles.halfWidth}>
+      <View key={index} style={[styles.kidSection, { zIndex: sectionZIndex }]}>
+        <View style={[styles.row, { zIndex: sectionZIndex + 2 }]}>
+          <View style={[styles.halfWidth, { zIndex: 1 }]}>
             <Text style={styles.inputLabel}>{labelPrefix} Kid Tag ID*</Text>
             <View style={styles.inputContainer}>
               <TextInput
@@ -237,7 +240,7 @@ const BreedingListScreen = ({ navigation, route }) => {
             </View>
           </View>
           
-          <View style={styles.halfWidth}>
+          <View style={[styles.halfWidth, { zIndex: 999 }]}>
             <Text style={styles.inputLabel}>Gender*</Text>
             <TouchableOpacity 
               style={styles.dropdownButton}
@@ -268,7 +271,7 @@ const BreedingListScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        <View style={styles.row}>
+        <View style={[styles.row, { zIndex: sectionZIndex + 1 }]}>
           <View style={styles.halfWidth}>
             <Text style={styles.inputLabel}>Birth Wt</Text>
             <View style={styles.inputContainer}>
