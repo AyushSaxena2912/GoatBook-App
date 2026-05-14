@@ -48,15 +48,13 @@ const BreedingListScreen = ({ navigation, route }) => {
   const [showBirthTypeDropdown, setShowBirthTypeDropdown] = useState(false);
   const [activeGenderDropdown, setActiveGenderDropdown] = useState(null); // stores index of kid
 
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
-
   // Handle pre-filled search if navigating from Animal detail
   useEffect(() => {
     if (route.params?.prefillTag && !isSearching) {
       setSearchTag(route.params.prefillTag);
       handleSearch(route.params.prefillTag, route.params?.autoOpenAdd);
     }
-  }, [route.params?.prefillTag]);
+  }, [route.params?.timestamp]);
 
   const handleSearch = async (tagToSearch = searchTag, shouldAutoOpen = false) => {
     if (!tagToSearch.trim()) {
@@ -74,8 +72,7 @@ const BreedingListScreen = ({ navigation, route }) => {
       if (res.data && res.data.id) {
         setAnimal(res.data);
         fetchAnimalBreedings(res.data.id);
-        if (shouldAutoOpen && !hasAutoOpened) {
-          setHasAutoOpened(true);
+        if (shouldAutoOpen) {
           openAddModal();
         }
       } else {

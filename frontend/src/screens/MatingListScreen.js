@@ -36,7 +36,6 @@ const MatingListScreen = ({ navigation, route }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   
   // Form State
   const [matingDate, setMatingDate] = useState(new Date());
@@ -69,7 +68,7 @@ const MatingListScreen = ({ navigation, route }) => {
       setSearchTag(route.params.prefillTag);
       handleSearch(route.params.prefillTag, route.params?.autoOpenAdd);
     }
-  }, [route.params?.prefillTag]);
+  }, [route.params?.timestamp]);
 
   const handleSearch = async (tagToSearch = searchTag, shouldAutoOpen = false) => {
     if (!tagToSearch.trim()) {
@@ -86,8 +85,7 @@ const MatingListScreen = ({ navigation, route }) => {
       if (res.data && res.data.id) {
         setAnimal(res.data);
         fetchAnimalMatings(res.data.id);
-        if (shouldAutoOpen && !hasAutoOpened) {
-          setHasAutoOpened(true);
+        if (shouldAutoOpen) {
           openAddModal();
         }
       } else {
