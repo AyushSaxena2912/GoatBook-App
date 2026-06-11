@@ -203,7 +203,6 @@ const AnimalListScreen = ({ navigation, route }) => {
 
         <View style={styles.animalInfo}>
           <View style={styles.tagWrapper}>
-            <Tag size={16} color={theme.colors.textLight} style={styles.tagIcon} />
             <Text style={[styles.tagNumber, { color: theme.colors.text }]}>{item.tagNumber}</Text>
           </View>
           <Text style={[styles.breedName, { color: theme.colors.textLight }]}>
