@@ -1032,7 +1032,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
             )}
           </View>
 
-          {((gender === 'FEMALE') || (acquisitionMethod === 'PURCHASED') || (acquisitionMethod === 'BORN')) && (
+          {((gender === 'FEMALE') || (acquisitionMethod === 'PURCHASED') || (acquisitionMethod === 'BORN') || true) && (
             <View style={styles.sectionCard}>
               <TouchableOpacity 
                 style={[
