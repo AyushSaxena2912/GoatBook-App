@@ -26,7 +26,7 @@ const updatedVaccines = [
     remark: "Initial dose, booster required after 21 days",
   },
   {
-    name: "ET (Booster)",
+    name: "ET Dose - 2 (Booster)",
     disease_name: "Enterotoxemia",
     dose_ml: 2.0,
     application_route: "Subcutaneous (S/c)",
@@ -92,7 +92,7 @@ const nameMapping = {
   "Goat Pox":               "Goat Pox Vaccine",
   "Goat Pox Vaccine":       "Goat Pox Vaccine",
   "ET (Dose 1)":            "ET (Dose 1)",
-  "ET (Booster)":           "ET (Booster)",
+  "ET (Booster)":           "ET Dose - 2 (Booster)",
   "ET":                     "ET (Dose 1)",
   "ET1":                    "ET (Dose 1)",
   "FMD + HS":               "FMD + HS (Biovac)",

@@ -24,7 +24,7 @@ const defaultVaccines = [
     remark: "Initial dose, booster required after 21 days",
   },
   {
-    name: "ET (Booster)",
+    name: "ET Dose - 2 (Booster)",
     disease_name: "Enterotoxemia",
     dose_ml: 2.0,
     application_route: "Subcutaneous (S/c)",
@@ -32,7 +32,7 @@ const defaultVaccines = [
     days_between: 365,
     next_due_duration_days: 365,
     is_default: true,
-    remark: "Booster dose, yearly schedule",
+    remark: "Booster Dose required inbetween 21 days.",
   },
   {
     name: "FMD Vaccine",

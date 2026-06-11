@@ -19,10 +19,20 @@ exports.getVaccines = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    // Move "PPR Vaccine" to the top
+    // Define specific order for top vaccines
+    const priorityOrder = {
+      'PPR Vaccine': 1,
+      'ET (Dose 1)': 2,
+      'ET Dose - 2 (Booster)': 3
+    };
+
     vaccines.sort((a, b) => {
-      if (a.name === 'PPR Vaccine') return -1;
-      if (b.name === 'PPR Vaccine') return 1;
+      const aPriority = priorityOrder[a.name] || 999;
+      const bPriority = priorityOrder[b.name] || 999;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
       return 0; // maintain existing 'asc' order for others
     });
 
