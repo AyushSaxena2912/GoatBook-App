@@ -37,7 +37,7 @@ const defaultVaccines = [
   {
     name: "FMD Vaccine",
     disease_name: "Foot and Mouth Disease",
-    dose_ml: 0.5,
+    dose_ml: 1.0,
     application_route: "Intramuscular (IM)",
     immunity_duration_days: 365,
     days_between: 365,
@@ -48,13 +48,24 @@ const defaultVaccines = [
   {
     name: "HS Vaccine",
     disease_name: "Hemorrhagic Septicemia",
-    dose_ml: 0.5,
+    dose_ml: 1.0,
     application_route: "Intramuscular (IM)",
     immunity_duration_days: 365,
     days_between: 365,
     next_due_duration_days: 365,
     is_default: true,
     remark: "Annual vaccine",
+  },
+  {
+    name: "ET + TT",
+    disease_name: "Enterotoxemia + Tetanus",
+    dose_ml: 2.0,
+    application_route: "Subcutaneous (S/c)",
+    immunity_duration_days: 365,
+    days_between: 365,
+    next_due_duration_days: 365,
+    is_default: true,
+    remark: "combine vaccine, yearly schedule.",
   },
   {
     name: "FMD + HS (Biovac)",
@@ -65,7 +76,7 @@ const defaultVaccines = [
     days_between: 365,
     next_due_duration_days: 365,
     is_default: true,
-    remark: "Combined vaccine",
+    remark: "combine vaccine, yearly schedule.",
   },
   {
     name: "Goat Pox Vaccine",
@@ -87,7 +98,7 @@ const defaultVaccines = [
     days_between: 365,
     next_due_duration_days: 365,
     is_default: true,
-    remark: "Triple combined vaccine",
+    remark: "Triple Combined vaccine, yearly schedule.",
   },
 ];
 
