@@ -11,15 +11,23 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_123456789'
 // @desc    Owner Registration Flow (Email + Phone + Password)
 // @route   POST api/auth/register
 exports.register = async (req, res) => {
-  const { name, email, phone, password, farmName, farmLocation } = req.body;
+  const { name, email, phone, password, farmName, farmLocation, planName, isTrial } = req.body;
 
   // Basic validation to ensure required fields are present
-  if (!phone || !password || !name || !farmName) {
-    return res.status(400).json({ message: 'Name, phone, password, and farm name are required' });
+  if (!phone || !password || !name || !farmName || !planName) {
+    return res.status(400).json({ message: 'Name, phone, password, farm name, and plan name are required' });
+  }
+
+  const isPlanTrial = isTrial !== undefined ? isTrial : true;
+  const validPlans = ['BASIC', 'STANDARD', 'ADVANCED', 'ULTIMATE'];
+  const normalizedPlan = planName.toUpperCase();
+
+  if (!validPlans.includes(normalizedPlan)) {
+      return res.status(400).json({ message: 'Invalid plan selected.' });
   }
 
   try {
-    console.log('--- Register Attempt ---', { name, email, phone, farmName });
+    console.log('--- Register Attempt ---', { name, email, phone, farmName, planName, isTrial: isPlanTrial });
     // 1. Check if user already exists by either email or phone for uniqueness
     const existingUser = await prisma.users.findFirst({
       where: {
@@ -87,6 +95,29 @@ exports.register = async (req, res) => {
       });
       console.log('Farm created:', farm.id);
 
+      // 4.5 Initialize the Subscription
+      const endDate = new Date(now);
+      if (isPlanTrial) {
+         endDate.setDate(endDate.getDate() + 7); // 7 days trial
+      } else {
+         endDate.setFullYear(endDate.getFullYear() + 1); // 1 year subscription
+      }
+
+      const subscription = await tx.subscriptions.create({
+         data: {
+             id: uuidv4(),
+             farm_id: farm.id,
+             plan_name: normalizedPlan,
+             status: isPlanTrial ? 'ACTIVE' : 'PENDING',
+             is_trial: isPlanTrial,
+             start_date: now,
+             end_date: endDate,
+             created_at: now,
+             updated_at: now
+         }
+      });
+      console.log('Subscription created:', subscription.id);
+
       // seeding default breeds and vaccines for the farm (Isolated)
       await seedBreeds(farm.id, tx);
       await seedVaccines(farm.id, tx);
@@ -103,7 +134,7 @@ exports.register = async (req, res) => {
       });
       console.log('Farm-Employee link created.');
 
-      return { user, farm };
+      return { user, farm, subscription };
     });
 
     // Generate session token (valid for 1 year)

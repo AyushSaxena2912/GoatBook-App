@@ -49,6 +49,28 @@ module.exports = async (req, res, next) => {
         return res.status(403).json({ message: 'Access denied: You do not belong to this farm' });
       }
       req.farmId = farmId;
+
+      // --- SaaS Subscription Check (Gatekeeper) ---
+      const subscription = await prisma.subscriptions.findUnique({ where: { farm_id: farmId } });
+      if (subscription) {
+        req.subscription = subscription;
+        // Check if expired
+        if (new Date() > subscription.end_date) {
+           // Allow access to subscription endpoints (for upgrade) and profile (to log out)
+           const allowedPaths = ['/api/subscriptions', '/api/users/profile'];
+           // Note: req.originalUrl is used in Express to get the full path
+           const isAllowed = req.originalUrl && allowedPaths.some(p => req.originalUrl.startsWith(p));
+           
+           if (!isAllowed) {
+               return res.status(402).json({ 
+                   message: 'Your subscription or trial has expired. Please upgrade your plan to continue using GoatBook.',
+                   code: 'SUBSCRIPTION_EXPIRED',
+                   plan: subscription.plan_name
+               });
+           }
+        }
+      }
+
     }
 
     next();

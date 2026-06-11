@@ -50,6 +50,7 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/matings', require('./routes/matings'));
 app.use('/api/breedings', require('./routes/breedings'));
+app.use('/api/subscriptions', require('./routes/subscriptions'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

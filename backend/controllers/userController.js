@@ -79,6 +79,14 @@ exports.updateProfile = async (req, res) => {
 exports.createEmployee = async (req, res) => {
   const { name, email, password, role } = req.body;
   try {
+    // 0. SaaS Plan Limits Check: Basic plan is single user only
+    if (req.subscription && req.subscription.plan_name === 'BASIC') {
+        return res.status(403).json({ 
+            message: 'Basic plan is limited to Single User Access. Please upgrade your plan to add staff members.',
+            code: 'LIMIT_EXCEEDED'
+        });
+    }
+
     // 1. Authorization: Only 'OWNER' role can hire/create new employee accounts
     if (req.employee.employee_type !== 'OWNER') return res.status(403).json({ message: 'Only farm owners can create employees' });
     

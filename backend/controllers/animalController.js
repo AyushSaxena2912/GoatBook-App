@@ -98,7 +98,19 @@ exports.addAnimal = async (req, res) => {
       return res.status(400).json({ message: 'No farm selected' });
     }
 
+    // 0. SaaS Plan Limits Check
+    if (req.subscription && req.subscription.plan_name === 'BASIC') {
+        const animalCount = await prisma.animals.count({ where: { farm_id: req.farmId } });
+        if (animalCount >= 50) {
+            return res.status(403).json({ 
+                message: 'Basic plan allows a maximum of 50 animals. Please upgrade your plan to add more animals.',
+                code: 'LIMIT_EXCEEDED'
+            });
+        }
+    }
+
     // 1. Security Check: Verify breed is either farm-specific or global
+
     const breed = await prisma.breeds.findFirst({ 
       where: { 
         id: breedId,

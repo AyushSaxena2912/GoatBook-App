@@ -3,6 +3,11 @@ generator client {
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "../ERD.md"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -129,6 +134,7 @@ model farms {
   weights             weights[]
   matings             matings[]
   breedings           breedings[]
+  subscription        subscriptions?
 }
 
 model locations {
@@ -400,3 +406,33 @@ model breedings {
   users_breedings_created_by_user_idTousers users?                  @relation("breedings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   users_breedings_updated_by_user_idTousers users?                  @relation("breedings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 }
+
+enum enum_subscription_plan {
+  BASIC
+  STANDARD
+  ADVANCED
+  ULTIMATE
+}
+
+enum enum_subscription_status {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+model subscriptions {
+  id                 String                   @id @db.Uuid
+  farm_id            String                   @unique @db.Uuid
+  plan_name          enum_subscription_plan
+  status             enum_subscription_status @default(ACTIVE)
+  is_trial           Boolean                  @default(true)
+  start_date         DateTime                 @default(now()) @db.Timestamptz(6)
+  end_date           DateTime                 @db.Timestamptz(6)
+  cashfree_order_id  String?                  @db.VarChar(255)
+  created_at         DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                 @updatedAt @db.Timestamptz(6)
+
+  farms              farms                    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+}
+
