@@ -124,23 +124,19 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     marginLeft: 4,
   },
   weightSection: {
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderRadius: 16,
-    borderColor: theme.colors.border,
-    overflow: 'hidden',
+    marginBottom: 24,
   },
   weightHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: SPACING.md,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   weightContent: {
-    padding: 16,
-    paddingTop: 8,
+    paddingTop: 16,
+    paddingHorizontal: 4,
     alignItems: 'stretch',
   },
   addNewBtn: {
@@ -247,12 +243,7 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
   },
   readyToSellCard: {
-    padding: 20,
-    paddingTop: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    paddingVertical: 16,
     marginBottom: 12,
   },
   readyHeaderRow: {
@@ -272,17 +263,15 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   photoCard: {
-    borderRadius: 16,
-    borderWidth: 1.5,
-    backgroundColor: theme.colors.surface,
-    marginBottom: 12,
-    overflow: 'hidden',
+    marginBottom: 24,
   },
   photoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   photoTitle: {
     fontSize: 15,
@@ -290,8 +279,8 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     letterSpacing: 0.5,
   },
   photoContent: {
-    padding: 20,
-    paddingTop: 0,
+    paddingTop: 16,
+    paddingHorizontal: 4,
   },
   imagePreview: {
     width: '100%',
