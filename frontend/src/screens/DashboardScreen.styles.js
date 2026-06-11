@@ -117,4 +117,113 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
   },
+  
+  // Analytics Dashboard Styles
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  kpiScroll: {
+    paddingBottom: 8,
+    paddingRight: 16,
+  },
+  kpiCard: {
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: 16,
+    width: 150,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  kpiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  kpiIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  kpiTitle: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.textLight,
+    flex: 1,
+  },
+  kpiValue: {
+    fontSize: 24,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  
+  // Composition Card
+  compositionCard: {
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 20,
+  },
+  compHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  compTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    color: theme.colors.text,
+    marginLeft: 8,
+  },
+  barContainer: {
+    height: 12,
+    flexDirection: 'row',
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.border,
+    marginBottom: 16,
+  },
+  compLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '30%',
+    marginBottom: 8,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.textLight,
+  },
+  legendValue: {
+    fontSize: 13,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+    marginLeft: 4,
+  },
 });

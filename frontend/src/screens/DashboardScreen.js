@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Alert, Platform, Modal, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Alert, Platform, Modal, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/ThemeContext';
@@ -7,7 +7,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { 
   Menu, GitBranch, PawPrint, User, Home, Syringe, Scale, 
   Heart, Activity, ClipboardList, Globe, Settings, Briefcase,
-  Moon, Sun, RefreshCcw, Milk, Sliders, Bell
+  Moon, Sun, RefreshCcw, Milk, Sliders, Bell, AlertTriangle, CheckCircle2,
+  TrendingDown, TrendingUp
 } from 'lucide-react-native';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,8 @@ const DashboardScreen = ({ navigation }) => {
   const [farmName, setFarmName] = useState('Goatwala Farm');
   const [userRole, setUserRole] = useState(null);
   const [soonVisible, setSoonVisible] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   // Memoize styles to avoid re-calculation on every render
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
@@ -51,6 +54,11 @@ const DashboardScreen = ({ navigation }) => {
             const farm = ep.farms.find(f => f.id === currentFarmId) || ep.farms[0];
             if (farm) setFarmName(farm.name);
           }
+
+          // 4. Fetch analytics
+          const analyticsRes = await api.get('/analytics/dashboard');
+          setAnalytics(analyticsRes.data);
+          
         } catch (err) {
           console.warn('Dashboard: Failed to load data:', err);
           if (err.response?.status === 401) {
@@ -59,7 +67,10 @@ const DashboardScreen = ({ navigation }) => {
         }
       };
 
-      loadDashboardData();
+      };
+
+      setLoading(true);
+      loadDashboardData().finally(() => setLoading(false));
     }, [navigation])
   );
 
@@ -108,6 +119,107 @@ const DashboardScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const renderDashboardHeader = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20, marginBottom: 40 }} />;
+    }
+
+    if (!analytics) return null;
+
+    const { metrics, composition } = analytics;
+    const totalComp = composition.bucks + composition.does + composition.kids;
+    const bucksPct = totalComp > 0 ? (composition.bucks / totalComp) * 100 : 0;
+    const doesPct = totalComp > 0 ? (composition.does / totalComp) * 100 : 0;
+    const kidsPct = totalComp > 0 ? (composition.kids / totalComp) * 100 : 0;
+
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>Overview</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiScroll}>
+          {/* Total Animals */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.kpiIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+                <PawPrint color={theme.colors.primary} size={18} />
+              </View>
+              <Text style={styles.kpiTitle} numberOfLines={1}>Total Animals</Text>
+            </View>
+            <Text style={styles.kpiValue}>{metrics.totalAnimals}</Text>
+          </View>
+
+          {/* Breeding Does */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.kpiIconContainer, { backgroundColor: '#10b98115' }]}>
+                <Heart color="#10b981" size={18} />
+              </View>
+              <Text style={styles.kpiTitle} numberOfLines={1}>Breeding Does</Text>
+            </View>
+            <Text style={styles.kpiValue}>{metrics.breedingDoes}</Text>
+          </View>
+
+          {/* Kids Born */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.kpiIconContainer, { backgroundColor: '#3b82f615' }]}>
+                <Activity color="#3b82f6" size={18} />
+              </View>
+              <Text style={styles.kpiTitle} numberOfLines={1}>Kids Born</Text>
+            </View>
+            <Text style={styles.kpiValue}>{metrics.kidsBorn}</Text>
+          </View>
+
+          {/* Mortality */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.kpiIconContainer, { backgroundColor: '#ef444415' }]}>
+                <TrendingDown color="#ef4444" size={18} />
+              </View>
+              <Text style={styles.kpiTitle} numberOfLines={1}>Mortality</Text>
+            </View>
+            <Text style={styles.kpiValue}>{metrics.mortalityRate}</Text>
+          </View>
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>Herd Composition</Text>
+        <View style={styles.compositionCard}>
+          <View style={styles.compHeader}>
+            <GitBranch color={theme.colors.primary} size={20} />
+            <Text style={styles.compTitle}>By Gender & Age</Text>
+          </View>
+
+          {/* Custom Horizontal Bar */}
+          <View style={styles.barContainer}>
+            <View style={{ width: `${bucksPct}%`, backgroundColor: '#3b82f6' }} />
+            <View style={{ width: `${doesPct}%`, backgroundColor: '#10b981' }} />
+            <View style={{ width: `${kidsPct}%`, backgroundColor: '#f59e0b' }} />
+          </View>
+
+          {/* Legend */}
+          <View style={styles.compLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} />
+              <Text style={styles.legendText}>Bucks</Text>
+              <Text style={styles.legendValue}>{Math.round(bucksPct)}%</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
+              <Text style={styles.legendText}>Does</Text>
+              <Text style={styles.legendValue}>{Math.round(doesPct)}%</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
+              <Text style={styles.legendText}>Kids</Text>
+              <Text style={styles.legendValue}>{Math.round(kidsPct)}%</Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" backgroundColor={theme.colors.primary} />
@@ -145,7 +257,7 @@ const DashboardScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Grid */}
+      {/* Grid with Analytics Header */}
       <View style={styles.content}>
         <FlatList
           data={tiles}
@@ -155,7 +267,8 @@ const DashboardScreen = ({ navigation }) => {
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          bounces={false}
+          bounces={true}
+          ListHeaderComponent={renderDashboardHeader}
         />
       </View>
 
