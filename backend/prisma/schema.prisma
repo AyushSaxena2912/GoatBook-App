@@ -232,6 +232,8 @@ model vaccines {
   users_vaccines_created_by_user_idTousers users?                  @relation("vaccines_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   farms                                    farms?                  @relation(fields: [farm_id], references: [id], onDelete: Cascade)
   users_vaccines_updated_by_user_idTousers users?                  @relation("vaccines_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+
+  @@unique([farm_id, name])
 }
 
 model weights {
