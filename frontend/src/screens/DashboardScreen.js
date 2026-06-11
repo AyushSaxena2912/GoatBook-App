@@ -67,8 +67,6 @@ const DashboardScreen = ({ navigation }) => {
         }
       };
 
-      };
-
       setLoading(true);
       loadDashboardData().finally(() => setLoading(false));
     }, [navigation])
