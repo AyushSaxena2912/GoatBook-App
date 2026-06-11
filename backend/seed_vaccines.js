@@ -38,7 +38,7 @@ const defaultVaccines = [
     name: "FMD Vaccine",
     disease_name: "Foot and Mouth Disease",
     dose_ml: 1.0,
-    application_route: "Intramuscular (IM)",
+    application_route: "Intramuscular (IM) / Subcutaneous (S/c)",
     immunity_duration_days: 365,
     days_between: 365,
     next_due_duration_days: 365,
@@ -65,7 +65,7 @@ const defaultVaccines = [
     days_between: 365,
     next_due_duration_days: 365,
     is_default: true,
-    remark: "combine vaccine, yearly schedule.",
+    remark: "Combined Vaccine, yearly schedule.",
   },
   {
     name: "FMD + HS (Biovac)",
