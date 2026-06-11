@@ -22,7 +22,7 @@ exports.getVaccines = async (req, res) => {
     // Define specific order for top vaccines
     const priorityOrder = {
       'PPR Vaccine': 1,
-      'ET (Dose 1)': 2,
+      'ET Dose - 1': 2,
       'ET Dose - 2 (Booster)': 3
     };
 

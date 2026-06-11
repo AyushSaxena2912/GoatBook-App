@@ -13,7 +13,7 @@ const defaultVaccines = [
     remark: "Long-term immunity vaccine",
   },
   {
-    name: "ET (Dose 1)",
+    name: "ET Dose - 1",
     disease_name: "Enterotoxemia",
     dose_ml: 2.0,
     application_route: "Subcutaneous (S/c)",
