@@ -1501,21 +1501,15 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
               {/* COMPLETELY REBUILT INSURANCE CARD - FIXED AND LOCKED LAYOUT */}
               <View style={{ 
-                borderRadius: 16, 
-                borderWidth: 1.5, 
-                borderColor: theme.colors.border, 
-                backgroundColor: theme.colors.surface, 
-                marginBottom: 12, 
-                overflow: 'hidden' 
+                marginBottom: 24
               }}>
                 <TouchableOpacity 
                   style={{ 
                     flexDirection: 'row', 
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
-                    paddingVertical: 14,
-                    paddingHorizontal: 16,
-                    borderBottomWidth: insuranceExpanded ? 1 : 0, 
+                    paddingVertical: 12,
+                    borderBottomWidth: 1, 
                     borderBottomColor: theme.colors.border
                   }} 
                   activeOpacity={0.7}
@@ -1538,7 +1532,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
 
                 {insuranceExpanded && (
-                  <View style={{ padding: 12, paddingTop: 16 }}>
+                  <View style={{ paddingTop: 16, paddingHorizontal: 4 }}>
                     <View style={styles.formContainer}>
                       <View style={styles.row}>
                         <GInput 
