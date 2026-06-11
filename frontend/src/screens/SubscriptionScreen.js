@@ -130,7 +130,7 @@ const SubscriptionScreen = ({ navigation }) => {
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      const msg = err.response?.data?.message || err.message || 'Failed to initiate payment';
+      const msg = (err.response && err.response.data && err.response.data.message) || err.message || 'Failed to initiate payment';
       if (Platform.OS === 'web') alert(msg);
       else Alert.alert('Error', msg);
     }
@@ -191,7 +191,7 @@ const SubscriptionScreen = ({ navigation }) => {
             </View>
 
             {PLANS.map((plan) => {
-              const isCurrent = currentPlan?.plan_name === plan.id;
+              const isCurrent = currentPlan && currentPlan.plan_name === plan.id;
               return (
                 <View 
                   key={plan.id} 
