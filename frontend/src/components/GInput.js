@@ -136,7 +136,9 @@ const GInput = ({
             {label}{required && '*'}
           </Animated.Text>
           {helpAction && (
-            <Animated.View style={{
+            <Animated.View 
+              pointerEvents={(isFocused || value) ? "auto" : "none"}
+              style={{
               marginLeft: animatedValue.interpolate({
                 inputRange: [0, 1],
                 outputRange: [8, 3],

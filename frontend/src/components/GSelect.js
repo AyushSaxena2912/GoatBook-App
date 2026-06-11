@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Animated, Modal, FlatList, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Animated, Modal, FlatList, SafeAreaView, Platform, TextInput } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
-import { ChevronDown, X, AlertCircle, HelpCircle } from 'lucide-react-native';
+import { ChevronDown, X, AlertCircle, HelpCircle, Search } from 'lucide-react-native';
 
 const GSelect = ({ 
   label, 
@@ -19,6 +19,7 @@ const GSelect = ({
 }) => {
   const { isDarkMode, theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
 
   useEffect(() => {
@@ -60,6 +61,10 @@ const GSelect = ({
   };
 
   const selectedOption = options.find(opt => opt.value === value);
+
+  const filteredOptions = options.filter(opt => 
+    opt.label?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -110,7 +115,9 @@ const GSelect = ({
           {label}{required && '*'}
         </Animated.Text>
         {helpAction && (
-          <Animated.View style={{
+          <Animated.View 
+            pointerEvents={(value || modalVisible) ? "auto" : "none"}
+            style={{
             marginLeft: animatedValue.interpolate({
               inputRange: [0, 1],
               outputRange: [5, 2],
@@ -146,23 +153,48 @@ const GSelect = ({
         visible={modalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => {
+          setModalVisible(false);
+          setSearchQuery('');
+        }}
       >
         <TouchableOpacity 
           style={styles.modalOverlay} 
           activeOpacity={1} 
-          onPress={() => setModalVisible(false)}
+          onPress={() => {
+            setModalVisible(false);
+            setSearchQuery('');
+          }}
         >
           <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface, pointerEvents: 'box-none' }]}>
             <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
               <Text style={[styles.modalTitle, { color: theme.colors.white }]}>Select {label}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
+              <TouchableOpacity onPress={() => {
+                setModalVisible(false);
+                setSearchQuery('');
+              }} style={styles.modalCloseBtn}>
                 <X size={24} color={theme.colors.white} />
               </TouchableOpacity>
             </View>
             
+            {options.length >= 6 && (
+              <View style={[styles.searchContainer, { borderBottomColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                <View style={[styles.searchInputWrapper, { backgroundColor: isDarkMode ? '#1E293B' : '#F3F4F6' }]}>
+                  <Search size={18} color={theme.colors.textMuted} style={styles.searchIcon} />
+                  <TextInput
+                    style={[styles.searchInput, { color: theme.colors.text }]}
+                    placeholder="Search..."
+                    placeholderTextColor={theme.colors.textMuted}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
+            )}
+
             <FlatList
-              data={options}
+              data={filteredOptions}
               keyExtractor={(item) => item.value}
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
@@ -175,6 +207,7 @@ const GSelect = ({
                   onPress={() => {
                     onSelect(item.value);
                     setModalVisible(false);
+                    setSearchQuery('');
                   }}
                 >
                   <Text style={[
@@ -265,6 +298,27 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 15,
     fontWeight: '500',
+  },
+  searchContainer: {
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    height: '100%',
+    paddingVertical: 0,
+    outlineWidth: 0,
   },
 });
 
