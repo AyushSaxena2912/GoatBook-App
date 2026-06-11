@@ -12,6 +12,7 @@ import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import GDatePicker from '../components/GDatePicker';
+import GConfirmModal from '../components/GConfirmModal';
 import { 
   Check, HelpCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Scale, Syringe, 
   Heart, Baby, Milk, Shield, Camera, Trash2, Edit2, Calendar
@@ -130,6 +131,9 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [showTagHelp, setShowTagHelp] = useState(false);
   const [showShedHelp, setShowShedHelp] = useState(false);
   const [helpInfo, setHelpInfo] = useState({ visible: false, title: '', content: '' });
+
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState('');
 
   const showHelp = (title, content) => {
     setHelpInfo({ visible: true, title, content });
@@ -490,8 +494,16 @@ const AddAnimalScreen = ({ navigation, route }) => {
       navigation.goBack();
     } catch (error) {
       setLoading(false);
-      const message = error.response?.data?.message || 'Failed to save animal';
-      alert(message);
+      const data = error.response?.data;
+      const message = data?.message || 'Failed to save animal';
+      
+      if (data?.code === 'LIMIT_EXCEEDED') {
+          const msgToShow = `${message}\n\nTo add more animals, you need to upgrade to the Standard, Advanced, or Ultimate plan.`;
+          setUpgradeMessage(msgToShow);
+          setShowUpgradeModal(true);
+      } else {
+          alert(message);
+      }
     }
   };
 
@@ -720,6 +732,20 @@ const AddAnimalScreen = ({ navigation, route }) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <GConfirmModal
+        visible={showUpgradeModal}
+        title="Plan Limit Reached"
+        message={upgradeMessage}
+        confirmText="View Plans"
+        cancelText="Cancel"
+        onConfirm={() => {
+            setShowUpgradeModal(false);
+            navigation.navigate('SubscriptionScreen');
+        }}
+        onCancel={() => setShowUpgradeModal(false)}
+        variant="primary"
+      />
 
       <View style={styles.header}>
         <View style={styles.headerRow}>

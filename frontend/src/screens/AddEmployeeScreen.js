@@ -32,6 +32,8 @@ const AddEmployeeScreen = ({ navigation, route }) => {
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState('');
 
   const pickImage = async () => {
     setShowImagePicker(false);
@@ -109,18 +111,9 @@ const AddEmployeeScreen = ({ navigation, route }) => {
       const msg = data?.message || 'Operation failed';
       
       if (data?.code === 'LIMIT_EXCEEDED') {
-          const upgradeMessage = `${msg}\n\nTo add employees, you need to upgrade to the Standard, Advanced, or Ultimate plan.`;
-          if (Platform.OS === 'web') {
-              const shouldUpgrade = window.confirm(`Plan Limit Reached\n\n${upgradeMessage}\n\nDo you want to see upgrade options?`);
-              if (shouldUpgrade) {
-                  navigation.navigate('SubscriptionScreen');
-              }
-          } else {
-              Alert.alert('Plan Limit Reached', upgradeMessage, [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'View Plans', onPress: () => navigation.navigate('SubscriptionScreen') }
-              ]);
-          }
+          const msgToShow = `${msg}\n\nTo add employees, you need to upgrade to the Standard, Advanced, or Ultimate plan.`;
+          setUpgradeMessage(msgToShow);
+          setShowUpgradeModal(true);
       } else {
           const detail = data?.error ? `\n\nDetail: ${data.error}` : '';
           if (Platform.OS === 'web') {
@@ -440,6 +433,20 @@ const AddEmployeeScreen = ({ navigation, route }) => {
         onCancel={() => setShowConfirmModal(false)}
         variant={state === 'Working' ? "destructive" : "primary"}
         loading={loading}
+      />
+
+      <GConfirmModal
+        visible={showUpgradeModal}
+        title="Plan Limit Reached"
+        message={upgradeMessage}
+        confirmText="View Plans"
+        cancelText="Cancel"
+        onConfirm={() => {
+            setShowUpgradeModal(false);
+            navigation.navigate('SubscriptionScreen');
+        }}
+        onCancel={() => setShowUpgradeModal(false)}
+        variant="primary"
       />
     </View>
   );
