@@ -1172,7 +1172,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <>
                       <GSelect 
                         containerStyle={styles.fullWidthField}
-                        label="Female Cond." 
+                        label="Female Condition" 
                         value={femaleCondition} 
                         onSelect={(val) => {
                           setFemaleCondition(val);
