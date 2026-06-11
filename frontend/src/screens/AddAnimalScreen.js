@@ -1141,7 +1141,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         <View style={styles.row}>
                           <GInput 
                             containerStyle={styles.halfWidth}
-                            label="Purchase Price" 
+                            label="Purchase Rate" 
                             value={purchasePrice} 
                             onChangeText={setPurchasePrice} 
                             keyboardType="number-pad"
