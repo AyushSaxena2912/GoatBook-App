@@ -1001,7 +1001,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     />
                     <GSelect 
                       containerStyle={styles.halfWidth}
-                      label="Location" 
+                      label="Shed No." 
                       value={locationId} 
                       onSelect={setLocationId}
                       options={locations}
