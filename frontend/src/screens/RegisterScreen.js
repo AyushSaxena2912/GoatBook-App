@@ -20,7 +20,8 @@ const RegisterScreen = ({ navigation }) => {
     password: '',
     confirmPassword: '',
     farmName: '',
-    farmLocation: ''
+    farmLocation: '',
+    planName: 'BASIC'
   });
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +48,9 @@ const RegisterScreen = ({ navigation }) => {
         phone: formData.phone,
         password: formData.password,
         farmName: formData.farmName,
-        farmLocation: formData.farmLocation
+        farmLocation: formData.farmLocation,
+        planName: formData.planName,
+        isTrial: true
       };
 
       // 4. Send POST request to registration endpoint
@@ -162,6 +165,30 @@ const RegisterScreen = ({ navigation }) => {
                 value={formData.farmLocation} 
                 onChangeText={(v) => updateField('farmLocation', v)} 
             />
+
+            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Select Plan (7-Day Free Trial)</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                {['BASIC', 'STANDARD', 'ADVANCED', 'ULTIMATE'].map(plan => (
+                    <TouchableOpacity 
+                        key={plan}
+                        style={{ 
+                            width: '48%', 
+                            padding: 12, 
+                            borderWidth: 1, 
+                            borderColor: formData.planName === plan ? theme.colors.primary : theme.colors.border,
+                            borderRadius: 8,
+                            marginBottom: 12,
+                            alignItems: 'center',
+                            backgroundColor: formData.planName === plan ? theme.colors.primary + '10' : 'transparent'
+                        }}
+                        onPress={() => updateField('planName', plan)}
+                    >
+                        <Text style={{ fontFamily: 'Inter_600SemiBold', color: formData.planName === plan ? theme.colors.primary : theme.colors.text }}>
+                            {plan}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
 
             <GButton 
                 title="Register" 

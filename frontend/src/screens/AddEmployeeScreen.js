@@ -105,9 +105,24 @@ const AddEmployeeScreen = ({ navigation, route }) => {
       navigation.goBack();
     } catch (error) {
       setLoading(false);
-      const msg = error.response?.data?.message || 'Operation failed';
-      const detail = error.response?.data?.error ? `\n\nDetail: ${error.response.data.error}` : '';
-      Alert.alert('Error', `${msg}${detail}`);
+      const data = error.response?.data;
+      const msg = data?.message || 'Operation failed';
+      
+      if (data?.code === 'LIMIT_EXCEEDED') {
+          const upgradeMessage = `${msg}\n\nTo add employees, you need to upgrade to the Standard, Advanced, or Ultimate plan.`;
+          if (Platform.OS === 'web') {
+              alert(`Plan Limit Reached\n\n${upgradeMessage}`);
+          } else {
+              Alert.alert('Plan Limit Reached', upgradeMessage);
+          }
+      } else {
+          const detail = data?.error ? `\n\nDetail: ${data.error}` : '';
+          if (Platform.OS === 'web') {
+              alert(`Error: ${msg}${detail}`);
+          } else {
+              Alert.alert('Error', `${msg}${detail}`);
+          }
+      }
     }
   };
 
