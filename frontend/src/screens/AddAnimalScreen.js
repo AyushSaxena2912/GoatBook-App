@@ -844,9 +844,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     label="Date*" 
                     value={deathDate} 
                     onDateChange={setDeathDate} 
-                    containerStyle={{ marginBottom: 12 }}
+                    containerStyle={styles.fullWidthField}
                   />
                   <GInput 
+                    containerStyle={styles.fullWidthField}
                     label="Reason" 
                     placeholder="Reason" 
                     value={deathReason} 
@@ -882,6 +883,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     />
                   </View>
                   <GInput 
+                    containerStyle={styles.fullWidthField}
                     label="Remark" 
                     placeholder="e.g. Healthy and active" 
                     value={soldRemark} 
@@ -1128,15 +1130,14 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     {/* PURCHASE SECTION */}
                     {acquisitionMethod === 'PURCHASED' && (
                       <>
-                        <View style={styles.row}>
-                          <GDatePicker 
-                            label="Purchase Date" 
-                            value={purchaseDate} 
-                            onDateChange={setPurchaseDate}
-                            placeholder="Select Date"
-                            required
-                          />
-                        </View>
+                        <GDatePicker 
+                          containerStyle={styles.fullWidthField}
+                          label="Purchase Date" 
+                          value={purchaseDate} 
+                          onDateChange={setPurchaseDate}
+                          placeholder="Select Date"
+                          required
+                        />
                         <View style={styles.row}>
                           <GInput 
                             containerStyle={styles.halfWidth}
@@ -1156,22 +1157,21 @@ const AddAnimalScreen = ({ navigation, route }) => {
                             placeholder="e.g. 300"
                           />
                         </View>
-                        <View style={styles.row}>
-                          <GInput 
-                            containerStyle={styles.halfWidth}
-                            label="Purchase Wt (KG)" 
-                            value={purchaseWeight} 
-                            onChangeText={setPurchaseWeight} 
-                            keyboardType="decimal-pad"
-                            placeholder="e.g. 20.5"
-                          />
-                        </View>
+                        <GInput 
+                          containerStyle={styles.fullWidthField}
+                          label="Purchase Wt (KG)" 
+                          value={purchaseWeight} 
+                          onChangeText={setPurchaseWeight} 
+                          keyboardType="decimal-pad"
+                          placeholder="e.g. 20.5"
+                        />
                       </>
                     )}
                     
                   {gender === 'FEMALE' && acquisitionMethod === 'PURCHASED' && (
                     <>
                       <GSelect 
+                        containerStyle={styles.fullWidthField}
                         label="Female Cond." 
                         value={femaleCondition} 
                         onSelect={(val) => {
@@ -1187,6 +1187,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       />
                       {femaleCondition === 'MATED' && (
                         <GDatePicker 
+                          containerStyle={styles.fullWidthField}
                           label="Mating Date" 
                           value={matingDate} 
                           onDateChange={setMatingDate}
@@ -1194,6 +1195,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       )}
                       {femaleCondition === 'PREGNANT' && (
                         <GDatePicker 
+                          containerStyle={styles.fullWidthField}
                           label="Delivery Due Date" 
                           value={expectedDeliveryDate} 
                           onDateChange={setExpectedDeliveryDate}
@@ -1203,6 +1205,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                   )}
 
                     <GInput 
+                      containerStyle={styles.fullWidthField}
                       label="Remark" 
                       value={remark} 
                       onChangeText={setRemark} 

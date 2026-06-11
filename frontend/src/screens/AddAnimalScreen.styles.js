@@ -49,10 +49,14 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
+    marginBottom: 16,
   },
   halfWidth: {
     flex: 1,
+    marginHorizontal: 4,
+  },
+  fullWidthField: {
+    marginBottom: 16,
     marginHorizontal: 4,
   },
   footer: {
