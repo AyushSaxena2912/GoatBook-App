@@ -29,8 +29,9 @@ const storage = {
   }
 };
 
-// Using local backend for testing Cashfree integration
-const BASE_URL = 'http://localhost:5001/api';
+// Using local backend for testing on Mobile (Expo Go)
+const LOCAL_IP = '192.168.0.187';
+const BASE_URL = `http://${LOCAL_IP}:5001/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
