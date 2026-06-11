@@ -39,6 +39,7 @@ import CreateLocationScreen from './src/screens/CreateLocationScreen';
 import AddWeightScreen from './src/screens/AddWeightScreen';
 import WeightListScreen from './src/screens/WeightListScreen';
 import FarmSettingsScreen from './src/screens/FarmSettingsScreen';
+import SubscriptionScreen from './src/screens/SubscriptionScreen';
 import VaccinesMenuScreen from './src/screens/VaccinesMenuScreen';
 import AddVaccineNameScreen from './src/screens/AddVaccineNameScreen';
 import VaccineDefinitionsScreen from './src/screens/VaccineDefinitionsScreen';
@@ -206,6 +207,8 @@ function AppContent() {
           <Stack.Screen name="EditLocation" component={CreateLocationScreen} />
           <Stack.Screen name="CreateLocation" component={CreateLocationScreen} />
           <Stack.Screen name="LocationDetails" component={LocationDetailsScreen} />
+
+          <Stack.Screen name="SubscriptionScreen" component={SubscriptionScreen} />
 
           <Stack.Screen name="AddWeight" component={AddWeightScreen} />
           <Stack.Screen name="WeightList" component={WeightListScreen} />

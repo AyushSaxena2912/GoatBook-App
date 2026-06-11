@@ -111,9 +111,15 @@ const AddEmployeeScreen = ({ navigation, route }) => {
       if (data?.code === 'LIMIT_EXCEEDED') {
           const upgradeMessage = `${msg}\n\nTo add employees, you need to upgrade to the Standard, Advanced, or Ultimate plan.`;
           if (Platform.OS === 'web') {
-              alert(`Plan Limit Reached\n\n${upgradeMessage}`);
+              const shouldUpgrade = window.confirm(`Plan Limit Reached\n\n${upgradeMessage}\n\nDo you want to see upgrade options?`);
+              if (shouldUpgrade) {
+                  navigation.navigate('SubscriptionScreen');
+              }
           } else {
-              Alert.alert('Plan Limit Reached', upgradeMessage);
+              Alert.alert('Plan Limit Reached', upgradeMessage, [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'View Plans', onPress: () => navigation.navigate('SubscriptionScreen') }
+              ]);
           }
       } else {
           const detail = data?.error ? `\n\nDetail: ${data.error}` : '';
