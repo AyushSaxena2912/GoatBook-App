@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Animated, Modal, FlatList, SafeAreaView, Platform, TextInput } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Animated, Modal, FlatList, SafeAreaView, Platform, TextInput, TouchableWithoutFeedback } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import { ChevronDown, X, AlertCircle, HelpCircle, Search } from 'lucide-react-native';
@@ -158,17 +158,16 @@ const GSelect = ({
           setSearchQuery('');
         }}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableWithoutFeedback 
           onPress={() => {
             setModalVisible(false);
             setSearchQuery('');
           }}
         >
-          <TouchableOpacity activeOpacity={1} style={{ width: '100%' }}>
-            <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
-              <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+                <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
               <Text style={[styles.modalTitle, { color: theme.colors.white }]}>Select {label}</Text>
               <TouchableOpacity onPress={() => {
                 setModalVisible(false);
@@ -221,9 +220,10 @@ const GSelect = ({
                 </TouchableOpacity>
               )}
             />
-            </SafeAreaView>
-          </TouchableOpacity>
-        </TouchableOpacity>
+              </SafeAreaView>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
