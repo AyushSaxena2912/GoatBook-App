@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
-const { protect } = require('../middleware/authMiddleware');
-const farmMiddleware = require('../middleware/farmMiddleware');
+const auth = require('../middleware/auth');
 
-router.get('/dashboard', protect, farmMiddleware, analyticsController.getDashboardAnalytics);
+router.get('/dashboard', auth, analyticsController.getDashboardAnalytics);
 
 module.exports = router;
