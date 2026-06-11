@@ -1170,9 +1170,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     )}
                     
                   {gender === 'FEMALE' && acquisitionMethod === 'PURCHASED' && (
-                    <View style={styles.row}>
+                    <>
                       <GSelect 
-                        containerStyle={styles.halfWidth}
                         label="Female Cond." 
                         value={femaleCondition} 
                         onSelect={(val) => {
@@ -1186,24 +1185,21 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         ]}
                         placeholder="Select"
                       />
-                      {femaleCondition === 'MATED' ? (
+                      {femaleCondition === 'MATED' && (
                         <GDatePicker 
-                          containerStyle={styles.halfWidth}
                           label="Mating Date" 
                           value={matingDate} 
                           onDateChange={setMatingDate}
                         />
-                      ) : femaleCondition === 'PREGNANT' ? (
+                      )}
+                      {femaleCondition === 'PREGNANT' && (
                         <GDatePicker 
-                          containerStyle={styles.halfWidth}
                           label="Delivery Due Date" 
                           value={expectedDeliveryDate} 
                           onDateChange={setExpectedDeliveryDate}
                         />
-                      ) : (
-                        <View style={styles.halfWidth} />
                       )}
-                    </View>
+                    </>
                   )}
 
                     <GInput 
