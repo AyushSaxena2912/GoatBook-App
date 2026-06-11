@@ -19,6 +19,13 @@ exports.getVaccines = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
+    // Move "PPR Vaccine" to the top
+    vaccines.sort((a, b) => {
+      if (a.name === 'PPR Vaccine') return -1;
+      if (b.name === 'PPR Vaccine') return 1;
+      return 0; // maintain existing 'asc' order for others
+    });
+
     res.json(vaccines.map(v => ({
       id: v.id, 
       name: v.name, 
