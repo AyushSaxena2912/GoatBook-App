@@ -21,20 +21,23 @@ async function retroSeed() {
     for (const farm of farms) {
       console.log(`\nProcessing Farm: ${farm.name} (${farm.id})`);
       
-      // Seed if breeds are missing
-      if (farm._count.breeds === 0) {
+      const defaultBreedsCount = await prisma.breeds.count({ where: { farm_id: farm.id, is_default: true } });
+      const defaultVaccinesCount = await prisma.vaccines.count({ where: { farm_id: farm.id, is_default: true } });
+
+      // Seed if default breeds are missing
+      if (defaultBreedsCount === 0) {
         console.log(`- Seeding missing breeds for "${farm.name}"...`);
         await seedBreeds(farm.id, prisma);
       } else {
-        console.log(`- Farm already has ${farm._count.breeds} breeds. Skipping breeds.`);
+        console.log(`- Farm already has ${defaultBreedsCount} default breeds. Skipping breeds.`);
       }
 
-      // Seed if vaccines are missing
-      if (farm._count.vaccines === 0) {
+      // Seed if default vaccines are missing
+      if (defaultVaccinesCount === 0) {
         console.log(`- Seeding missing vaccines for "${farm.name}"...`);
         await seedVaccines(farm.id, prisma);
       } else {
-        console.log(`- Farm already has ${farm._count.vaccines} vaccines. Skipping vaccines.`);
+        console.log(`- Farm already has ${defaultVaccinesCount} default vaccines. Skipping vaccines.`);
       }
     }
 
