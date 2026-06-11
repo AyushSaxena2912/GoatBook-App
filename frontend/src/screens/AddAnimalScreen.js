@@ -118,6 +118,17 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [updatingWeight, setUpdatingWeight] = useState(false);
   const [deletingWeight, setDeletingWeight] = useState(false);
   const [policyNumber, setPolicyNumber] = useState('');
+
+  // Vaccination Edit Modal State
+  const [editVaccinationModalVisible, setEditVaccinationModalVisible] = useState(false);
+  const [editingVaccinationRecord, setEditingVaccinationRecord] = useState(null);
+  const [editVaccineId, setEditVaccineId] = useState('');
+  const [editVaccinationDate, setEditVaccinationDate] = useState('');
+  const [editVaccinationNextDate, setEditVaccinationNextDate] = useState('');
+  const [editVaccinationRemark, setEditVaccinationRemark] = useState('');
+  const [updatingVaccination, setUpdatingVaccination] = useState(false);
+  const [deletingVaccination, setDeletingVaccination] = useState(false);
+  const [vaccineOptions, setVaccineOptions] = useState([]);
   const [agentName, setAgentName] = useState('');
 
   // UI state
@@ -148,6 +159,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
     useCallback(() => {
       fetchBreeds();
       fetchLocations();
+      fetchVaccineOptions();
         if (isEditing) {
           fetchWeights();
           fetchVaccinations();
@@ -339,6 +351,84 @@ const AddAnimalScreen = ({ navigation, route }) => {
         setAllBreeds(mapped);
       }
     }
+  };
+
+  const fetchVaccineOptions = async () => {
+    try {
+      const response = await api.get('/vaccines');
+      setVaccineOptions(response.data.map(v => ({ 
+        label: v.name, 
+        value: v.id,
+        daysBetween: v.daysBetween
+      })));
+    } catch (error) {
+      console.warn('Fetch vaccines failed', error);
+    }
+  };
+
+  const handleOpenVaccinationModal = (record) => {
+    setEditingVaccinationRecord(record);
+    setEditVaccineId(record.vaccineId || '');
+    setEditVaccinationDate(record.date ? new Date(record.date).toISOString().split('T')[0] : '');
+    setEditVaccinationNextDate(record.nextDueDate ? new Date(record.nextDueDate).toISOString().split('T')[0] : '');
+    setEditVaccinationRemark(record.remark || '');
+    setEditVaccinationModalVisible(true);
+  };
+
+  const handleUpdateVaccination = async () => {
+    if (!editVaccineId || !editVaccinationDate) {
+      Alert.alert('Error', 'Vaccine and Date are required');
+      return;
+    }
+    
+    try {
+      setUpdatingVaccination(true);
+      // Determine URL, might be different based on API endpoint
+      // EditVaccinationScreen uses: /vaccines/records/{id}
+      await api.put(`/vaccines/records/${editingVaccinationRecord.id}`, {
+        vaccineId: editVaccineId,
+        date: editVaccinationDate,
+        nextDueDate: editVaccinationNextDate || null,
+        remark: editVaccinationRemark
+      });
+      setEditVaccinationModalVisible(false);
+      fetchVaccinations();
+      Alert.alert('Success', 'Vaccination record updated successfully');
+    } catch (err) {
+      console.error('Update Vaccination Error:', err);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to update vaccination record';
+      Alert.alert('Error', errorMsg);
+    } finally {
+      setUpdatingVaccination(false);
+    }
+  };
+
+  const confirmDeleteVaccination = () => {
+    Alert.alert(
+      'Delete Vaccination Record',
+      'Are you sure you want to delete this vaccination record? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'DELETE', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeletingVaccination(true);
+              await api.delete(`/vaccines/records/${editingVaccinationRecord.id}`);
+              setEditVaccinationModalVisible(false);
+              fetchVaccinations();
+              Alert.alert('Deleted', 'Vaccination record has been removed.');
+            } catch (err) {
+              console.error('Delete Vaccination Error:', err);
+              Alert.alert('Error', 'Failed to delete vaccination record');
+            } finally {
+              setDeletingVaccination(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const fetchLocations = async () => {
@@ -1337,7 +1427,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           <TouchableOpacity 
                             key={v.id} 
                             style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === vaccinations.length - 1 && { borderBottomWidth: 0 }]}
-                            onPress={() => navigation.navigate('AddVaccination', { mode: 'single', record: v })}
+                            onPress={() => handleOpenVaccinationModal(v)}
                           >
                             <View style={styles.weightIconBox}>
                               <Syringe size={16} color={theme.colors.textMuted} />
@@ -1608,6 +1698,123 @@ const AddAnimalScreen = ({ navigation, route }) => {
           />
         )}
       </View>
+
+      {/* EDIT VACCINATION MODAL */}
+      <Modal
+        visible={editVaccinationModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setEditVaccinationModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
+          activeOpacity={1}
+          onPress={() => setEditVaccinationModalVisible(false)}
+        >
+          <View style={{ 
+            width: '90%', 
+            backgroundColor: theme.colors.surface, 
+            borderRadius: 16, 
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: theme.colors.border
+          }}>
+            <View style={{ backgroundColor: theme.colors.primary, padding: 16, alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, fontFamily: theme.typography.semiBold, color: '#FFF' }}>Edit Vaccination</Text>
+            </View>
+
+            <View style={{ padding: 20 }}>
+              <View style={{ marginBottom: 12 }}>
+                <GSelect
+                  label="Vaccine*"
+                  value={editVaccineId}
+                  onSelect={(val) => {
+                    setEditVaccineId(val);
+                    // auto calculate next due date if applicable
+                    const selected = vaccineOptions.find(v => v.value === val);
+                    if (selected && selected.daysBetween > 0 && editVaccinationDate) {
+                      const baseDate = new Date(editVaccinationDate);
+                      baseDate.setDate(baseDate.getDate() + selected.daysBetween);
+                      setEditVaccinationNextDate(baseDate.toISOString().split('T')[0]);
+                    }
+                  }}
+                  options={vaccineOptions}
+                />
+              </View>
+
+              <View style={{ marginBottom: 12 }}>
+                <GDatePicker
+                  label="Date*"
+                  value={editVaccinationDate}
+                  onDateChange={setEditVaccinationDate}
+                  required
+                />
+              </View>
+
+              <View style={{ marginBottom: 12 }}>
+                <GDatePicker
+                  label="Next Due Date"
+                  value={editVaccinationNextDate}
+                  onDateChange={setEditVaccinationNextDate}
+                />
+              </View>
+
+              <View style={{ marginBottom: 20 }}>
+                <GInput
+                  label="Remark"
+                  value={editVaccinationRemark}
+                  onChangeText={setEditVaccinationRemark}
+                  placeholder="e.g. Follow up required"
+                  multiline
+                />
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <TouchableOpacity 
+                  disabled={deletingVaccination || updatingVaccination}
+                  onPress={confirmDeleteVaccination}
+                  style={{ 
+                    flex: 1, 
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderColor: theme.colors.primary, 
+                    paddingVertical: 14, 
+                    borderRadius: 10, 
+                    marginRight: 8, 
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {deletingVaccination ? (
+                    <ActivityIndicator color={theme.colors.primary} size="small" />
+                  ) : (
+                    <Text style={{ color: theme.colors.primary, fontSize: 16, fontFamily: theme.typography.semiBold }}>Delete</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  disabled={deletingVaccination || updatingVaccination}
+                  onPress={handleUpdateVaccination}
+                  style={{ 
+                    flex: 1, 
+                    backgroundColor: theme.colors.primary, 
+                    paddingVertical: 14, 
+                    borderRadius: 10, 
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {updatingVaccination ? (
+                    <ActivityIndicator color="#FFF" size="small" />
+                  ) : (
+                    <Text style={{ color: '#FFF', fontSize: 16, fontFamily: theme.typography.semiBold }}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* EDIT WEIGHT MODAL */}
       <Modal
