@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, Platform, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Platform, Alert, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
@@ -14,16 +14,24 @@ import GAlert from '../components/GAlert';
 const AddWeightScreen = ({ route, navigation }) => {
   const { isDarkMode, theme } = useTheme();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+  const existingRecord = route.params?.record;
+  const isEditing = !!existingRecord;
+
   const initialTag = route.params?.tagNumber || '';
   const [tagNumber, setTagNumber] = useState(initialTag);
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [remark, setRemark] = useState('');
+  const [weight, setWeight] = useState(existingRecord?.weight?.toString() || '');
+  const [height, setHeight] = useState(existingRecord?.height?.toString() || '');
+  const [date, setDate] = useState(existingRecord?.date ? new Date(existingRecord.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+  const [remark, setRemark] = useState(existingRecord?.remark || '');
   const [animalInfo, setAnimalInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetchingAnimal, setFetchingAnimal] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Delete state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (initialTag) {
@@ -58,8 +66,27 @@ const AddWeightScreen = ({ route, navigation }) => {
     }
   };
 
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/weights/${existingRecord.id}`);
+      setDeleting(false);
+      setShowDeleteModal(false);
+      setSuccessMessage('Weight record deleted successfully');
+      setSuccessVisible(true);
+    } catch (error) {
+      setDeleting(false);
+      setShowDeleteModal(false);
+      Alert.alert('Error', 'Failed to delete record');
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
   const handleSubmit = async () => {
-    if (!tagNumber || !weight) {
+    if ((!tagNumber && !isEditing) || !weight) {
       Alert.alert('Required', 'Please enter both Tag ID and Weight');
       return;
     }
@@ -67,25 +94,37 @@ const AddWeightScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       
-      // Explicit validation check to ensure tag exists
-      const checkRes = await api.get(`/animals?tagNumber=${tagNumber}`);
-      if (!checkRes.data || checkRes.data.length === 0) {
-        Alert.alert('Invalid Tag ID', 'The scanned Tag ID does not exist in our system. Please check and try again.');
-        setLoading(false);
-        return;
-      }
+      if (isEditing) {
+        await api.put(`/weights/${existingRecord.id}`, {
+          weight: parseFloat(weight),
+          height: height ? parseFloat(height) : null,
+          date,
+          remark
+        });
+        setSuccessMessage('Weight record updated successfully');
+        setSuccessVisible(true);
+      } else {
+        // Explicit validation check to ensure tag exists
+        const checkRes = await api.get(`/animals?tagNumber=${tagNumber}`);
+        if (!checkRes.data || checkRes.data.length === 0) {
+          Alert.alert('Invalid Tag ID', 'The scanned Tag ID does not exist in our system. Please check and try again.');
+          setLoading(false);
+          return;
+        }
 
-      await api.post('/weights', {
-        tagNumber,
-        weight: parseFloat(weight),
-        height: height ? parseFloat(height) : null,
-        date,
-        remark
-      });
-      setSuccessVisible(true);
+        await api.post('/weights', {
+          tagNumber,
+          weight: parseFloat(weight),
+          height: height ? parseFloat(height) : null,
+          date,
+          remark
+        });
+        setSuccessMessage(`Weight record for Tag ${tagNumber} has been saved successfully.`);
+        setSuccessVisible(true);
+      }
     } catch (error) {
-      console.error('Add weight error:', error);
-      const msg = error.response?.data?.message || 'Failed to add weight record';
+      console.error('Add/Edit weight error:', error);
+      const msg = error.response?.data?.message || 'Failed to save weight record';
       Alert.alert('Error', msg);
     } finally {
       setLoading(false);
@@ -95,7 +134,7 @@ const AddWeightScreen = ({ route, navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Add Weight" 
+        title={isEditing ? "Edit Weight" : "Add Weight"} 
         onBack={() => navigation.goBack()} 
         leftAlign={true}
       />
@@ -110,6 +149,8 @@ const AddWeightScreen = ({ route, navigation }) => {
                 onChangeText={handleTagChange} 
                 placeholder="2912"
                 required
+                disabled={isEditing}
+                editable={!isEditing}
               />
             </View>
           </View>
@@ -181,17 +222,68 @@ const AddWeightScreen = ({ route, navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <GButton 
-          title="Submit Record" 
-          onPress={handleSubmit} 
-          loading={loading}
-        />
+        {isEditing ? (
+          <View style={{ width: '100%' }}>
+            <GButton 
+              title="Update Record" 
+              onPress={handleSubmit} 
+              loading={loading}
+              containerStyle={{ marginBottom: 12 }}
+            />
+            <TouchableOpacity 
+              style={[styles.deleteOutlineBtn, { borderColor: theme.colors.error + '30' }]}
+              onPress={handleDelete}
+              disabled={loading || deleting}
+            >
+              <Text style={[styles.deleteOutlineBtnText, { color: theme.colors.error }]}>Delete Record</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <GButton 
+            title="Submit Record" 
+            onPress={handleSubmit} 
+            loading={loading}
+          />
+        )}
       </View>
+
+      {/* Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowDeleteModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Delete Record</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to remove this weight record permanently? This action cannot be undone.
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setShowDeleteModal(false)} style={styles.modalBtn}>
+                <Text style={styles.modalCancelText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDelete} style={styles.modalBtn} disabled={deleting}>
+                {deleting ? (
+                  <ActivityIndicator size="small" color={theme.colors.error} />
+                ) : (
+                  <Text style={styles.modalDeleteText}>DELETE</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <GAlert 
         visible={successVisible}
         title="Success!"
-        message={`Weight record for Tag ${tagNumber} has been saved successfully.`}
+        message={successMessage}
         type="success"
         confirmText="Excellent"
         onClose={() => {
@@ -260,6 +352,68 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     borderTopColor: theme.colors.border,
     backgroundColor: theme.colors.background,
     paddingBottom: Platform.OS === 'ios' ? 30 : SPACING.lg,
+  },
+  deleteOutlineBtn: {
+    height: 54,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderStyle: 'dashed',
+    marginBottom: 8,
+  },
+  deleteOutlineBtnText: {
+    fontSize: 15,
+    fontFamily: theme.typography.semiBold,
+    letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 24,
+    ...SHADOW.large,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: theme.typography.bold,
+    color: theme.colors.text,
+    marginBottom: 16,
+  },
+  modalMessage: {
+    fontSize: 15,
+    fontFamily: theme.typography.regular,
+    color: theme.colors.textLight,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 20,
+  },
+  modalBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontFamily: theme.typography.bold,
+    color: '#1A73E8',
+    letterSpacing: 0.5,
+  },
+  modalDeleteText: {
+    fontSize: 14,
+    fontFamily: theme.typography.bold,
+    color: theme.colors.error,
+    letterSpacing: 0.5,
   },
 });
 export default AddWeightScreen;

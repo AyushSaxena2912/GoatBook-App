@@ -108,27 +108,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [insuranceCompany, setInsuranceCompany] = useState('');
   const [planName, setPlanName] = useState('');
   
-  // Weight Edit Modal State
-  const [editWeightModalVisible, setEditWeightModalVisible] = useState(false);
-  const [editingWeightRecord, setEditingWeightRecord] = useState(null);
-  const [editWeightValue, setEditWeightValue] = useState('');
-  const [editHeightValue, setEditHeightValue] = useState('');
-  const [editDateValue, setEditDateValue] = useState('');
-  const [editRemarkValue, setEditRemarkValue] = useState('');
-  const [updatingWeight, setUpdatingWeight] = useState(false);
-  const [deletingWeight, setDeletingWeight] = useState(false);
   const [policyNumber, setPolicyNumber] = useState('');
-
-  // Vaccination Edit Modal State
-  const [editVaccinationModalVisible, setEditVaccinationModalVisible] = useState(false);
-  const [editingVaccinationRecord, setEditingVaccinationRecord] = useState(null);
-  const [editVaccineId, setEditVaccineId] = useState('');
-  const [editVaccinationDate, setEditVaccinationDate] = useState('');
-  const [editVaccinationNextDate, setEditVaccinationNextDate] = useState('');
-  const [editVaccinationRemark, setEditVaccinationRemark] = useState('');
-  const [updatingVaccination, setUpdatingVaccination] = useState(false);
-  const [deletingVaccination, setDeletingVaccination] = useState(false);
-  const [vaccineOptions, setVaccineOptions] = useState([]);
   const [agentName, setAgentName] = useState('');
 
   // UI state
@@ -159,7 +139,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
     useCallback(() => {
       fetchBreeds();
       fetchLocations();
-      fetchVaccineOptions();
         if (isEditing) {
           fetchWeights();
           fetchVaccinations();
@@ -217,81 +196,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleOpenWeightModal = (record) => {
-    setEditingWeightRecord(record);
-    setEditWeightValue(record.weight?.toString() || '');
-    setEditHeightValue(record.height?.toString() || '');
-    setEditDateValue(record.date ? new Date(record.date).toISOString().split('T')[0] : '');
-    setEditRemarkValue(record.remark || '');
-    setEditWeightModalVisible(true);
-  };
-
-  const handleUpdateWeight = async () => {
-    if (!editWeightValue) {
-      Alert.alert('Error', 'Weight is required');
-      return;
-    }
-    
-    const parsedWeight = parseFloat(editWeightValue);
-    if (parsedWeight > 9999) {
-      Alert.alert('Error', 'Weight cannot exceed 9999 KG');
-      return;
-    }
-    
-    const parsedHeight = editHeightValue ? parseFloat(editHeightValue) : null;
-    if (parsedHeight !== null && parsedHeight > 9999) {
-      Alert.alert('Error', 'Height cannot exceed 9999');
-      return;
-    }
-
-    try {
-      setUpdatingWeight(true);
-      await api.put(`/weights/${editingWeightRecord.id}`, {
-        weight: parsedWeight,
-        height: parsedHeight,
-        date: editDateValue,
-        remark: editRemarkValue
-      });
-      setEditWeightModalVisible(false);
-      fetchWeights();
-      Alert.alert('Success', 'Weight record updated successfully');
-    } catch (err) {
-      console.error('Update Weight Error:', err);
-      // Prisma errors or backend errors
-      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to update weight record';
-      Alert.alert('Error', errorMsg);
-    } finally {
-      setUpdatingWeight(false);
-    }
-  };
-
-  const confirmDeleteWeight = () => {
-    Alert.alert(
-      'Delete Weight Record',
-      'Are you sure you want to delete this weight record? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'DELETE', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeletingWeight(true);
-              await api.delete(`/weights/${editingWeightRecord.id}`);
-              setEditWeightModalVisible(false);
-              fetchWeights();
-              Alert.alert('Deleted', 'Weight record has been removed.');
-            } catch (err) {
-              console.error('Delete Weight Error:', err);
-              Alert.alert('Error', 'Failed to delete weight record');
-            } finally {
-              setDeletingWeight(false);
-            }
-          }
-        }
-      ]
-    );
-  };
 
   // Rules: Uncheck male specific boxes if gender changes to FEMALE
   useEffect(() => {
@@ -353,83 +257,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
     }
   };
 
-  const fetchVaccineOptions = async () => {
-    try {
-      const response = await api.get('/vaccines');
-      setVaccineOptions(response.data.map(v => ({ 
-        label: v.name, 
-        value: v.id,
-        daysBetween: v.daysBetween
-      })));
-    } catch (error) {
-      console.warn('Fetch vaccines failed', error);
-    }
-  };
-
-  const handleOpenVaccinationModal = (record) => {
-    setEditingVaccinationRecord(record);
-    setEditVaccineId(record.vaccineId || '');
-    setEditVaccinationDate(record.date ? new Date(record.date).toISOString().split('T')[0] : '');
-    setEditVaccinationNextDate(record.nextDueDate ? new Date(record.nextDueDate).toISOString().split('T')[0] : '');
-    setEditVaccinationRemark(record.remark || '');
-    setEditVaccinationModalVisible(true);
-  };
-
-  const handleUpdateVaccination = async () => {
-    if (!editVaccineId || !editVaccinationDate) {
-      Alert.alert('Error', 'Vaccine and Date are required');
-      return;
-    }
-    
-    try {
-      setUpdatingVaccination(true);
-      // Determine URL, might be different based on API endpoint
-      // EditVaccinationScreen uses: /vaccines/records/{id}
-      await api.put(`/vaccines/records/${editingVaccinationRecord.id}`, {
-        vaccineId: editVaccineId,
-        date: editVaccinationDate,
-        nextDueDate: editVaccinationNextDate || null,
-        remark: editVaccinationRemark
-      });
-      setEditVaccinationModalVisible(false);
-      fetchVaccinations();
-      Alert.alert('Success', 'Vaccination record updated successfully');
-    } catch (err) {
-      console.error('Update Vaccination Error:', err);
-      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to update vaccination record';
-      Alert.alert('Error', errorMsg);
-    } finally {
-      setUpdatingVaccination(false);
-    }
-  };
-
-  const confirmDeleteVaccination = () => {
-    Alert.alert(
-      'Delete Vaccination Record',
-      'Are you sure you want to delete this vaccination record? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'DELETE', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeletingVaccination(true);
-              await api.delete(`/vaccines/records/${editingVaccinationRecord.id}`);
-              setEditVaccinationModalVisible(false);
-              fetchVaccinations();
-              Alert.alert('Deleted', 'Vaccination record has been removed.');
-            } catch (err) {
-              console.error('Delete Vaccination Error:', err);
-              Alert.alert('Error', 'Failed to delete vaccination record');
-            } finally {
-              setDeletingVaccination(false);
-            }
-          }
-        }
-      ]
-    );
-  };
 
   const fetchLocations = async () => {
     try {
@@ -1362,7 +1189,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           <TouchableOpacity 
                             key={w.id} 
                             style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === weights.length - 1 && { borderBottomWidth: 0 }]}
-                            onPress={() => handleOpenWeightModal(w)}
+                            onPress={() => navigation.navigate('AddWeight', { tagNumber: existingAnimal.tagNumber, record: w })}
                             activeOpacity={0.7}
                           >
                             <View style={[styles.weightIconBox, { backgroundColor: isDarkMode ? theme.colors.surface : '#FFF1EA' }]}>
@@ -1427,7 +1254,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           <TouchableOpacity 
                             key={v.id} 
                             style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === vaccinations.length - 1 && { borderBottomWidth: 0 }]}
-                            onPress={() => handleOpenVaccinationModal(v)}
+                            onPress={() => navigation.navigate('AddVaccination', { mode: 'single', record: v })}
                           >
                             <View style={styles.weightIconBox}>
                               <Syringe size={16} color={theme.colors.textMuted} />
@@ -1699,235 +1526,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
         )}
       </View>
 
-      {/* EDIT VACCINATION MODAL */}
-      <Modal
-        visible={editVaccinationModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setEditVaccinationModalVisible(false)}
-      >
-        <TouchableOpacity 
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
-          activeOpacity={1}
-          onPress={() => setEditVaccinationModalVisible(false)}
-        >
-          <View style={{ 
-            width: '90%', 
-            backgroundColor: theme.colors.surface, 
-            borderRadius: 16, 
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: theme.colors.border
-          }}>
-            <View style={{ backgroundColor: theme.colors.primary, padding: 16, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontFamily: theme.typography.semiBold, color: '#FFF' }}>Edit Vaccination</Text>
-            </View>
-
-            <View style={{ padding: 20 }}>
-              <View style={{ marginBottom: 12 }}>
-                <GSelect
-                  label="Vaccine*"
-                  value={editVaccineId}
-                  onSelect={(val) => {
-                    setEditVaccineId(val);
-                    // auto calculate next due date if applicable
-                    const selected = vaccineOptions.find(v => v.value === val);
-                    if (selected && selected.daysBetween > 0 && editVaccinationDate) {
-                      const baseDate = new Date(editVaccinationDate);
-                      baseDate.setDate(baseDate.getDate() + selected.daysBetween);
-                      setEditVaccinationNextDate(baseDate.toISOString().split('T')[0]);
-                    }
-                  }}
-                  options={vaccineOptions}
-                />
-              </View>
-
-              <View style={{ marginBottom: 12 }}>
-                <GDatePicker
-                  label="Date*"
-                  value={editVaccinationDate}
-                  onDateChange={setEditVaccinationDate}
-                  required
-                />
-              </View>
-
-              <View style={{ marginBottom: 12 }}>
-                <GDatePicker
-                  label="Next Due Date"
-                  value={editVaccinationNextDate}
-                  onDateChange={setEditVaccinationNextDate}
-                />
-              </View>
-
-              <View style={{ marginBottom: 20 }}>
-                <GInput
-                  label="Remark"
-                  value={editVaccinationRemark}
-                  onChangeText={setEditVaccinationRemark}
-                  placeholder="e.g. Follow up required"
-                  multiline
-                />
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <TouchableOpacity 
-                  disabled={deletingVaccination || updatingVaccination}
-                  onPress={confirmDeleteVaccination}
-                  style={{ 
-                    flex: 1, 
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    borderColor: theme.colors.primary, 
-                    paddingVertical: 14, 
-                    borderRadius: 10, 
-                    marginRight: 8, 
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {deletingVaccination ? (
-                    <ActivityIndicator color={theme.colors.primary} size="small" />
-                  ) : (
-                    <Text style={{ color: theme.colors.primary, fontSize: 16, fontFamily: theme.typography.semiBold }}>Delete</Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  disabled={deletingVaccination || updatingVaccination}
-                  onPress={handleUpdateVaccination}
-                  style={{ 
-                    flex: 1, 
-                    backgroundColor: theme.colors.primary, 
-                    paddingVertical: 14, 
-                    borderRadius: 10, 
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {updatingVaccination ? (
-                    <ActivityIndicator color="#FFF" size="small" />
-                  ) : (
-                    <Text style={{ color: '#FFF', fontSize: 16, fontFamily: theme.typography.semiBold }}>Save Changes</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* EDIT WEIGHT MODAL */}
-      <Modal
-        visible={editWeightModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setEditWeightModalVisible(false)}
-      >
-        <TouchableOpacity 
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
-          activeOpacity={1}
-          onPress={() => setEditWeightModalVisible(false)}
-        >
-          <View style={{ 
-            width: '90%', 
-            backgroundColor: theme.colors.surface, 
-            borderRadius: 16, 
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: theme.colors.border
-          }}>
-            <View style={{ backgroundColor: theme.colors.primary, padding: 16, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontFamily: theme.typography.semiBold, color: '#FFF' }}>Edit Weight</Text>
-            </View>
-
-            <View style={{ padding: 20 }}>
-              <View style={{ marginBottom: 12 }}>
-                <GDatePicker
-                  label="Date*"
-                  value={editDateValue}
-                  onDateChange={setEditDateValue}
-                  required
-                />
-              </View>
-
-              <View style={{ marginBottom: 12 }}>
-                <GInput
-                  label="Weight*"
-                  value={editWeightValue}
-                  onChangeText={setEditWeightValue}
-                  keyboardType="decimal-pad"
-                  placeholder="e.g. 55"
-                  required
-                />
-              </View>
-
-              <View style={{ marginBottom: 12 }}>
-                <GInput
-                  label="Height"
-                  value={editHeightValue}
-                  onChangeText={setEditHeightValue}
-                  keyboardType="decimal-pad"
-                  placeholder="e.g. 5"
-                />
-              </View>
-
-              <View style={{ marginBottom: 20 }}>
-                <GInput
-                  label="Remark"
-                  value={editRemarkValue}
-                  onChangeText={setEditRemarkValue}
-                  placeholder="e.g. Healthy"
-                  multiline
-                />
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <TouchableOpacity 
-                  disabled={deletingWeight || updatingWeight}
-                  onPress={confirmDeleteWeight}
-                  style={{ 
-                    flex: 1, 
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    borderColor: theme.colors.primary, 
-                    paddingVertical: 14, 
-                    borderRadius: 10, 
-                    marginRight: 8, 
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {deletingWeight ? (
-                    <ActivityIndicator color={theme.colors.primary} size="small" />
-                  ) : (
-                    <Text style={{ color: theme.colors.primary, fontSize: 16, fontFamily: theme.typography.semiBold }}>Delete</Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  disabled={deletingWeight || updatingWeight}
-                  onPress={handleUpdateWeight}
-                  style={{ 
-                    flex: 1, 
-                    backgroundColor: theme.colors.primary, 
-                    paddingVertical: 14, 
-                    borderRadius: 10, 
-                    marginLeft: 8, 
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {updatingWeight ? (
-                    <ActivityIndicator color="#FFF" size="small" />
-                  ) : (
-                    <Text style={{ color: '#FFF', fontSize: 16, fontFamily: theme.typography.semiBold }}>Save Changes</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 };
