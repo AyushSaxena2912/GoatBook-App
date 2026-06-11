@@ -166,8 +166,9 @@ const GSelect = ({
             setSearchQuery('');
           }}
         >
-          <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface, pointerEvents: 'box-none' }]}>
-            <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
+          <TouchableOpacity activeOpacity={1} style={{ width: '100%' }}>
+            <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
               <Text style={[styles.modalTitle, { color: theme.colors.white }]}>Select {label}</Text>
               <TouchableOpacity onPress={() => {
                 setModalVisible(false);
@@ -220,7 +221,8 @@ const GSelect = ({
                 </TouchableOpacity>
               )}
             />
-          </SafeAreaView>
+            </SafeAreaView>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </View>
