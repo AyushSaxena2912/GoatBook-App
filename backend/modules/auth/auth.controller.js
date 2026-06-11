@@ -172,13 +172,15 @@ exports.login = async (req, res) => {
     return res.status(400).json({ message: 'Email/Phone and password are required' });
   }
 
+  const strIdentifier = String(identifier).trim();
+
   try {
     // Find user where identifier matches EITHER email OR phone
     const user = await prisma.users.findFirst({
       where: {
         OR: [
-          { email: identifier },
-          { phone: identifier }
+          { email: { equals: strIdentifier, mode: 'insensitive' } },
+          { phone: strIdentifier }
         ]
       },
       include: {
@@ -240,13 +242,15 @@ exports.forgotPassword = async (req, res) => {
     return res.status(400).json({ message: 'Email or Phone is required' });
   }
 
+  const strIdentifier = String(identifier).trim();
+
   try {
     // Lookup user by either email or phone
     const user = await prisma.users.findFirst({
       where: {
         OR: [
-          { email: identifier },
-          { phone: identifier }
+          { email: { equals: strIdentifier, mode: 'insensitive' } },
+          { phone: strIdentifier }
         ]
       }
     });
@@ -321,13 +325,15 @@ exports.resetPassword = async (req, res) => {
     return res.status(400).json({ message: 'Code and new password are required' });
   }
 
+  const strIdentifier = String(identifier).trim();
+
   try {
     // Validate identity and the temporary reset code
     const user = await prisma.users.findFirst({
       where: {
         OR: [
-          { email: identifier },
-          { phone: identifier }
+          { email: { equals: strIdentifier, mode: 'insensitive' } },
+          { phone: strIdentifier }
         ],
         reset_password_token: code
       }
