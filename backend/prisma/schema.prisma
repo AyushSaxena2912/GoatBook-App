@@ -85,6 +85,7 @@ model breeds {
   users_breeds_updated_by_user_idTousers users?    @relation("breeds_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 
   @@index([origin])
+  @@unique([farm_id, name, animal_type])
 }
 
 model employees {
