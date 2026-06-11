@@ -23,7 +23,7 @@ const updatedVaccines = [
     application_route: "Subcutaneous (S/c)",
     immunity_duration_days: 0,
     next_due_duration_days: 21,
-    remark: "Combine vaccine yearly schedule",
+    remark: "Combined vaccine, yearly schedule.",
   },
   {
     name: "ET Dose - 2 (Booster)",
