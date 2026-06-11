@@ -29,9 +29,8 @@ const storage = {
   }
 };
 
-// Backend URL configuration
-// Using Render backend (Production) exclusively as requested.
-const BASE_URL = 'https://goatbookapp.onrender.com/api';
+// Using local backend for testing Cashfree integration
+const BASE_URL = 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
