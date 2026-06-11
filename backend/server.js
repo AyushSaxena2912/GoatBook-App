@@ -38,20 +38,20 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/breeds', require('./routes/breeds'));
-app.use('/api/animals', require('./routes/animals'));
-app.use('/api/locations', require('./routes/locations'));
-app.use('/api/weights', require('./routes/weights'));
-app.use('/api/farms', require('./routes/farms'));
-app.use('/api/vaccines', require('./routes/vaccines'));
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/transactions', require('./routes/transactions'));
-app.use('/api/matings', require('./routes/matings'));
-app.use('/api/breedings', require('./routes/breedings'));
-app.use('/api/subscriptions', require('./routes/subscriptions'));
-app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/auth', require('./modules/auth/auth.routes'));
+app.use('/api/users', require('./modules/users/user.routes'));
+app.use('/api/breeds', require('./modules/breeds/breed.routes'));
+app.use('/api/animals', require('./modules/animals/animal.routes'));
+app.use('/api/locations', require('./modules/locations/location.routes'));
+app.use('/api/weights', require('./modules/weights/weight.routes'));
+app.use('/api/farms', require('./modules/farms/farm.routes'));
+app.use('/api/vaccines', require('./modules/vaccines/vaccine.routes'));
+app.use('/api/reports', require('./modules/reports/report.routes'));
+app.use('/api/transactions', require('./modules/animals/transaction.routes'));
+app.use('/api/matings', require('./modules/matings/mating.routes'));
+app.use('/api/breedings', require('./modules/breedings/breeding.routes'));
+app.use('/api/subscriptions', require('./modules/subscriptions/subscription.routes'));
+app.use('/api/analytics', require('./modules/analytics/analytics.routes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
