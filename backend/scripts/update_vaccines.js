@@ -23,7 +23,7 @@ const updatedVaccines = [
     application_route: "Subcutaneous (S/c)",
     immunity_duration_days: 0,
     next_due_duration_days: 21,
-    remark: "Initial dose, booster required after 21 days",
+    remark: "Combine vaccine yearly schedule",
   },
   {
     name: "ET Dose - 2 (Booster)",
@@ -32,7 +32,7 @@ const updatedVaccines = [
     application_route: "Subcutaneous (S/c)",
     immunity_duration_days: 365,
     next_due_duration_days: 365,
-    remark: "Booster dose, yearly schedule",
+    remark: "A booster dose is required within 21 days.",
   },
   {
     name: "FMD Vaccine",

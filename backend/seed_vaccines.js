@@ -21,7 +21,7 @@ const defaultVaccines = [
     days_between: 21,
     next_due_duration_days: 21,
     is_default: true,
-    remark: "Initial dose, booster required after 21 days",
+    remark: "Combine vaccine yearly schedule",
   },
   {
     name: "ET Dose - 2 (Booster)",
@@ -32,7 +32,7 @@ const defaultVaccines = [
     days_between: 365,
     next_due_duration_days: 365,
     is_default: true,
-    remark: "Booster Dose required inbetween 21 days.",
+    remark: "A booster dose is required within 21 days.",
   },
   {
     name: "FMD Vaccine",
