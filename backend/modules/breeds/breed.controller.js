@@ -9,13 +9,10 @@ exports.getBreeds = async (req, res) => {
       return res.status(400).json({ message: 'No farm selected' });
     }
 
-    // Fetch breeds: this farm's own breeds + all system default breeds
+    // Fetch breeds that belong to this farm only (which includes the seeded default breeds)
     const breeds = await prisma.breeds.findMany({
       where: {
-        OR: [
-          { farm_id: req.farmId },
-          { is_default: true }
-        ]
+        farm_id: req.farmId
       },
       include: {
         _count: {
