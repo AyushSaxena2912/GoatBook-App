@@ -764,21 +764,26 @@ const AddAnimalScreen = ({ navigation, route }) => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           
-          <View style={[styles.photoCard, { borderColor: theme.colors.border }]}>
+          <View style={styles.sectionCard}>
             <TouchableOpacity 
-              style={styles.photoHeader} 
+              style={[
+                styles.sectionHeader, 
+                photoExpanded && styles.sectionHeaderBorder
+              ]} 
               activeOpacity={0.7}
               onPress={() => setPhotoExpanded(!photoExpanded)}
             >
-              <View style={styles.iconGroup}>
-                <Text style={[styles.photoTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>Add Photo</Text>
-                <Camera size={20} color={theme.colors.textMuted} style={{ marginLeft: 8 }} />
+              <View style={styles.sectionHeaderLeft}>
+                <View style={styles.sectionIconBox}>
+                  <Camera size={18} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.sectionTitle}>Add Photo</Text>
               </View>
               {photoExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
             </TouchableOpacity>
 
             {photoExpanded && (
-              <View style={styles.photoContent}>
+              <View style={styles.sectionContent}>
                 {image ? (
                   <View style={{ width: '100%', position: 'relative' }}>
                     <Image source={{ uri: image }} style={styles.imagePreview} />
@@ -893,21 +898,27 @@ const AddAnimalScreen = ({ navigation, route }) => {
             </View>
           )}
 
-          <View style={[styles.photoCard, { borderColor: theme.colors.border }]}>
+          <View style={styles.sectionCard}>
             <TouchableOpacity 
-              style={[styles.photoHeader, { borderBottomWidth: identificationExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]} 
+              style={[
+                styles.sectionHeader,
+                identificationExpanded && styles.sectionHeaderBorder
+              ]} 
               activeOpacity={0.7}
               onPress={() => setIdentificationExpanded(!identificationExpanded)}
             >
-              <View style={styles.iconGroup}>
-                <Text style={[styles.photoTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>Identification</Text>
+              <View style={styles.sectionHeaderLeft}>
+                <View style={styles.sectionIconBox}>
+                  <Check size={18} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.sectionTitle}>Identification</Text>
               </View>
               {identificationExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
             </TouchableOpacity>
 
             {identificationExpanded && (
-              <View style={styles.photoContent}>
-                <View style={[styles.formContainer, { marginTop: 16 }]}>
+              <View style={styles.sectionContent}>
+                <View style={styles.formContainer}>
                   <View style={styles.row}>
                     <GInput 
                       containerStyle={styles.halfWidth}
@@ -1003,7 +1014,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <View style={{ 
                       flexDirection: 'row', 
                       alignItems: 'center', 
-                      marginTop: 16, 
+                      marginTop: 4, 
                       marginBottom: 8,
                       marginHorizontal: 4,
                       justifyContent: 'flex-start'
@@ -1021,23 +1032,28 @@ const AddAnimalScreen = ({ navigation, route }) => {
             )}
           </View>
 
-          {/* GROWTH & BACKGROUND CARD */}
           {((gender === 'FEMALE') || (acquisitionMethod === 'PURCHASED') || (acquisitionMethod === 'BORN')) && (
-            <View style={[styles.photoCard, { borderColor: theme.colors.border }]}>
+            <View style={styles.sectionCard}>
               <TouchableOpacity 
-                style={[styles.photoHeader, { borderBottomWidth: growthExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]} 
+                style={[
+                  styles.sectionHeader,
+                  growthExpanded && styles.sectionHeaderBorder
+                ]} 
                 activeOpacity={0.7}
                 onPress={() => setGrowthExpanded(!growthExpanded)}
               >
-                <View style={styles.iconGroup}>
-                  <Text style={[styles.photoTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>Growth & Background</Text>
+                <View style={styles.sectionHeaderLeft}>
+                  <View style={styles.sectionIconBox}>
+                    <Scale size={18} color={theme.colors.primary} />
+                  </View>
+                  <Text style={styles.sectionTitle}>Growth & Background</Text>
                 </View>
                 {growthExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
               </TouchableOpacity>
 
               {growthExpanded && (
-                <View style={styles.photoContent}>
-                  <View style={[styles.formContainer, { marginTop: 16 }]}>
+                <View style={styles.sectionContent}>
+                  <View style={styles.formContainer}>
                     {/* Born specific fields */}
                     {acquisitionMethod === 'BORN' && (
                       <View style={styles.row}>
@@ -1088,23 +1104,21 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                     {/* Teeth Stage dropdown */}
                     {(acquisitionMethod === 'BORN' || acquisitionMethod === 'PURCHASED') && (
-                      <View style={styles.row}>
-                        <GSelect 
-                          containerStyle={styles.halfWidth}
-                          label="Teeth Stage" 
-                          value={teethStage} 
-                          onSelect={setTeethStage}
-                          options={[
-                            { label: 'Boney Teeth', value: 'Boney Teeth' },
-                            { label: '2 Teeth', value: '2 Teeth' },
-                            { label: '4 Teeth', value: '4 Teeth' },
-                            { label: '6 Teeth', value: '6 Teeth' },
-                            { label: '8 Teeth', value: '8 Teeth' },
-                            { label: 'More than 10 Teeth', value: 'More than 10 Teeth' }
-                          ]}
-                          placeholder="Select Stage"
-                        />
-                      </View>
+                      <GSelect 
+                        containerStyle={styles.fullWidthField}
+                        label="Teeth Stage" 
+                        value={teethStage} 
+                        onSelect={setTeethStage}
+                        options={[
+                          { label: 'Boney Teeth', value: 'Boney Teeth' },
+                          { label: '2 Teeth', value: '2 Teeth' },
+                          { label: '4 Teeth', value: '4 Teeth' },
+                          { label: '6 Teeth', value: '6 Teeth' },
+                          { label: '8 Teeth', value: '8 Teeth' },
+                          { label: 'More than 10 Teeth', value: 'More than 10 Teeth' }
+                        ]}
+                        placeholder="Select Stage"
+                      />
                     )}
 
                     {/* PARENTS: Only if Born at farm */}
@@ -1168,41 +1182,41 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       </>
                     )}
                     
-                  {gender === 'FEMALE' && acquisitionMethod === 'PURCHASED' && (
-                    <>
-                      <GSelect 
-                        containerStyle={styles.fullWidthField}
-                        label="Female Condition" 
-                        value={femaleCondition} 
-                        onSelect={(val) => {
-                          setFemaleCondition(val);
-                          if (val === 'MATED') setExpectedDeliveryDate('');
-                          if (val === 'PREGNANT') setMatingDate('');
-                        }}
-                        options={[
-                          { label: 'Mated', value: 'MATED' },
-                          { label: 'Pregnant', value: 'PREGNANT' }
-                        ]}
-                        placeholder="Select"
-                      />
-                      {femaleCondition === 'MATED' && (
-                        <GDatePicker 
+                    {gender === 'FEMALE' && acquisitionMethod === 'PURCHASED' && (
+                      <>
+                        <GSelect 
                           containerStyle={styles.fullWidthField}
-                          label="Mating Date" 
-                          value={matingDate} 
-                          onDateChange={setMatingDate}
+                          label="Female Condition" 
+                          value={femaleCondition} 
+                          onSelect={(val) => {
+                            setFemaleCondition(val);
+                            if (val === 'MATED') setExpectedDeliveryDate('');
+                            if (val === 'PREGNANT') setMatingDate('');
+                          }}
+                          options={[
+                            { label: 'Mated', value: 'MATED' },
+                            { label: 'Pregnant', value: 'PREGNANT' }
+                          ]}
+                          placeholder="Select"
                         />
-                      )}
-                      {femaleCondition === 'PREGNANT' && (
-                        <GDatePicker 
-                          containerStyle={styles.fullWidthField}
-                          label="Delivery Due Date" 
-                          value={expectedDeliveryDate} 
-                          onDateChange={setExpectedDeliveryDate}
-                        />
-                      )}
-                    </>
-                  )}
+                        {femaleCondition === 'MATED' && (
+                          <GDatePicker 
+                            containerStyle={styles.fullWidthField}
+                            label="Mating Date" 
+                            value={matingDate} 
+                            onDateChange={setMatingDate}
+                          />
+                        )}
+                        {femaleCondition === 'PREGNANT' && (
+                          <GDatePicker 
+                            containerStyle={styles.fullWidthField}
+                            label="Delivery Due Date" 
+                            value={expectedDeliveryDate} 
+                            onDateChange={setExpectedDeliveryDate}
+                          />
+                        )}
+                      </>
+                    )}
 
                     <GInput 
                       containerStyle={styles.fullWidthField}
@@ -1222,16 +1236,19 @@ const AddAnimalScreen = ({ navigation, route }) => {
           {isEditing && (
             <>
               {/* WEIGHT HISTORY */}
-              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.sectionCard}>
                 <TouchableOpacity 
-                  style={[styles.weightHeader, { borderBottomWidth: weightExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]}
+                  style={[styles.sectionHeader, weightExpanded && styles.sectionHeaderBorder]}
                   activeOpacity={0.7}
                   onPress={() => setWeightExpanded(!weightExpanded)}
                 >
-                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                    <Text style={[sectionHeaderStyle, { marginBottom: 0, marginTop: 0, borderBottomWidth: 0, paddingBottom: 0 }]}>Weight History</Text>
-                    <TouchableOpacity onPress={() => showHelp('What is Weight Record?', 'This section allows you to maintain weight of animal that you measure periodically. This will help you to analyze weight gain chart.')}>
-                      <HelpCircle size={14} color={theme.colors.textMuted} style={{ marginLeft: 6, marginTop: -1 }} strokeWidth={2} />
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Scale size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Weight History</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Weight Record?', 'This section allows you to maintain weight of animal that you measure periodically. This will help you to analyze weight gain chart.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
                   {weightExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
@@ -1239,13 +1256,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 
                 {weightExpanded && (
                   <View style={styles.weightContent}>
-                      <TouchableOpacity 
-                        style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('AddWeight', { tagNumber: existingAnimal.tagNumber })}
-                      >
-                        <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Add New Record</Text>
-                      </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.addNewBtn}
+                      onPress={() => navigation.navigate('AddWeight', { tagNumber: existingAnimal.tagNumber })}
+                    >
+                      <Plus size={14} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
 
                     {weightsLoading ? (
                       <ActivityIndicator color={theme.colors.primary} style={{ marginVertical: 20 }} />
@@ -1278,29 +1295,30 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         ))}
                       </View>
                     ) : (
-                      <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                        <Text style={[styles.noRecordsText, { color: theme.colors.textMuted }]}>No records found</Text>
-                      </View>
+                      <Text style={styles.noRecordsText}>No records found</Text>
                     )}
                   </View>
                 )}
               </View>
 
               {/* VACCINATION RECORD */}
-              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.sectionCard}>
                 <TouchableOpacity 
-                  style={[styles.weightHeader, { borderBottomWidth: vaccinationExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]}
+                  style={[styles.sectionHeader, vaccinationExpanded && styles.sectionHeaderBorder]}
                   activeOpacity={0.7}
                   onPress={() => setVaccinationExpanded(!vaccinationExpanded)}
                 >
-                <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                  <Text style={[sectionHeaderStyle, { marginBottom: 0, marginTop: 0, borderBottomWidth: 0, paddingBottom: 0 }]}>Vaccination Record</Text>
-                  <TouchableOpacity onPress={() => showHelp('What is Vaccination Record?', 'This section allows you to maintain each vaccination given to the animal. You can specify vaccination date, vaccination name and other detail like Dr. Name or dose, etc.')}>
-                    <HelpCircle size={14} color={theme.colors.textMuted} style={{ marginLeft: 6, marginTop: -1 }} strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-                {vaccinationExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
-              </TouchableOpacity>
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Syringe size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Vaccination Record</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Vaccination Record?', 'This section allows you to maintain each vaccination given to the animal. You can specify vaccination date, vaccination name and other detail like Dr. Name or dose, etc.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
+                  {vaccinationExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
                 {vaccinationExpanded && (
                   <View style={styles.weightContent}>
                     <TouchableOpacity 
@@ -1349,182 +1367,169 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
 
               {/* MATING RECORD */}
-              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.sectionCard}>
                 <TouchableOpacity 
-                  style={[styles.weightHeader, { borderBottomWidth: matingExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]}
+                  style={[styles.sectionHeader, matingExpanded && styles.sectionHeaderBorder]}
                   activeOpacity={0.7}
                   onPress={() => setMatingExpanded(!matingExpanded)}
                 >
-                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                    <Text style={[sectionHeaderStyle, { marginBottom: 0, marginTop: 0, borderBottomWidth: 0, paddingBottom: 0 }]}>Mating Record</Text>
-                    <TouchableOpacity onPress={() => showHelp('What is Mating Record?', 'This section allows you to maintain mating details of animal. This will help you to analyze when goat expected to become pregnant and delivered kids.')}>
-                      <HelpCircle size={14} color={theme.colors.textMuted} style={{ marginLeft: 6, marginTop: -1 }} strokeWidth={2} />
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Heart size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Mating Record</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Mating Record?', 'This section allows you to maintain mating details of animal. This will help you to analyze when goat expected to become pregnant and delivered kids.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
                   {matingExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
                 </TouchableOpacity>
-                  {matingExpanded && (
-                    <View style={styles.weightContent}>
-                      <TouchableOpacity 
-                        style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal })}
-                      >
-                        <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Add New Record</Text>
-                      </TouchableOpacity>
-                      
-                      {matingsLoading ? (
-                        <ActivityIndicator color={theme.colors.primary} />
-                      ) : matings.length > 0 ? (
-                        <View style={styles.weightList}>
-                          {matings.map((m, idx) => (
-                            <View 
-                              key={m.id} 
-                              style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === matings.length - 1 && { borderBottomWidth: 0 }]}
-                            >
-                              <View style={styles.weightIconBox}>
-                                <Heart size={16} color={theme.colors.primary} />
-                              </View>
-                              <View style={styles.weightInfoBlock}>
-                                <Text style={[styles.weightKg, { color: theme.colors.text }]}>{m.mating_type}</Text>
-                                <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(m.mating_date).toLocaleDateString()}</Text>
-                              </View>
-                              <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
-                                <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Status</Text>
-                                <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{m.status}</Text>
-                              </View>
-                              <TouchableOpacity onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal, editItem: m })} style={{ padding: 8 }}>
-                                <Edit2 size={16} color={theme.colors.textMuted} />
-                              </TouchableOpacity>
+                {matingExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity 
+                      style={styles.addNewBtn}
+                      onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal })}
+                    >
+                      <Plus size={14} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    
+                    {matingsLoading ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : matings.length > 0 ? (
+                      <View style={styles.weightList}>
+                        {matings.map((m, idx) => (
+                          <View 
+                            key={m.id} 
+                            style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === matings.length - 1 && { borderBottomWidth: 0 }]}
+                          >
+                            <View style={styles.weightIconBox}>
+                              <Heart size={16} color={theme.colors.primary} />
                             </View>
-                          ))}
-                        </View>
-                      ) : (
-                        <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                          <Text style={[styles.noRecordsText, { color: theme.colors.textMuted }]}>No records found</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                            <View style={styles.weightInfoBlock}>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{m.mating_type}</Text>
+                              <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(m.mating_date).toLocaleDateString()}</Text>
+                            </View>
+                            <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
+                              <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Status</Text>
+                              <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{m.status}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => navigation.navigate('AddMating', { preSelectedAnimal: existingAnimal, editItem: m })} style={{ padding: 8 }}>
+                              <Edit2 size={16} color={theme.colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={styles.noRecordsText}>No records found</Text>
+                    )}
+                  </View>
+                )}
               </View>
 
               {/* BREEDING/DELIVERY */}
-              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.sectionCard}>
                 <TouchableOpacity 
-                  style={[styles.weightHeader, { borderBottomWidth: breedingExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]}
+                  style={[styles.sectionHeader, breedingExpanded && styles.sectionHeaderBorder]}
                   activeOpacity={0.7}
                   onPress={() => setBreedingExpanded(!breedingExpanded)}
                 >
-                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                    <Text style={[sectionHeaderStyle, { marginBottom: 0, marginTop: 0, borderBottomWidth: 0, paddingBottom: 0 }]}>Breeding/Delivery Record</Text>
-                    <TouchableOpacity onPress={() => showHelp('What Is Breeding Record?', 'This section allow you to maintain each breeding record of individual goat.You can specify delivery date, birth type and also provid temporary tag id to the litters/kids and other detail like gender, birth weight, etc.')}>
-                      <HelpCircle size={14} color={theme.colors.textMuted} style={{ marginLeft: 6, marginTop: -1 }} strokeWidth={2} />
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Baby size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Breeding/Delivery Record</Text>
+                    <TouchableOpacity onPress={() => showHelp('What Is Breeding Record?', 'This section allow you to maintain each breeding record of individual goat.You can specify delivery date, birth type and also provid temporary tag id to the litters/kids and other detail like gender, birth weight, etc.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
                   {breedingExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
                 </TouchableOpacity>
-                  {breedingExpanded && (
-                    <View style={styles.weightContent}>
-                      <TouchableOpacity 
-                        style={styles.addNewBtn}
-                        onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal })}
-                      >
-                        <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Add New Record</Text>
-                      </TouchableOpacity>
-                      
-                      {breedingsLoading ? (
-                        <ActivityIndicator color={theme.colors.primary} />
-                      ) : breedings.length > 0 ? (
-                        <View style={styles.weightList}>
-                          {breedings.map((b, idx) => (
-                            <View 
-                              key={b.id} 
-                              style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === breedings.length - 1 && { borderBottomWidth: 0 }]}
-                            >
-                              <View style={styles.weightIconBox}>
-                                <Baby size={16} color={theme.colors.primary} />
-                              </View>
-                              <View style={styles.weightInfoBlock}>
-                                <Text style={[styles.weightKg, { color: theme.colors.text }]}>{b.birth_type}</Text>
-                                <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(b.delivery_date).toLocaleDateString()}</Text>
-                              </View>
-                              <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
-                                <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Male/Female</Text>
-                                <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{b.num_male} / {b.num_female}</Text>
-                              </View>
-                              <TouchableOpacity onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal, editItem: b })} style={{ padding: 8 }}>
-                                <Edit2 size={16} color={theme.colors.textMuted} />
-                              </TouchableOpacity>
+                {breedingExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity 
+                      style={styles.addNewBtn}
+                      onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal })}
+                    >
+                      <Plus size={14} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    
+                    {breedingsLoading ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : breedings.length > 0 ? (
+                      <View style={styles.weightList}>
+                        {breedings.map((b, idx) => (
+                          <View 
+                            key={b.id} 
+                            style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === breedings.length - 1 && { borderBottomWidth: 0 }]}
+                          >
+                            <View style={styles.weightIconBox}>
+                              <Baby size={16} color={theme.colors.primary} />
                             </View>
-                          ))}
-                        </View>
-                      ) : (
-                        <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                          <Text style={[styles.noRecordsText, { color: theme.colors.textMuted }]}>No records found</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                            <View style={styles.weightInfoBlock}>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{b.birth_type}</Text>
+                              <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(b.delivery_date).toLocaleDateString()}</Text>
+                            </View>
+                            <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
+                              <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Male/Female</Text>
+                              <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{b.num_male} / {b.num_female}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => navigation.navigate('AddBreeding', { preSelectedAnimal: existingAnimal, editItem: b })} style={{ padding: 8 }}>
+                              <Edit2 size={16} color={theme.colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={styles.noRecordsText}>No records found</Text>
+                    )}
+                  </View>
+                )}
               </View>
 
               {/* MILK HISTORY */}
-              <View style={[styles.weightSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.sectionCard}>
                 <TouchableOpacity 
-                  style={[styles.weightHeader, { borderBottomWidth: milkExpanded ? 1 : 0, borderBottomColor: theme.colors.border }]}
+                  style={[styles.sectionHeader, milkExpanded && styles.sectionHeaderBorder]}
                   activeOpacity={0.7}
                   onPress={() => setMilkExpanded(!milkExpanded)}
                 >
-                  <View style={[styles.row, { marginBottom: 0, alignItems: 'center' }]}>
-                    <Text style={[sectionHeaderStyle, { marginBottom: 0, marginTop: 0, borderBottomWidth: 0, paddingBottom: 0 }]}>Milk History</Text>
-                    <TouchableOpacity onPress={() => showHelp('What is Milk History?', 'Track daily or periodic milk production of your female goats. This helps in identifying high-yielding animals and monitoring lactation cycles.')}>
-                      <HelpCircle size={14} color={theme.colors.textMuted} style={{ marginLeft: 6, marginTop: -1 }} strokeWidth={2} />
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Milk size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Milk History</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Milk History?', 'Track daily or periodic milk production of your female goats. This helps in identifying high-yielding animals and monitoring lactation cycles.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
                   {milkExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
                 </TouchableOpacity>
-                  {milkExpanded && (
-                    <View style={styles.weightContent}>
-                      <TouchableOpacity 
-                        style={styles.addNewBtn}
-                        onPress={() => {}}
-                      >
-                        <Plus size={14} color="#FFF" />
-                        <Text style={styles.addNewText}>Add New Record</Text>
-                      </TouchableOpacity>
-                      <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                        <Text style={[styles.noRecordsText, { color: theme.colors.textMuted }]}>No records found</Text>
-                      </View>
-                    </View>
-                  )}
+                {milkExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity style={styles.addNewBtn} onPress={() => {}}>
+                      <Plus size={14} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.noRecordsText}>No records found</Text>
+                  </View>
+                )}
               </View>
 
-              {/* COMPLETELY REBUILT INSURANCE CARD - FIXED AND LOCKED LAYOUT */}
-              <View style={{ 
-                marginBottom: 24
-              }}>
+              {/* INSURANCE */}
+              <View style={styles.sectionCard}>
                 <TouchableOpacity 
-                  style={{ 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
-                    paddingVertical: 12,
-                    borderBottomWidth: 1, 
-                    borderBottomColor: theme.colors.border
-                  }} 
+                  style={[styles.sectionHeader, insuranceExpanded && styles.sectionHeaderBorder]}
                   activeOpacity={0.7}
                   onPress={() => setInsuranceExpanded(!insuranceExpanded)}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                    <Text style={{ 
-                      fontSize: 15, 
-                      color: theme.colors.primary, 
-                      fontFamily: 'Inter_600SemiBold'
-                    }}>Insurance</Text>
-                    <TouchableOpacity 
-                      onPress={() => showHelp('What is Insurance?', 'Store insurance details for your livestock, including company name, policy number, and coverage period, ensuring your farm assets are well-protected.')}
-                      style={{ marginLeft: 8 }}
-                    >
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Shield size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Insurance</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Insurance?', 'Store insurance details for your livestock, including company name, policy number, and coverage period, ensuring your farm assets are well-protected.')} style={{ marginLeft: 8 }}>
                       <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
@@ -1532,7 +1537,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
 
                 {insuranceExpanded && (
-                  <View style={{ paddingTop: 16, paddingHorizontal: 4 }}>
+                  <View style={styles.sectionContent}>
                     <View style={styles.formContainer}>
                       <View style={styles.row}>
                         <GInput 

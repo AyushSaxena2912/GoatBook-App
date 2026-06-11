@@ -32,40 +32,83 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: SPACING.lg,
+    padding: 16,
     flexGrow: 1,
-    paddingBottom: 140, // Increased to clear fixed footer
+    paddingBottom: 140,
+  },
+
+  // ─── Section Card ─────────────────────────────────────────
+  sectionCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  sectionHeaderBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  sectionIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: isDarkMode ? 'rgba(255,140,0,0.15)' : '#FEF2E6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
   sectionTitle: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
-    marginBottom: SPACING.md,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
+  sectionContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+
+  // ─── Form Layout ──────────────────────────────────────────
   formContainer: {
-    marginTop: 4,
+    marginTop: 0,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   halfWidth: {
     flex: 1,
     marginHorizontal: 4,
   },
   fullWidthField: {
-    marginBottom: 16,
+    marginBottom: 14,
     marginHorizontal: 4,
   },
+
+  // ─── Footer ───────────────────────────────────────────────
   footer: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
     backgroundColor: theme.colors.background,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    ...theme.shadow.lg, // Added shadow for floating effect
+    ...theme.shadow.lg,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -74,6 +117,8 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
   halfBtn: {
     width: '48%',
   },
+
+  // ─── Male options ─────────────────────────────────────────
   maleLabel: {
     fontSize: 14,
     color: theme.colors.text,
@@ -103,6 +148,8 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     color: theme.colors.text,
   },
+
+  // ─── Header status pill ───────────────────────────────────
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -127,8 +174,10 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
   statusChevron: {
     marginLeft: 4,
   },
+
+  // ─── Record sections (weight, vaccination etc.) ───────────
   weightSection: {
-    marginBottom: 24,
+    // uses sectionCard now
   },
   weightHeader: {
     flexDirection: 'row',
@@ -139,32 +188,34 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   weightContent: {
-    paddingTop: 16,
-    paddingHorizontal: 4,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
     alignItems: 'stretch',
   },
   addNewBtn: {
     backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     alignSelf: 'flex-end',
-    marginBottom: SPACING.md,
+    marginBottom: 12,
   },
   addNewText: {
     color: '#FFF',
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
     marginLeft: 6,
   },
   noRecordsText: {
     color: theme.colors.textMuted,
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   weightList: {
     width: '100%',
@@ -177,8 +228,8 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   weightIconBox: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     backgroundColor: isDarkMode ? '#1A1A1A' : '#FEF2E6',
     justifyContent: 'center',
@@ -197,6 +248,7 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter_400Regular',
     color: theme.colors.textLight,
+    marginTop: 2,
   },
   heightInfoBlock: {
     alignItems: 'flex-end',
@@ -211,43 +263,21 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: theme.colors.text,
   },
+
+  // ─── Misc/Divider ─────────────────────────────────────────
   sectionDivider: {
     height: 1,
     backgroundColor: theme.colors.border,
     marginVertical: 16,
   },
-  readyForSaleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  readyLabel: {
-    fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
-    color: theme.colors.primary,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-  },
+
+  // ─── Ready to sell / Dead / Sold ──────────────────────────
   readyToSellCard: {
-    paddingVertical: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
     marginBottom: 12,
   },
   readyHeaderRow: {
@@ -259,32 +289,39 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
   readyTitle: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   readyOptions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+
+  // ─── Photo card ───────────────────────────────────────────
   photoCard: {
-    marginBottom: 24,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 12,
+    overflow: 'hidden',
   },
   photoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   photoTitle: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   photoContent: {
-    paddingTop: 16,
-    paddingHorizontal: 4,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   imagePreview: {
     width: '100%',
@@ -321,6 +358,8 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     alignItems: 'center',
     marginLeft: 8,
   },
+
+  // ─── Modals ───────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -353,5 +392,24 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  readyForSaleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  readyLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    color: theme.colors.primary,
   },
 });
