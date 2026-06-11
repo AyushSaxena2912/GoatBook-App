@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { StyleSheet, View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, Animated, TextInput } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
+import GConfirmModal from '../components/GConfirmModal';
 import { Plus, ChevronRight, User, Briefcase, Mail, Phone, Search, X, SearchX } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,13 +14,34 @@ const EmployeeListScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const searchBarTranslateY = React.useRef(new Animated.Value(-100)).current;
+  const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
+
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       fetchEmployees();
+      fetchSubscription();
     }, [])
   );
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await api.get('/subscriptions/current');
+      setCurrentPlan(res.data?.plan_name || null);
+    } catch (e) {
+      console.warn('Could not fetch subscription:', e);
+    }
+  };
+
+  const handleAddPress = () => {
+    if (currentPlan === 'BASIC') {
+      setShowUpgradeModal(true);
+    } else {
+      navigation.navigate('AddEmployee');
+    }
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -179,11 +201,25 @@ const EmployeeListScreen = ({ navigation }) => {
 
       <TouchableOpacity 
         style={[styles.fab, { backgroundColor: theme.colors.primary, ...theme.shadow.lg }]}
-        onPress={() => navigation.navigate('AddEmployee')}
+        onPress={handleAddPress}
         activeOpacity={0.8}
       >
         <Plus color={theme.colors.white} size={30} strokeWidth={2.5} />
       </TouchableOpacity>
+
+      <GConfirmModal
+        visible={showUpgradeModal}
+        title="Employees Not Included"
+        message={`Your current Basic Plan allows Single User Access only.\n\nTo add employees (managers, workers, vets, etc.), please upgrade to the Standard, Advanced, or Ultimate plan.`}
+        confirmText="View Plans"
+        cancelText="Cancel"
+        onConfirm={() => {
+          setShowUpgradeModal(false);
+          navigation.navigate('SubscriptionScreen');
+        }}
+        onCancel={() => setShowUpgradeModal(false)}
+        variant="primary"
+      />
     </View>
   );
 };
