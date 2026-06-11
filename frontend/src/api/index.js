@@ -29,9 +29,9 @@ const storage = {
   }
 };
 
-// Using local backend for testing on Mobile (Expo Go)
-const LOCAL_IP = '192.168.0.187';
-const BASE_URL = `http://${LOCAL_IP}:5001/api`;
+// Using Ngrok tunnel for testing on Mobile (Expo Go)
+const NGROK_URL = 'https://6025-106-219-84-134.ngrok-free.app';
+const BASE_URL = `${NGROK_URL}/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
