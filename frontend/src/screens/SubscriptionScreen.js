@@ -249,6 +249,7 @@ const SubscriptionScreen = ({ navigation }) => {
           </>
         )}
         <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 };
