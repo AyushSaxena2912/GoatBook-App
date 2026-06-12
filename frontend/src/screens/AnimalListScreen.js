@@ -4,11 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, SearchX, X, MapPin, CheckSquare, Square, Trash2, CheckCircle2, Lock, Check, MoreVertical, Tag } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, SearchX, X, MapPin, CheckSquare, Square, Trash2, CheckCircle2, Lock, Check, MoreVertical, Tag, Filter } from 'lucide-react-native';
 import api from '../api';
 import GAlert from '../components/GAlert';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFromCache, saveToCache } from '../utils/cache';
+import AnimalFilterModal from '../components/AnimalFilterModal';
 
 const AnimalListScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
@@ -18,6 +19,8 @@ const AnimalListScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
 
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
@@ -78,8 +81,51 @@ const AnimalListScreen = ({ navigation, route }) => {
       );
     }
     
+    // Apply Advanced Filters
+    if (activeFilters.sheds?.length > 0) result = result.filter(a => activeFilters.sheds.includes(a.Location?.name));
+    if (activeFilters.status?.length > 0) result = result.filter(a => activeFilters.status.includes(a.status));
+    if (activeFilters.gender?.length > 0) result = result.filter(a => activeFilters.gender.includes(a.gender));
+    if (activeFilters.breeds?.length > 0) result = result.filter(a => activeFilters.breeds.includes(a.Breed?.name));
+    if (activeFilters.animalTypes?.length > 0) result = result.filter(a => activeFilters.animalTypes.includes(a.animalType));
+    if (activeFilters.origins?.length > 0) result = result.filter(a => activeFilters.origins.includes(a.acquisitionMethod));
+
+    if (activeFilters.timeAdded && activeFilters.timeAdded !== 'All') {
+      const timeDate = new Date();
+      if (activeFilters.timeAdded === 'Recently (24h)') timeDate.setHours(timeDate.getHours() - 24);
+      else if (activeFilters.timeAdded === 'Last 1 Week') timeDate.setDate(timeDate.getDate() - 7);
+      else if (activeFilters.timeAdded === 'Last 1 Month') timeDate.setMonth(timeDate.getMonth() - 1);
+      else if (activeFilters.timeAdded === 'Last 3 Months') timeDate.setMonth(timeDate.getMonth() - 3);
+      else if (activeFilters.timeAdded === 'Last 6 Months') timeDate.setMonth(timeDate.getMonth() - 6);
+      else if (activeFilters.timeAdded === 'Last 1 Year') timeDate.setFullYear(timeDate.getFullYear() - 1);
+      result = result.filter(a => new Date(a.createdAt) >= timeDate);
+    }
+
+    if (activeFilters.weightValue) {
+      const weightVal = parseFloat(activeFilters.weightValue);
+      if (!isNaN(weightVal)) {
+        if (activeFilters.weightCondition === 'Above') result = result.filter(a => a.currentWeight >= weightVal);
+        else if (activeFilters.weightCondition === 'Below') result = result.filter(a => a.currentWeight <= weightVal);
+        else if (activeFilters.weightCondition === 'Between' && activeFilters.weightMax) {
+          const maxVal = parseFloat(activeFilters.weightMax);
+          if (!isNaN(maxVal)) result = result.filter(a => a.currentWeight >= weightVal && a.currentWeight <= maxVal);
+        }
+      }
+    }
+
+    if (activeFilters.priceValue) {
+      const priceVal = parseFloat(activeFilters.priceValue);
+      if (!isNaN(priceVal)) {
+        if (activeFilters.priceCondition === 'Above') result = result.filter(a => a.netSalePrice >= priceVal);
+        else if (activeFilters.priceCondition === 'Below') result = result.filter(a => a.netSalePrice <= priceVal);
+        else if (activeFilters.priceCondition === 'Between' && activeFilters.priceMax) {
+          const maxVal = parseFloat(activeFilters.priceMax);
+          if (!isNaN(maxVal)) result = result.filter(a => a.netSalePrice >= priceVal && a.netSalePrice <= maxVal);
+        }
+      }
+    }
+    
     setFilteredAnimals(result);
-  }, [searchQuery, animals, route.params]);
+  }, [searchQuery, animals, route.params, activeFilters]);
 
   const fetchAnimals = async () => {
     try {
@@ -264,6 +310,17 @@ const AnimalListScreen = ({ navigation, route }) => {
         onClose={hideAlert}
       />
 
+      <AnimalFilterModal
+        visible={isFilterModalVisible}
+        onClose={() => setIsFilterModalVisible(false)}
+        animals={animals}
+        initialFilters={activeFilters}
+        onApply={(filters) => {
+          setActiveFilters(filters);
+          setIsFilterModalVisible(false);
+        }}
+      />
+
       {isSelectionMode ? (
         <View style={[styles.selectionHeader, { paddingTop: insets.top + 10, paddingBottom: 10 }]}>
             <TouchableOpacity onPress={exitSelectionMode} style={styles.headerButton}>
@@ -286,8 +343,19 @@ const AnimalListScreen = ({ navigation, route }) => {
           onMenu={!navigation.canGoBack() ? () => navigation.openDrawer() : undefined} 
           onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} 
           leftAlign={true}
-          rightIcon={isSearching ? <X color={theme.colors.white} size={24} /> : <Search color={theme.colors.white} size={24} />}
-          onRightPress={toggleSearch}
+          rightIcon={
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingRight: 4 }}>
+              <TouchableOpacity onPress={() => setIsFilterModalVisible(true)} style={{ position: 'relative' }}>
+                <Filter color={theme.colors.white} size={22} />
+                {Object.keys(activeFilters).length > 0 && Object.values(activeFilters).some(v => Array.isArray(v) ? v.length > 0 : v && v !== 'All') && (
+                  <View style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' }} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={toggleSearch}>
+                {isSearching ? <X color={theme.colors.white} size={24} /> : <Search color={theme.colors.white} size={24} />}
+              </TouchableOpacity>
+            </View>
+          }
         />
       )}
 

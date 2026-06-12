@@ -14,6 +14,11 @@ import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStyles } from './DashboardScreen.styles';
 import { registerForPushNotificationsAsync } from '../utils/notificationService';
+import AnimalIcon from '../components/AnimalIcon';
+import MatingIcon from '../components/MatingIcon';
+import BreedIcon from '../components/BreedIcon';
+import BreedingIcon from '../components/BreedingIcon';
+
 
 const DashboardScreen = ({ navigation }) => {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -74,14 +79,14 @@ const DashboardScreen = ({ navigation }) => {
 
   const tiles = useMemo(() => {
     const allTiles = [
-      { id: '1', title: 'Breed', icon: <GitBranch color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'BreedList' },
-      { id: '2', title: 'Animals', icon: <PawPrint color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'AnimalList' },
+      { id: '1', title: 'Breed', icon: <BreedIcon size={32} color={theme.colors.primary} />, screen: 'BreedList' },
+      { id: '2', title: 'Animals', icon: <AnimalIcon size={32} color={theme.colors.primary} />, screen: 'AnimalList' },
       { id: '3', title: 'Employee', icon: <User color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'EmployeeList' },
-      { id: '4', title: 'Location', icon: <Home color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'LocationMenu' },
+      { id: '4', title: 'Animal Shed', icon: <Home color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'LocationMenu' },
       { id: '5', title: 'Vaccines', icon: <Syringe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'VaccinesMenu' },
       { id: '6', title: 'Weight', icon: <Scale color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'AddWeight' },
-      { id: '7', title: 'Mating', icon: <Heart color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'MatingList' },
-      { id: '8', title: 'Breeding', icon: <Activity color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'BreedingList' },
+      { id: '7', title: 'Mating', icon: <MatingIcon size={32} color={theme.colors.primary} />, screen: 'MatingList' },
+      { id: '8', title: 'Breeding', icon: <BreedingIcon size={32} color={theme.colors.primary} />, screen: 'BreedingList' },
       { id: '9', title: 'Report', icon: <ClipboardList color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReportsMenu' },
       { id: '10', title: 'Language', icon: <Globe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
       { id: '11', title: 'Settings', icon: <Settings color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'Settings' },

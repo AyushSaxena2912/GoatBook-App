@@ -44,11 +44,16 @@ const GHeader = ({ title, onBack, onMenu, rightIcon, onRightPress, subTitle, lef
             {subTitle && <Text style={[styles.subTitle, { color: 'rgba(255,255,255,0.8)' }]}>{subTitle}</Text>}
           </View>
           
-          {/* Right Action Button (Optional) */}
           {rightIcon ? (
-            <TouchableOpacity onPress={onRightPress} style={styles.rightButton}>
-              {rightIcon}
-            </TouchableOpacity>
+            onRightPress ? (
+              <TouchableOpacity onPress={onRightPress} style={styles.rightButton}>
+                {rightIcon}
+              </TouchableOpacity>
+            ) : (
+              <View style={[styles.rightButton, { width: 'auto' }]}>
+                {rightIcon}
+              </View>
+            )
           ) : (
             <View style={{ width: 36 }} />
           )}

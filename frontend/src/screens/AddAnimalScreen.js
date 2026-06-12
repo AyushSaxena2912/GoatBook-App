@@ -20,6 +20,8 @@ import {
 import api from '../api';
 import { getFromCache } from '../utils/cache';
 import { uploadToCloudinary as cloudinaryUpload } from '../utils/cloudinary';
+import { generateInvoice } from '../utils/InvoiceGenerator';
+import { FileText } from 'lucide-react-native';
 
 const AddAnimalScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
@@ -93,7 +95,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
   // Misc
   const [remark, setRemark] = useState(existingAnimal.remark || '');
-  const [status, setStatus] = useState(existingAnimal.status || 'Live');
+  const [status, setStatus] = useState(existingAnimal.status ? (existingAnimal.status.charAt(0).toUpperCase() + existingAnimal.status.slice(1).toLowerCase()) : 'Live');
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [isReadyForSale, setIsReadyForSale] = useState(existingAnimal.isReadyForSale || false);
   const [currentWeight, setCurrentWeight] = useState(existingAnimal.currentWeight?.toString() || '');
@@ -105,6 +107,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [saleDiscount, setSaleDiscount] = useState(existingAnimal.saleDiscount?.toString() || '');
   const [saleWeight, setSaleWeight] = useState(existingAnimal.saleWeight?.toString() || existingAnimal.currentWeight?.toString() || '');
   const [soldRemark, setSoldRemark] = useState(existingAnimal.soldRemark || '');
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
   
   // Insurance specific (UI only for now)
   const [insuranceCompany, setInsuranceCompany] = useState('');
@@ -348,6 +351,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
   };
 
   const handleSave = async () => {
+    // ... existing save logic will be above this ...
+
     if (!tagNumber || !breedId || !gender || !acquisitionMethod) {
       alert('Please fill in all required fields marked with *');
       return;
@@ -411,7 +416,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
         saleWeight: status === 'Sold' ? (parseFloat(saleWeight) || null) : null,
         saleDiscount: status === 'Sold' ? (parseFloat(saleDiscount) || null) : null,
         netSalePrice: status === 'Sold' ? ((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) : null,
-        saleRate: status === 'Sold' ? (parseFloat(saleWeight) > 0 ? (((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) / parseFloat(saleWeight)) : null) : null,
+        saleRate: status === 'Sold' ? (parseFloat(saleWeight) > 0 ? ((parseFloat(sellingPrice) || 0) / parseFloat(saleWeight)) : null) : null,
         treatmentRecord: treatmentRecord || null,
       };
 
@@ -846,7 +851,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 12, color: theme.colors.textMuted, marginBottom: 4 }}>Sale Rate (Rs./KG)</Text>
                       <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: theme.colors.primary }}>
-                        {parseFloat(saleWeight) > 0 ? (((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) / parseFloat(saleWeight)).toFixed(2) : '0.00'}
+                        {parseFloat(saleWeight) > 0 ? ((parseFloat(sellingPrice) || 0) / parseFloat(saleWeight)).toFixed(2) : '0.00'}
                       </Text>
                     </View>
                   </View>
@@ -857,6 +862,48 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     placeholder="e.g. Healthy and active" 
                     value={soldRemark} 
                     onChangeText={setSoldRemark} 
+                  />
+                  
+                  <GButton 
+                    title="Generate Invoice" 
+                    onPress={async () => {
+                      try {
+                        setGeneratingInvoice(true);
+                        const profileResponse = await api.get('/farms/current');
+                        const farmData = profileResponse.data;
+                        
+                        let breedName = 'N/A';
+                        if (existingAnimal?.breed?.name) {
+                          breedName = existingAnimal.breed.name;
+                        }
+                        
+                        const animalData = {
+                          tagNumber,
+                          animalType,
+                          gender,
+                          breed: { name: breedName }
+                        };
+                        
+                        const soldData = {
+                          date: soldDate,
+                          price: sellingPrice,
+                          discount: saleDiscount,
+                          weight: saleWeight,
+                          netPrice: ((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)).toFixed(2)
+                        };
+                        
+                        await generateInvoice(animalData, soldData, farmData);
+                      } catch (err) {
+                        Alert.alert("Error", "Failed to generate invoice");
+                        console.error(err);
+                      } finally {
+                        setGeneratingInvoice(false);
+                      }
+                    }} 
+                    variant="outline"
+                    icon={<FileText size={20} color={theme.colors.primary} />}
+                    loading={generatingInvoice}
+                    containerStyle={{ marginTop: 16 }}
                   />
                </View>
             </View>
