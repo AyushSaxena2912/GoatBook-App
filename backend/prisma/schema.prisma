@@ -125,6 +125,14 @@ model farms {
   id                  String                @id @db.Uuid
   name                String                @db.VarChar(255)
   location            String?               @db.VarChar(255)
+  address             String?               @db.Text
+  city                String?               @db.VarChar(255)
+  state               String?               @db.VarChar(255)
+  country             String?               @db.VarChar(255)
+  email               String?               @db.VarChar(255)
+  phone               String?               @db.VarChar(255)
+  phones              String?               @db.Text
+  logo_url            String?
   owner_employee_id   String                @db.Uuid
   created_by_user_id  String?               @db.Uuid
   updated_by_user_id  String?               @db.Uuid

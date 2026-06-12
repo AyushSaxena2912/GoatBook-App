@@ -172,6 +172,14 @@ PENDING PENDING
     String id "🗝️"
     String name 
     String location "❓"
+    String address "❓"
+    String city "❓"
+    String state "❓"
+    String country "❓"
+    String email "❓"
+    String phone "❓"
+    String phones "❓"
+    String logo_url "❓"
     String created_by_user_id "❓"
     String updated_by_user_id "❓"
     DateTime created_at 

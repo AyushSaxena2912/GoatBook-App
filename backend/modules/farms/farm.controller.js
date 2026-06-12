@@ -19,6 +19,14 @@ exports.getFarmDetails = async (req, res) => {
       id: farm.id,
       name: farm.name,
       location: farm.location,
+      address: farm.address,
+      city: farm.city,
+      state: farm.state,
+      country: farm.country,
+      email: farm.email,
+      phone: farm.phone,
+      phones: farm.phones ? JSON.parse(farm.phones) : (farm.phone ? [farm.phone] : []),
+      logoUrl: farm.logo_url,
       ownerEmployeeId: farm.owner_employee_id,
       createdAt: farm.created_at,
       updatedAt: farm.updated_at
@@ -29,10 +37,10 @@ exports.getFarmDetails = async (req, res) => {
   }
 };
 
-// @desc    Edit main farm settings (Name, Location)
+// @desc    Edit main farm settings (Name, Location, Contact)
 // @route   PUT /api/farms/current
 exports.updateFarmDetails = async (req, res) => {
-  const { name, location } = req.body;
+  const { name, location, address, city, state, country, email, phone, phones, logoUrl } = req.body;
   try {
     if (!req.farmId) {
       return res.status(400).json({ message: 'No farm selected' });
@@ -55,6 +63,14 @@ exports.updateFarmDetails = async (req, res) => {
       data: {
         name: name || farm.name,
         location: location !== undefined ? location : farm.location,
+        address: address !== undefined ? address : farm.address,
+        city: city !== undefined ? city : farm.city,
+        state: state !== undefined ? state : farm.state,
+        country: country !== undefined ? country : farm.country,
+        email: email !== undefined ? email : farm.email,
+        phone: phone !== undefined ? phone : farm.phone,
+        phones: phones !== undefined ? JSON.stringify(phones) : farm.phones,
+        logo_url: logoUrl !== undefined ? logoUrl : farm.logo_url,
         updated_by_user_id: req.user.id,
         updated_at: new Date()
       }
@@ -64,6 +80,14 @@ exports.updateFarmDetails = async (req, res) => {
       id: updated.id,
       name: updated.name,
       location: updated.location,
+      address: updated.address,
+      city: updated.city,
+      state: updated.state,
+      country: updated.country,
+      email: updated.email,
+      phone: updated.phone,
+      phones: updated.phones ? JSON.parse(updated.phones) : (updated.phone ? [updated.phone] : []),
+      logoUrl: updated.logo_url,
       updatedAt: updated.updated_at
     });
   } catch (err) {
