@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform, Alert, SafeAreaView, Modal } from 'react-native';
+import { StyleSheet, View, Text, SectionList, TouchableOpacity, ActivityIndicator, TextInput, Animated, Platform, Alert, SafeAreaView, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
@@ -206,6 +206,25 @@ const BreedListScreen = ({ navigation }) => {
 
   const isAllSelected = selectedIds.length > 0 && selectedIds.length === filteredBreeds.filter(b => !b.isDefault).length;
 
+  const sections = useMemo(() => {
+    const defaultBreeds = filteredBreeds.filter(b => b.isDefault);
+    const customBreeds = filteredBreeds.filter(b => !b.isDefault);
+    const result = [];
+    if (customBreeds.length > 0) {
+      result.push({ title: 'Custom Breeds', data: customBreeds });
+    }
+    if (defaultBreeds.length > 0) {
+      result.push({ title: 'System Default', data: defaultBreeds });
+    }
+    return result;
+  }, [filteredBreeds]);
+
+  const renderSectionHeader = ({ section: { title } }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>{title}</Text>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background, pointerEvents: 'box-none' }]}>
       <GAlert 
@@ -270,10 +289,12 @@ const BreedListScreen = ({ navigation }) => {
         </View>
       ) : (
         <>
-          <FlatList
-            data={filteredBreeds}
+          <SectionList
+            sections={sections}
             renderItem={renderItem}
+            renderSectionHeader={renderSectionHeader}
             keyExtractor={item => item.id}
+            stickySectionHeadersEnabled={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                   <SearchX size={64} color={theme.colors.border} />
@@ -382,6 +403,17 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 15, fontFamily: 'Inter_500Medium' },
   listContent: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 120, paddingTop: 16 },
+  sectionHeader: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.5,
+  },
   breedCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -397,7 +429,21 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   checkboxUnselected: { borderColor: theme.colors.border },
   checkboxSelected: { borderColor: '#007AFF', backgroundColor: '#007AFF' },
   breedInfo: { flex: 1 },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   breedName: { fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  defaultBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  defaultBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
+  },
   animalType: { fontSize: 13, fontFamily: 'Inter_500Medium' },
   originBadge: {
     paddingHorizontal: 8,

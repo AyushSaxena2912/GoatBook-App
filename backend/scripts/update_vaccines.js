@@ -53,13 +53,22 @@ const updatedVaccines = [
     remark: "Annual vaccine",
   },
   {
+    name: "ET + TT",
+    disease_name: "Enterotoxemia + Tetanus",
+    dose_ml: 2.0,
+    application_route: "Subcutaneous (S/c)",
+    immunity_duration_days: 365,
+    next_due_duration_days: 365,
+    remark: "Combined vaccine, yearly schedule.",
+  },
+  {
     name: "FMD + HS (Biovac)",
     disease_name: "FMD + HS",
     dose_ml: 1.0,
     application_route: "Intramuscular (IM)",
     immunity_duration_days: 365,
     next_due_duration_days: 365,
-    remark: "Combined vaccine",
+    remark: "Combined vaccine, yearly schedule.",
   },
   {
     name: "Goat Pox Vaccine",
@@ -77,7 +86,7 @@ const updatedVaccines = [
     application_route: "Intramuscular (IM)",
     immunity_duration_days: 365,
     next_due_duration_days: 365,
-    remark: "Triple combined vaccine",
+    remark: "Triple Combined vaccine, yearly schedule.",
   },
 ];
 
@@ -95,6 +104,7 @@ const nameMapping = {
   "ET (Booster)":           "ET Dose - 2 (Booster)",
   "ET":                     "ET Dose - 1",
   "ET1":                    "ET Dose - 1",
+  "ET + TT":                "ET + TT",
   "FMD + HS":               "FMD + HS (Biovac)",
   "FMD + HS (Biovac)":      "FMD + HS (Biovac)",
   "FMD + HS + BQ":          "FMD + HS + BQ (Triovac)",

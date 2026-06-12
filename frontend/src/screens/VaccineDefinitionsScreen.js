@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, SectionList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
@@ -31,7 +31,9 @@ const VaccineDefinitionsScreen = ({ navigation }) => {
     }
   };
 
-  const formatFrequency = (days) => {
+  const formatFrequency = (item) => {
+    if (item.name === 'ET Dose - 1') return { label: 'Initial Dose', color: '#F59E0B' };
+    const days = item.daysBetween;
     if (!days || days === 0) return { label: 'One-time', color: '#8B5CF6' };
     if (days === 21) return { label: 'Every 21 Days', color: '#F59E0B' };
     if (days % 365 === 0) return { label: `Every ${days / 365} Year${days / 365 > 1 ? 's' : ''}`, color: '#10B981' };
@@ -40,89 +42,103 @@ const VaccineDefinitionsScreen = ({ navigation }) => {
   };
 
   const getRouteShort = (route) => {
-    if (!route) return 'N/A';
-    if (route.includes('Subcutaneous') || route.includes('S/c') || route === 'SC') return 'S/C';
-    if (route.includes('Intramuscular') || route.includes('I/M') || route === 'IM') return 'I/M';
-    if (route.includes('Oral')) return 'Oral';
-    if (route.includes('Intranasal')) return 'Nasal';
-    return route.substring(0, 4);
+    if (!route) return [];
+    const parts = route.split(' / ').map(r => r.trim());
+    const labels = [];
+    for (const part of parts) {
+      if (part.includes('Subcutaneous') || part.includes('S/c') || part === 'SC') labels.push('S/C');
+      else if (part.includes('Intramuscular') || part.includes('I/M') || part === 'IM') labels.push('I/M');
+      else if (part.includes('Oral')) labels.push('Oral');
+      else if (part.includes('Intranasal')) labels.push('Nasal');
+      else labels.push(part.substring(0, 4));
+    }
+    return labels;
   };
 
   const renderItem = ({ item }) => {
-    const freq = formatFrequency(item.daysBetween);
+    const freq = formatFrequency(item);
     return (
       <TouchableOpacity
-        style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+        style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border + '80' }]}
         onPress={() => navigation.navigate('AddVaccineName', { vaccine: item })}
         activeOpacity={0.75}
       >
-        {/* Left accent bar */}
-        <View style={[styles.accentBar, { backgroundColor: freq.color }]} />
-
-        <View style={styles.cardContent}>
-          {/* Top row: name + chevron */}
-          <View style={styles.cardTop}>
-            <View style={[styles.iconWrap, { backgroundColor: freq.color + '15' }]}>
-              <Syringe size={18} color={freq.color} strokeWidth={2} />
-            </View>
-            <View style={styles.nameBlock}>
-              <Text style={[styles.vaccineName, { color: theme.colors.text }]} numberOfLines={1}>
-                {item.name}
-              </Text>
-              {item.diseaseName ? (
-                <Text style={[styles.diseaseName, { color: theme.colors.textLight }]} numberOfLines={1}>
-                  {item.diseaseName}
+        <View style={styles.cardInner}>
+          <View style={styles.cardContent}>
+            {/* Top row: icon and name */}
+            <View style={styles.cardTop}>
+              <View style={[styles.iconWrap, { backgroundColor: freq.color + '15' }]}>
+                <Syringe size={20} color={freq.color} strokeWidth={2.5} />
+              </View>
+              <View style={styles.nameBlock}>
+                <Text style={[styles.vaccineName, { color: theme.colors.text }]} numberOfLines={1}>
+                  {item.name}
                 </Text>
+                {item.diseaseName ? (
+                  <Text style={[styles.diseaseName, { color: theme.colors.textLight }]} numberOfLines={1}>
+                    {item.diseaseName}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Bottom info row (simplified chips) */}
+            <View style={styles.infoRow}>
+              <View style={[styles.infoItem, { backgroundColor: freq.color + '12' }]}>
+                <Clock size={12} color={freq.color} />
+                <Text style={[styles.infoText, { color: freq.color }]}>{freq.label}</Text>
+              </View>
+
+              {item.doseMl ? (
+                <View style={[styles.infoItem, { backgroundColor: theme.colors.border + '40' }]}>
+                  <Text style={[styles.infoText, { color: theme.colors.text }]}>{item.doseMl} ml</Text>
+                </View>
+              ) : null}
+
+              {item.applicationRoute ? (
+                getRouteShort(item.applicationRoute).map((label, idx) => (
+                  <View key={idx} style={[styles.infoItem, { backgroundColor: theme.colors.border + '40' }]}>
+                    <Text style={[styles.infoText, { color: theme.colors.text }]}>{label}</Text>
+                  </View>
+                ))
               ) : null}
             </View>
-            <ChevronRight size={16} color={theme.colors.textMuted} />
+
+            {/* Remark */}
+            {item.remark ? (
+              <Text style={[styles.remark, { color: theme.colors.textLight }]} numberOfLines={2}>
+                {item.remark}
+              </Text>
+            ) : null}
           </View>
 
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: theme.colors.border + '40' }]} />
-
-          {/* Bottom chips row */}
-          <View style={styles.chipsRow}>
-            {/* Frequency chip */}
-            <View style={[styles.chip, { backgroundColor: freq.color + '12', borderColor: freq.color + '30' }]}>
-              <Clock size={11} color={freq.color} />
-              <Text style={[styles.chipText, { color: freq.color }]}>{freq.label}</Text>
-            </View>
-
-            {/* Dose chip */}
-            {item.doseMl ? (
-              <View style={[styles.chip, { backgroundColor: theme.colors.border + '30', borderColor: theme.colors.border }]}>
-                <Droplets size={11} color={theme.colors.textLight} />
-                <Text style={[styles.chipText, { color: theme.colors.textLight }]}>{item.doseMl} ml</Text>
-              </View>
-            ) : null}
-
-            {/* Route chip */}
-            {item.applicationRoute ? (
-              <View style={[styles.chip, { backgroundColor: theme.colors.border + '30', borderColor: theme.colors.border }]}>
-                <Activity size={11} color={theme.colors.textLight} />
-                <Text style={[styles.chipText, { color: theme.colors.textLight }]}>{getRouteShort(item.applicationRoute)}</Text>
-              </View>
-            ) : null}
-
-            {/* Default badge */}
-            {item.isDefault && (
-              <View style={[styles.defaultBadge, { backgroundColor: theme.colors.primary + '12', borderColor: theme.colors.primary + '25' }]}>
-                <Text style={[styles.defaultBadgeText, { color: theme.colors.primary }]}>Default</Text>
-              </View>
-            )}
+          {/* Centered Right Chevron */}
+          <View style={styles.chevronContainer}>
+            <ChevronRight size={24} color={theme.colors.textMuted || '#9CA3AF'} />
           </View>
-
-          {/* Remark */}
-          {item.remark ? (
-            <Text style={[styles.remark, { color: theme.colors.textLight }]} numberOfLines={1}>
-              {item.remark}
-            </Text>
-          ) : null}
         </View>
       </TouchableOpacity>
     );
   };
+
+  const sections = useMemo(() => {
+    const defaultVaccines = vaccines.filter(v => v.isDefault);
+    const customVaccines = vaccines.filter(v => !v.isDefault);
+    const result = [];
+    if (customVaccines.length > 0) {
+      result.push({ title: 'Custom Vaccines', data: customVaccines });
+    }
+    if (defaultVaccines.length > 0) {
+      result.push({ title: 'System Default', data: defaultVaccines });
+    }
+    return result;
+  }, [vaccines]);
+
+  const renderSectionHeader = ({ section: { title } }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>{title}</Text>
+    </View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -133,19 +149,15 @@ const VaccineDefinitionsScreen = ({ navigation }) => {
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
-        <FlatList
-          data={vaccines}
+        <SectionList
+          sections={sections}
           renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <View style={styles.listHeader}>
-              <Text style={[styles.listCount, { color: theme.colors.textLight }]}>
-                {vaccines.length} vaccines in catalog
-              </Text>
-            </View>
-          }
+          stickySectionHeadersEnabled={false}
+
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Syringe size={64} color={theme.colors.border} />
@@ -169,7 +181,7 @@ const VaccineDefinitionsScreen = ({ navigation }) => {
 const getStyles = (theme, isDarkMode) => StyleSheet.create({
   container: { flex: 1 },
   listContent: {
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: 16,
     paddingBottom: 100,
   },
   listHeader: {
@@ -179,86 +191,99 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
-  card: {
-    flexDirection: 'row',
-    borderRadius: 16,
-    borderWidth: 1.2,
-    marginBottom: 16, // Increased spacing between cards
-    overflow: 'hidden',
-    ...SHADOW.small,
+  sectionHeader: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+    marginTop: 8,
   },
-  accentBar: {
-    width: 6, // Slightly thicker for more color pop
+  sectionTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.5,
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+    backgroundColor: theme.colors.surface,
+  },
+  cardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cardContent: {
     flex: 1,
-    paddingHorizontal: 16, // Increased padding
-    paddingVertical: 16,
+    padding: 16,
+  },
+  chevronContainer: {
+    paddingRight: 16,
+    paddingLeft: 4,
   },
   cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 14,
-    gap: 12,
+    gap: 14,
   },
   iconWrap: {
-    width: 42, // Slightly larger icon
-    height: 42,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   nameBlock: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   vaccineName: {
-    fontSize: 16, // Slightly larger name
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -0.3,
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.2,
+  },
+  customBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  customBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
   },
   diseaseName: {
     fontSize: 13,
     fontFamily: 'Inter_400Regular',
     marginTop: 2,
   },
-  divider: {
-    height: 1,
-    marginBottom: 12,
-  },
-  chipsRow: {
+  infoRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8, // More gap between chips
+    gap: 8,
     alignItems: 'center',
   },
-  chip: {
+  infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  chipText: {
-    fontSize: 11,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  defaultBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  defaultBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: 0.5,
+  infoText: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
   },
   remark: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
-    marginTop: 8,
+    marginTop: 12,
+    lineHeight: 18,
   },
   center: {
     flex: 1,

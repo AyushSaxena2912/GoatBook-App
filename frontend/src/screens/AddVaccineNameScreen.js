@@ -23,7 +23,16 @@ const AddVaccineNameScreen = ({ navigation, route }) => {
   const [name, setName] = useState(editingVaccine?.name || '');
   const [diseaseName, setDiseaseName] = useState(editingVaccine?.diseaseName || '');
   const [doseMl, setDoseMl] = useState(editingVaccine?.doseMl?.toString() || '');
-  const [appRoute, setAppRoute] = useState(editingVaccine?.applicationRoute || 'Sub Cut S/c');
+  const [appRoute, setAppRoute] = useState(
+    (editingVaccine?.applicationRoute && !['Subcutaneous (S/c)', 'Intramuscular (IM)', 'Sub Cut S/c', 'Intra Muscular I/M', 'Intramuscular (IM) / Subcutaneous (S/c)'].includes(editingVaccine.applicationRoute))
+      ? 'Other'
+      : (editingVaccine?.applicationRoute || 'Sub Cut S/c')
+  );
+  const [customRoute, setCustomRoute] = useState(
+    (editingVaccine?.applicationRoute && !['Subcutaneous (S/c)', 'Intramuscular (IM)', 'Sub Cut S/c', 'Intra Muscular I/M', 'Intramuscular (IM) / Subcutaneous (S/c)'].includes(editingVaccine.applicationRoute))
+      ? (editingVaccine.applicationRoute || '')
+      : ''
+  );
   
   // Calculate frequency based on daysBetween
   const getInitialFrequency = () => {
@@ -112,7 +121,7 @@ const AddVaccineNameScreen = ({ navigation, route }) => {
         name,
         diseaseName,
         doseMl: doseMl ? parseFloat(doseMl) : null,
-        applicationRoute: appRoute,
+        applicationRoute: appRoute === 'Other' ? customRoute : appRoute,
         daysBetween: days,
         remark
       };
@@ -151,9 +160,13 @@ const AddVaccineNameScreen = ({ navigation, route }) => {
   const routeOptions = [
     { label: 'Sub Cut S/c (Skin)', value: 'Sub Cut S/c' },
     { label: 'Intra Muscular I/M (Muscle)', value: 'Intra Muscular I/M' },
-    { label: 'Oral (Mouth)', value: 'Oral' },
-    { label: 'Intranasal (Nose)', value: 'Intranasal' },
+    { label: 'Other', value: 'Other' },
   ];
+
+  const handleRouteSelect = (val) => {
+    setAppRoute(val);
+    if (val !== 'Other') setCustomRoute('');
+  };
 
   const unitOptions = [
     { label: 'Days', value: 'Days' },
@@ -210,12 +223,22 @@ const AddVaccineNameScreen = ({ navigation, route }) => {
                   <GSelect 
                     label="App. Route" 
                     value={appRoute}
-                    onSelect={setAppRoute}
+                    onSelect={handleRouteSelect}
                     options={routeOptions}
                     placeholder="Select Route"
                   />
                 </View>
               </View>
+
+              {appRoute === 'Other' && (
+                <GInput
+                  label="Specify Route"
+                  value={customRoute}
+                  onChangeText={setCustomRoute}
+                  placeholder="e.g. Oral, Intranasal, Intravenous..."
+                  containerStyle={{ marginTop: 16 }}
+                />
+              )}
             </View>
 
             <View style={styles.section}>

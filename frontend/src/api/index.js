@@ -29,9 +29,9 @@ const storage = {
   }
 };
 
-// Using Ngrok tunnel for testing on Mobile (Expo Go)
-const NGROK_URL = 'https://6025-106-219-84-134.ngrok-free.app';
-const BASE_URL = `${NGROK_URL}/api`;
+// Using Render backend URL
+const RENDER_URL = 'https://goatbookapp.onrender.com';
+const BASE_URL = `${RENDER_URL}/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
