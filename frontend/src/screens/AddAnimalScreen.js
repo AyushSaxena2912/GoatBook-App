@@ -15,7 +15,7 @@ import GDatePicker from '../components/GDatePicker';
 import GConfirmModal from '../components/GConfirmModal';
 import { 
   Check, HelpCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Scale, Syringe, 
-  Heart, Baby, Milk, Shield, Camera, Trash2, Edit2, Calendar
+  Heart, Baby, Milk, Shield, Camera, Trash2, Edit2, Calendar, Stethoscope
 } from 'lucide-react-native';
 import api from '../api';
 import { getFromCache } from '../utils/cache';
@@ -102,14 +102,19 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [deathReason, setDeathReason] = useState(existingAnimal.deathReason || '');
   const [soldDate, setSoldDate] = useState(existingAnimal.soldAt || '');
   const [sellingPrice, setSellingPrice] = useState(existingAnimal.salePrice?.toString() || '');
+  const [saleDiscount, setSaleDiscount] = useState(existingAnimal.saleDiscount?.toString() || '');
+  const [saleWeight, setSaleWeight] = useState(existingAnimal.saleWeight?.toString() || existingAnimal.currentWeight?.toString() || '');
   const [soldRemark, setSoldRemark] = useState(existingAnimal.soldRemark || '');
   
   // Insurance specific (UI only for now)
   const [insuranceCompany, setInsuranceCompany] = useState('');
   const [planName, setPlanName] = useState('');
   
-  const [policyNumber, setPolicyNumber] = useState('');
-  const [agentName, setAgentName] = useState('');
+  const [policyStartDate, setPolicyStartDate] = useState(existingAnimal?.Insurance?.policyStartDate || '');
+  const [policyExpiryDate, setPolicyExpiryDate] = useState(existingAnimal?.Insurance?.policyExpiryDate || '');
+
+  const [treatmentExpanded, setTreatmentExpanded] = useState(false);
+  const [treatmentRecord, setTreatmentRecord] = useState(existingAnimal?.treatmentRecord || '');
 
   // UI state
   const [allBreeds, setAllBreeds] = useState([]);
@@ -165,6 +170,9 @@ const AddAnimalScreen = ({ navigation, route }) => {
       setWeightsLoading(true);
       const res = await api.get(`/weights?animalId=${existingAnimal.id}`);
       setWeights(res.data);
+      if (res.data && res.data.length > 0 && !saleWeight) {
+        setSaleWeight(res.data[0].weight?.toString() || '');
+      }
     } catch (err) {
       console.error('Fetch Weights Error:', err);
     } finally {
@@ -400,6 +408,11 @@ const AddAnimalScreen = ({ navigation, route }) => {
         soldAt: status === 'Sold' ? soldDate : null,
         soldRemark: status === 'Sold' ? soldRemark : null,
         salePrice: status === 'Sold' ? (parseFloat(sellingPrice) || null) : (isReadyForSale ? (parseFloat(salePrice) || null) : null),
+        saleWeight: status === 'Sold' ? (parseFloat(saleWeight) || null) : null,
+        saleDiscount: status === 'Sold' ? (parseFloat(saleDiscount) || null) : null,
+        netSalePrice: status === 'Sold' ? ((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) : null,
+        saleRate: status === 'Sold' ? (parseFloat(saleWeight) > 0 ? (((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) / parseFloat(saleWeight)) : null) : null,
+        treatmentRecord: treatmentRecord || null,
       };
 
       if (isEditing) {
@@ -804,6 +817,40 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       containerStyle={{ flex: 1 }}
                     />
                   </View>
+                  <View style={styles.row}>
+                    <GInput 
+                      label="Discount (Rs.)" 
+                      placeholder="Discount" 
+                      value={saleDiscount} 
+                      onChangeText={setSaleDiscount} 
+                      keyboardType="numeric"
+                      containerStyle={{ flex: 1, marginRight: 12 }}
+                    />
+                    <GInput 
+                      label="Weight (KG)" 
+                      placeholder="Weight" 
+                      value={saleWeight} 
+                      onChangeText={setSaleWeight} 
+                      keyboardType="numeric"
+                      containerStyle={{ flex: 1 }}
+                    />
+                  </View>
+
+                  <View style={[styles.row, { marginBottom: 16, padding: 12, backgroundColor: isDarkMode ? theme.colors.surface : '#F9F9F9', borderRadius: 8 }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, color: theme.colors.textMuted, marginBottom: 4 }}>Net Price (Rs.)</Text>
+                      <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: theme.colors.primary }}>
+                        {((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)).toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, color: theme.colors.textMuted, marginBottom: 4 }}>Sale Rate (Rs./KG)</Text>
+                      <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: theme.colors.primary }}>
+                        {parseFloat(saleWeight) > 0 ? (((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) / parseFloat(saleWeight)).toFixed(2) : '0.00'}
+                      </Text>
+                    </View>
+                  </View>
+
                   <GInput 
                     containerStyle={styles.fullWidthField}
                     label="Remark" 
@@ -1107,23 +1154,15 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           value={femaleCondition} 
                           onSelect={(val) => {
                             setFemaleCondition(val);
-                            if (val === 'MATED') setExpectedDeliveryDate('');
-                            if (val === 'PREGNANT') setMatingDate('');
+                            if (val !== 'PREGNANT') setExpectedDeliveryDate('');
                           }}
                           options={[
-                            { label: 'Mated', value: 'MATED' },
+                            { label: 'Kid', value: 'KID' },
+                            { label: 'Empty', value: 'EMPTY' },
                             { label: 'Pregnant', value: 'PREGNANT' }
                           ]}
                           placeholder="Select"
                         />
-                        {femaleCondition === 'MATED' && (
-                          <GDatePicker 
-                            containerStyle={styles.fullWidthField}
-                            label="Mating Date" 
-                            value={matingDate} 
-                            onDateChange={setMatingDate}
-                          />
-                        )}
                         {femaleCondition === 'PREGNANT' && (
                           <GDatePicker 
                             containerStyle={styles.fullWidthField}
@@ -1456,38 +1495,70 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 {insuranceExpanded && (
                   <View style={styles.sectionContent}>
                     <View style={styles.formContainer}>
-                      <View style={styles.row}>
-                        <GInput 
-                          containerStyle={styles.halfWidth}
-                          label="Insurance Company" 
-                          placeholder="Company Name" 
-                          value={insuranceCompany}
-                          onChangeText={setInsuranceCompany}
-                        />
-                        <GInput 
-                          containerStyle={styles.halfWidth}
-                          label="Plan Name" 
-                          placeholder="Plan Name" 
-                          value={planName}
-                          onChangeText={setPlanName}
-                        />
-                      </View>
-                      <View style={styles.row}>
-                        <GInput 
-                          containerStyle={styles.halfWidth}
-                          label="Policy Number" 
-                          placeholder="Policy No" 
-                          value={policyNumber}
-                          onChangeText={setPolicyNumber}
-                        />
-                        <GInput 
-                          containerStyle={styles.halfWidth}
-                          label="Agent Name" 
-                          placeholder="Agent Name" 
-                          value={agentName}
-                          onChangeText={setAgentName}
-                        />
-                      </View>
+                      <GInput 
+                        containerStyle={styles.fullWidthField}
+                        label="Insurance Company" 
+                        placeholder="Company Name" 
+                        value={insuranceCompany}
+                        onChangeText={setInsuranceCompany}
+                      />
+                      <GInput 
+                        containerStyle={styles.fullWidthField}
+                        label="Plan Name" 
+                        placeholder="Plan Name" 
+                        value={planName}
+                        onChangeText={setPlanName}
+                      />
+                      <GDatePicker 
+                        containerStyle={styles.fullWidthField}
+                        label="Policy Start Date" 
+                        placeholder="Start Date" 
+                        value={policyStartDate}
+                        onDateChange={setPolicyStartDate}
+                      />
+                      <GDatePicker 
+                        containerStyle={styles.fullWidthField}
+                        label="Policy Expiry Date" 
+                        placeholder="Expiry Date" 
+                        value={policyExpiryDate}
+                        onDateChange={setPolicyExpiryDate}
+                      />
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* TREATMENT RECORDS */}
+              <View style={styles.sectionCard}>
+                <TouchableOpacity 
+                  style={[styles.sectionHeader, treatmentExpanded && styles.sectionHeaderBorder]}
+                  activeOpacity={0.7}
+                  onPress={() => setTreatmentExpanded(!treatmentExpanded)}
+                >
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Stethoscope size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Treatment Records</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Treatment Records?', 'Maintain a log of any medical treatments, illnesses, or procedures for this animal. You can type notes freely here.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
+                  {treatmentExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
+
+                {treatmentExpanded && (
+                  <View style={styles.sectionContent}>
+                    <View style={styles.formContainer}>
+                      <GInput 
+                        containerStyle={styles.fullWidthField}
+                        label="Treatment Notes" 
+                        value={treatmentRecord} 
+                        onChangeText={setTreatmentRecord} 
+                        placeholder="e.g. Treated for fever on 10 May..."
+                        multiline
+                        style={{ minHeight: 80, paddingTop: 12, color: theme.colors.text }}
+                      />
                     </View>
                   </View>
                 )}

@@ -114,11 +114,16 @@ PENDING PENDING
     enum_animals_status status 
     Boolean is_ready_for_sale "❓"
     Decimal sale_price "❓"
+    Decimal sale_weight "❓"
+    Decimal sale_discount "❓"
+    Decimal net_sale_price "❓"
+    Decimal sale_rate "❓"
     Decimal current_weight "❓"
     String remark "❓"
     String teeth_stage "❓"
     Decimal purchase_weight "❓"
     Decimal landing_cost "❓"
+    String treatment_record "❓"
     DateTime created_at 
     DateTime updated_at 
     String image_url "❓"

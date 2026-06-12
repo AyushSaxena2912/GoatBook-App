@@ -55,10 +55,19 @@ exports.getAnimals = async (req, res) => {
       expectedDeliveryDate: a.expected_delivery_date,
       birthType: a.birth_type,
       status: a.status,
+      deathDate: a.death_date,
+      deathReason: a.death_reason,
+      soldAt: a.sold_at,
+      soldRemark: a.sold_remark,
       isReadyForSale: a.is_ready_for_sale,
       salePrice: a.sale_price,
+      saleWeight: a.sale_weight,
+      saleDiscount: a.sale_discount,
+      netSalePrice: a.net_sale_price,
+      saleRate: a.sale_rate,
       currentWeight: a.current_weight,
       remark: a.remark,
+      treatmentRecord: a.treatment_record,
       imageUrl: a.image_url,
       teethStage: a.teeth_stage,
       purchaseWeight: a.purchase_weight,
@@ -90,7 +99,8 @@ exports.addAnimal = async (req, res) => {
     status, isReadyForSale, currentWeight, salePrice, imageUrl,
     teethStage, purchaseWeight, landingCost,
     deathDate, deathReason,
-    soldAt, soldRemark
+    soldAt, soldRemark, treatmentRecord,
+    saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
   
   try {
@@ -180,8 +190,13 @@ exports.addAnimal = async (req, res) => {
         sold_remark: soldRemark || null,
         is_ready_for_sale: isReadyForSale || false,
         current_weight: isReadyForSale ? currentWeight : null,
-        sale_price: isReadyForSale ? salePrice : null,
+        sale_price: isReadyForSale ? salePrice : (status?.toUpperCase() === 'SOLD' ? salePrice : null),
+        sale_weight: status?.toUpperCase() === 'SOLD' ? saleWeight : null,
+        sale_discount: status?.toUpperCase() === 'SOLD' ? saleDiscount : null,
+        net_sale_price: status?.toUpperCase() === 'SOLD' ? netSalePrice : null,
+        sale_rate: status?.toUpperCase() === 'SOLD' ? saleRate : null,
         remark,
+        treatment_record: treatmentRecord || null,
         image_url: imageUrl || null,
         created_at: now,
         updated_at: now
@@ -233,11 +248,17 @@ exports.getAnimal = async (req, res) => {
       deathReason: animal.death_reason,
       soldAt: animal.sold_at,
       soldRemark: animal.sold_remark,
+      saleWeight: animal.sale_weight,
+      saleDiscount: animal.sale_discount,
+      netSalePrice: animal.net_sale_price,
+      saleRate: animal.sale_rate,
+      salePrice: animal.sale_price,
       isReadyForSale: animal.is_ready_for_sale,
       teethStage: animal.teeth_stage,
       purchaseWeight: animal.purchase_weight,
       landingCost: animal.landing_cost,
       remark: animal.remark,
+      treatmentRecord: animal.treatment_record,
       imageUrl: animal.image_url,
       Breed: animal.breeds,
       Location: animal.locations,
@@ -261,7 +282,8 @@ exports.updateAnimal = async (req, res) => {
     status, isReadyForSale, currentWeight, salePrice, imageUrl,
     teethStage, purchaseWeight, landingCost,
     deathDate, deathReason,
-    soldAt, soldRemark
+    soldAt, soldRemark, treatmentRecord,
+    saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
   
   try {
@@ -317,8 +339,13 @@ exports.updateAnimal = async (req, res) => {
         sold_remark: soldRemark !== undefined ? soldRemark : (status?.toUpperCase() === 'LIVE' ? null : animal.sold_remark),
         is_ready_for_sale: isReadyForSale !== undefined ? isReadyForSale : animal.is_ready_for_sale,
         current_weight: isReadyForSale ? currentWeight : null,
-        sale_price: isReadyForSale ? salePrice : null,
+        sale_price: isReadyForSale ? salePrice : (status?.toUpperCase() === 'SOLD' ? salePrice : animal.sale_price),
+        sale_weight: status?.toUpperCase() === 'SOLD' ? saleWeight : animal.sale_weight,
+        sale_discount: status?.toUpperCase() === 'SOLD' ? saleDiscount : animal.sale_discount,
+        net_sale_price: status?.toUpperCase() === 'SOLD' ? netSalePrice : animal.net_sale_price,
+        sale_rate: status?.toUpperCase() === 'SOLD' ? saleRate : animal.sale_rate,
         remark,
+        treatment_record: treatmentRecord !== undefined ? treatmentRecord : animal.treatment_record,
         image_url: imageUrl !== undefined ? imageUrl : animal.image_url,
         updated_by_user_id: req.user.id,
         updated_at: new Date()

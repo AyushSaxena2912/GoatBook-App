@@ -68,13 +68,13 @@ const AnimalListScreen = ({ navigation, route }) => {
       });
     }
 
-    // Search query filter
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       result = result.filter(animal => 
         animal.tagNumber.toLowerCase().includes(q) ||
         (animal.Breed?.name && animal.Breed.name.toLowerCase().includes(q)) ||
-        (animal.Location?.name && animal.Location.name.toLowerCase().includes(q))
+        (animal.Location?.name && animal.Location.name.toLowerCase().includes(q)) ||
+        (animal.gender && animal.gender.toLowerCase().startsWith(q))
       );
     }
     
@@ -297,7 +297,7 @@ const AnimalListScreen = ({ navigation, route }) => {
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search tag, breed or location..."
+              placeholder="Search tag, breed, location or gender..."
               placeholderTextColor={theme.colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
