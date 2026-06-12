@@ -34,6 +34,26 @@ export const generateInvoice = async (animal, soldRecord, farm) => {
       logoHtml = `<img src="${farm.logoUrl}" style="max-height: 80px; margin-bottom: 10px;" />`;
     }
 
+    let vaccinationsHtml = '';
+    if (animal.vaccinations && animal.vaccinations.length > 0) {
+      const vaxRows = animal.vaccinations.map(v => {
+        const vDate = new Date(v.date).toLocaleDateString('en-GB');
+        const vName = v.vaccine?.name || 'Vaccine';
+        const dueStr = v.nextDueDate ? ` (Due: ${new Date(v.nextDueDate).toLocaleDateString('en-GB')})` : '';
+        return `<div class="customer-line">
+                  <div class="customer-label" style="width: 100px;">${vDate}</div>
+                  <div class="customer-value">${vName}${dueStr}</div>
+                </div>`;
+      }).join('');
+      
+      vaccinationsHtml = `
+        <div class="customer-details" style="margin-top: -10px;">
+          <h4 style="color: #ea580c; margin-bottom: 5px;">Vaccination History</h4>
+          ${vaxRows}
+        </div>
+      `;
+    }
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -215,6 +235,8 @@ export const generateInvoice = async (animal, soldRecord, farm) => {
             <div class="customer-value"></div>
           </div>
         </div>
+        
+        ${vaccinationsHtml}
         
         <table>
           <thead>

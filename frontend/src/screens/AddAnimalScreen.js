@@ -875,13 +875,17 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         let breedName = 'N/A';
                         if (existingAnimal?.breed?.name) {
                           breedName = existingAnimal.breed.name;
+                        } else if (breedId) {
+                          const selectedBreed = allBreeds.find(b => b.id === breedId);
+                          if (selectedBreed) breedName = selectedBreed.name;
                         }
                         
                         const animalData = {
                           tagNumber,
                           animalType,
                           gender,
-                          breed: { name: breedName }
+                          breed: { name: breedName },
+                          vaccinations: vaccinations || []
                         };
                         
                         const soldData = {
