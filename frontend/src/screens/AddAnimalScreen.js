@@ -106,6 +106,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [sellingPrice, setSellingPrice] = useState(existingAnimal.salePrice?.toString() || '');
   const [saleDiscount, setSaleDiscount] = useState(existingAnimal.saleDiscount?.toString() || '');
   const [saleWeight, setSaleWeight] = useState(existingAnimal.saleWeight?.toString() || existingAnimal.currentWeight?.toString() || '');
+  const [saleRate, setSaleRate] = useState(() => {
+    if (existingAnimal.salePrice && existingAnimal.saleWeight) {
+      return (parseFloat(existingAnimal.salePrice) / parseFloat(existingAnimal.saleWeight)).toFixed(2).replace(/\.00$/, '');
+    }
+    return '';
+  });
   const [soldRemark, setSoldRemark] = useState(existingAnimal.soldRemark || '');
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   
@@ -814,10 +820,45 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       containerStyle={{ flex: 1, marginRight: 12 }}
                     />
                     <GInput 
+                      label="Weight (KG)" 
+                      placeholder="Weight" 
+                      value={saleWeight} 
+                      onChangeText={(val) => {
+                        setSaleWeight(val);
+                        if (val && saleRate) {
+                          setSellingPrice((parseFloat(val) * parseFloat(saleRate)).toFixed(2).replace(/\.00$/, ''));
+                        } else if (val && sellingPrice && parseFloat(val) > 0) {
+                          setSaleRate((parseFloat(sellingPrice) / parseFloat(val)).toFixed(2).replace(/\.00$/, ''));
+                        }
+                      }} 
+                      keyboardType="numeric"
+                      containerStyle={{ flex: 1 }}
+                    />
+                  </View>
+                  <View style={styles.row}>
+                    <GInput 
+                      label="Sale Rate (Rs./KG)" 
+                      placeholder="Rate" 
+                      value={saleRate} 
+                      onChangeText={(val) => {
+                        setSaleRate(val);
+                        if (val && saleWeight) {
+                          setSellingPrice((parseFloat(val) * parseFloat(saleWeight)).toFixed(2).replace(/\.00$/, ''));
+                        }
+                      }} 
+                      keyboardType="numeric"
+                      containerStyle={{ flex: 1, marginRight: 12 }}
+                    />
+                    <GInput 
                       label="Sale Price (Rs.)*" 
-                      placeholder="Selling Price" 
+                      placeholder="Total Price" 
                       value={sellingPrice} 
-                      onChangeText={setSellingPrice} 
+                      onChangeText={(val) => {
+                        setSellingPrice(val);
+                        if (val && saleWeight && parseFloat(saleWeight) > 0) {
+                          setSaleRate((parseFloat(val) / parseFloat(saleWeight)).toFixed(2).replace(/\.00$/, ''));
+                        }
+                      }} 
                       keyboardType="numeric"
                       containerStyle={{ flex: 1 }}
                     />
@@ -831,27 +872,16 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       keyboardType="numeric"
                       containerStyle={{ flex: 1, marginRight: 12 }}
                     />
-                    <GInput 
-                      label="Weight (KG)" 
-                      placeholder="Weight" 
-                      value={saleWeight} 
-                      onChangeText={setSaleWeight} 
-                      keyboardType="numeric"
-                      containerStyle={{ flex: 1 }}
-                    />
+                    <View style={{ flex: 1 }}>
+                       {/* Empty flex slot to align Discount on the left */}
+                    </View>
                   </View>
 
                   <View style={[styles.row, { marginBottom: 16, padding: 12, backgroundColor: isDarkMode ? theme.colors.surface : '#F9F9F9', borderRadius: 8 }]}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 12, color: theme.colors.textMuted, marginBottom: 4 }}>Net Price (Rs.)</Text>
                       <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: theme.colors.primary }}>
-                        {((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)).toFixed(2)}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, color: theme.colors.textMuted, marginBottom: 4 }}>Sale Rate (Rs./KG)</Text>
-                      <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: theme.colors.primary }}>
-                        {parseFloat(saleWeight) > 0 ? ((parseFloat(sellingPrice) || 0) / parseFloat(saleWeight)).toFixed(2) : '0.00'}
+                        {((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)).toFixed(2).replace(/\.00$/, '')}
                       </Text>
                     </View>
                   </View>
@@ -863,7 +893,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     value={soldRemark} 
                     onChangeText={setSoldRemark} 
                   />
-                  
                   <GButton 
                     title="Generate Invoice" 
                     onPress={async () => {
@@ -893,6 +922,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           price: sellingPrice,
                           discount: saleDiscount,
                           weight: saleWeight,
+                          rate: saleRate,
                           netPrice: ((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)).toFixed(2)
                         };
                         

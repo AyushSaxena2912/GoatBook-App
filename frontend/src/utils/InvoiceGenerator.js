@@ -256,8 +256,8 @@ export const generateInvoice = async (animal, soldRecord, farm) => {
                 <small style="color: #666">Breed: ${animal.breed?.name || 'N/A'} | Gender: ${animal.gender || 'N/A'}</small>
               </td>
               <td class="text-center">${soldRecord.weight ? soldRecord.weight + ' KG' : '1'}</td>
+              <td class="text-right">${soldRecord.rate || soldRecord.price || '0.00'}</td>
               <td class="text-right">${soldRecord.price || '0.00'}</td>
-              <td class="text-right">${soldRecord.netPrice || soldRecord.price || '0.00'}</td>
             </tr>
             <!-- Fill empty rows to make it look like a physical bill block -->
             <tr><td style="color:transparent">.</td><td></td><td></td><td></td><td></td></tr>
