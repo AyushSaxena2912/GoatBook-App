@@ -23,9 +23,9 @@ exports.getProfile = async (req, res) => {
     const farms = ep?.farm_employees?.map(fe => fe.farms) || []; // Extract farm objects
 
     res.json({
-      id: user.id, 
-      name: user.name, 
-      email: user.email, 
+      id: user.id,
+      name: user.name,
+      email: user.email,
       phone: user.phone,
       profilePhotoUrl: user.profile_photo_url || null,
       employeeProfile: ep ? { id: ep.id, employeeType: ep.employee_type, farms } : null
@@ -49,22 +49,22 @@ exports.updateProfile = async (req, res) => {
     const updated = await prisma.users.update({
       where: { id: req.user.id },
       data: {
-        name: name || user.name, 
+        name: name || user.name,
         // Only OWNER can update their own email/phone via this endpoint (usually they are the ones who created the farm)
         // Others cannot change their own sensitive info
         email: isOwner ? (email === "" ? null : (email || user.email)) : user.email,
         phone: isOwner ? (phone || user.phone) : user.phone,
         profile_photo_url: profilePhotoUrl !== undefined ? profilePhotoUrl : user.profile_photo_url,
-        updated_by_user_id: req.user.id, 
+        updated_by_user_id: req.user.id,
         updated_at: new Date()
       }
     });
 
     // Cleanup Cloudinary profile photo if it was replaced or removed
     if (profilePhotoUrl !== undefined && profilePhotoUrl !== user.profile_photo_url) {
-        if (user.profile_photo_url) {
-            deleteImage(user.profile_photo_url).catch(err => console.error('Cloudinary Profile Cleanup Error:', err));
-        }
+      if (user.profile_photo_url) {
+        deleteImage(user.profile_photo_url).catch(err => console.error('Cloudinary Profile Cleanup Error:', err));
+      }
     }
 
     res.json({ id: updated.id, name: updated.name, email: updated.email, phone: updated.phone, profilePhotoUrl: updated.profile_photo_url });
@@ -81,19 +81,19 @@ exports.createEmployee = async (req, res) => {
   try {
     // 0. SaaS Plan Limits Check: Basic plan is single user only
     if (req.subscription && req.subscription.plan_name === 'BASIC') {
-        return res.status(403).json({ 
-            message: 'Basic plan is limited to Single User Access. Please upgrade your plan to add staff members.',
-            code: 'LIMIT_EXCEEDED'
-        });
+      return res.status(403).json({
+        message: 'Basic plan is limited to Single User Access. Please upgrade your plan to add staff members.',
+        code: 'LIMIT_EXCEEDED'
+      });
     }
 
     // 1. Authorization: Only 'OWNER' role can hire/create new employee accounts
     if (req.employee.employee_type !== 'OWNER') return res.status(403).json({ message: 'Only farm owners can create employees' });
-    
+
     if (!email || !password) return res.status(400).json({ message: 'Email and temporary password are required' });
-    
+
     console.log('--- Create Employee Attempt ---', { name, email, phone: req.body.phone, role });
-    
+
     // 2. Uniqueness Check: Email or Phone must not already be in our system
     const existingUser = await prisma.users.findFirst({
       where: {
@@ -106,12 +106,12 @@ exports.createEmployee = async (req, res) => {
 
     if (existingUser) {
       console.log('Conflict: User already exists with this email or phone.');
-      const conflictMsg = (email && existingUser.email === email) 
-        ? 'A user with this email already exists' 
+      const conflictMsg = (email && existingUser.email === email)
+        ? 'A user with this email already exists'
         : 'A user with this phone number already exists';
       return res.status(400).json({ message: conflictMsg });
     }
-    
+
     if (!req.farmId) return res.status(400).json({ message: 'No active farm context' });
     console.log('Uniqueness check passed, starting transaction...');
 
@@ -122,29 +122,29 @@ exports.createEmployee = async (req, res) => {
     console.log('Context check:', { userId: req.user.id, farmId: req.farmId });
     await prisma.$transaction(async (tx) => {
       // Create global user record
-      const user = await tx.users.create({ 
-        data: { 
-          id: uuidv4(), 
-          name, 
-          email: email || null, 
-          phone: req.body.phone || null, 
-          password: hashedPassword, 
-          created_by_user_id: req.user.id, 
-          created_at: now, 
-          updated_at: now 
-        } 
+      const user = await tx.users.create({
+        data: {
+          id: uuidv4(),
+          name,
+          email: email || null,
+          phone: req.body.phone || null,
+          password: hashedPassword,
+          created_by_user_id: req.user.id,
+          created_at: now,
+          updated_at: now
+        }
       });
       console.log('User created:', user.id);
 
       // Create employee identity record
-      const employee = await tx.employees.create({ 
-        data: { id: uuidv4(), user_id: user.id, employee_type: role || 'EMPLOYEE', state: req.body.state || 'Working', created_by_user_id: req.user.id, created_at: now, updated_at: now } 
+      const employee = await tx.employees.create({
+        data: { id: uuidv4(), user_id: user.id, employee_type: role || 'EMPLOYEE', state: req.body.state || 'Working', created_by_user_id: req.user.id, created_at: now, updated_at: now }
       });
       console.log('Employee created:', employee.id);
 
       // Link the new employee to the current farm context
-      await tx.farm_employees.create({ 
-        data: { id: uuidv4(), farm_id: req.farmId, employee_id: employee.id, created_by_user_id: req.user.id, created_at: now, updated_at: now } 
+      await tx.farm_employees.create({
+        data: { id: uuidv4(), farm_id: req.farmId, employee_id: employee.id, created_by_user_id: req.user.id, created_at: now, updated_at: now }
       });
       console.log('Farm-Employee link created.');
     });
@@ -168,7 +168,7 @@ exports.updateEmployee = async (req, res) => {
   const { name, role, email, phone, profilePhotoUrl } = req.body;
   try {
     if (req.employee.employee_type !== 'OWNER') return res.status(403).json({ message: 'Permission denied' });
-    
+
     const employee = await prisma.employees.findUnique({ where: { id: req.params.id }, include: { users: true } });
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
 
@@ -177,30 +177,30 @@ exports.updateEmployee = async (req, res) => {
     if (ownedFarm && role && role !== 'OWNER') return res.status(403).json({ message: 'The primary owner role cannot be changed' });
 
     // Update the functional role and state
-    await prisma.employees.update({ 
-      where: { id: req.params.id }, 
-      data: { employee_type: role || employee.employee_type, state: req.body.state || employee.state, updated_by_user_id: req.user.id, updated_at: new Date() } 
+    await prisma.employees.update({
+      where: { id: req.params.id },
+      data: { employee_type: role || employee.employee_type, state: req.body.state || employee.state, updated_by_user_id: req.user.id, updated_at: new Date() }
     });
 
     // Update the human name and contact info if provided
     if (name || email !== undefined || phone !== undefined || profilePhotoUrl !== undefined) {
-      await prisma.users.update({ 
-        where: { id: employee.user_id }, 
-        data: { 
+      await prisma.users.update({
+        where: { id: employee.user_id },
+        data: {
           name: name || employee.users.name,
           email: email === "" ? null : (email || employee.users.email),
           phone: phone || employee.users.phone,
           profile_photo_url: profilePhotoUrl !== undefined ? profilePhotoUrl : employee.users.profile_photo_url,
-          updated_by_user_id: req.user.id, 
-          updated_at: new Date() 
-        } 
+          updated_by_user_id: req.user.id,
+          updated_at: new Date()
+        }
       });
 
       // Cleanup Cloudinary profile photo if it was replaced or removed by owner
       if (profilePhotoUrl !== undefined && profilePhotoUrl !== employee.users.profile_photo_url) {
-          if (employee.users.profile_photo_url) {
-              deleteImage(employee.users.profile_photo_url).catch(err => console.error('Cloudinary Employee Cleanup Error:', err));
-          }
+        if (employee.users.profile_photo_url) {
+          deleteImage(employee.users.profile_photo_url).catch(err => console.error('Cloudinary Employee Cleanup Error:', err));
+        }
       }
     }
 
@@ -217,19 +217,19 @@ exports.resetEmployeePassword = async (req, res) => {
   const { newPassword } = req.body;
   try {
     if (req.employee.employee_type !== 'OWNER') return res.status(403).json({ message: 'Only owners can reset staff passwords' });
-    
+
     const employee = await prisma.employees.findUnique({ where: { id: req.params.id } });
     if (!employee) return res.status(404).json({ message: 'Employee record not found' });
-    
+
     const hashed = await hashPassword(newPassword);
-    await prisma.users.update({ 
-      where: { id: employee.user_id }, 
-      data: { password: hashed, updated_by_user_id: req.user.id, updated_at: new Date() } 
+    await prisma.users.update({
+      where: { id: employee.user_id },
+      data: { password: hashed, updated_by_user_id: req.user.id, updated_at: new Date() }
     });
-    
+
     res.json({ message: 'Staff password has been reset successfully' });
-  } catch (err) { 
-    res.status(500).json({ message: 'Server Error' }); 
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
   }
 };
 
@@ -239,7 +239,7 @@ exports.updateEmployeeStatus = async (req, res) => {
   const { state } = req.body;
   try {
     if (req.employee.employee_type !== 'OWNER') return res.status(403).json({ message: 'Permission denied' });
-    
+
     if (!['Working', 'Terminated'].includes(state)) {
       return res.status(400).json({ message: 'Invalid state. Must be Working or Terminated.' });
     }
@@ -255,7 +255,7 @@ exports.updateEmployeeStatus = async (req, res) => {
 
     await prisma.employees.update({
       where: { id: req.params.id },
-      data: { 
+      data: {
         state,
         updated_by_user_id: req.user.id,
         updated_at: new Date()
@@ -274,29 +274,29 @@ exports.updateEmployeeStatus = async (req, res) => {
 exports.getEmployees = async (req, res) => {
   try {
     if (!req.farmId) return res.status(400).json({ message: 'No farm selected' });
-    
+
     // Fetch all staff members linked to the active farm ID
     const farmEmployees = await prisma.farm_employees.findMany({
       where: { farm_id: req.farmId },
-      include: { 
-        employees: { 
-          include: { 
-            users: { select: { id: true, name: true, email: true, phone: true, profile_photo_url: true } } 
-          } 
-        } 
+      include: {
+        employees: {
+          include: {
+            users: { select: { id: true, name: true, email: true, phone: true, profile_photo_url: true } }
+          }
+        }
       }
     });
 
     res.json(farmEmployees.map(fe => {
       const emp = fe.employees;
       if (!emp) return null;
-      
+
       const user = emp.users;
-      return { 
-        id: emp.id, 
-        name: user?.name || 'Staff Member', 
-        email: user?.email || 'N/A', 
-        phone: user?.phone || 'N/A', 
+      return {
+        id: emp.id,
+        name: user?.name || 'Staff Member',
+        email: user?.email || 'N/A',
+        phone: user?.phone || 'N/A',
         role: emp.employee_type,
         state: emp.state,
         profilePhotoUrl: user?.profile_photo_url || null
@@ -315,17 +315,17 @@ exports.changePassword = async (req, res) => {
   try {
     const user = await prisma.users.findUnique({ where: { id: req.user.id } });
     if (!user) return res.status(404).json({ message: 'User database record not found' });
-    
+
     // Authenticate the user with their old password first
     const isMatch = await comparePassword(currentPassword, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Current password verification failed. Please try again.' });
-    
+
     const hashed = await hashPassword(newPassword);
-    await prisma.users.update({ 
-      where: { id: req.user.id }, 
-      data: { password: hashed, updated_by_user_id: req.user.id, updated_at: new Date() } 
+    await prisma.users.update({
+      where: { id: req.user.id },
+      data: { password: hashed, updated_by_user_id: req.user.id, updated_at: new Date() }
     });
-    
+
     res.json({ message: 'Your password has been changed successfully' });
   } catch (err) {
     console.error('CHANGE PASSWORD ERROR:', err);
@@ -336,13 +336,18 @@ exports.changePassword = async (req, res) => {
 // @desc    Update user's expo push token
 // @route   POST /api/users/push-token
 exports.updatePushToken = async (req, res) => {
+  console.log("=== PUSH TOKEN API HIT ===");
+
+  console.log("User ID:", req.user?.id);
+
+  console.log("Body:", req.body);
   const { pushToken } = req.body;
   try {
     if (!pushToken) return res.status(400).json({ message: 'Push token is required' });
 
     await prisma.users.update({
       where: { id: req.user.id },
-      data: { 
+      data: {
         push_token: pushToken,
         updated_at: new Date()
       }
