@@ -2,6 +2,7 @@ const prisma = require('../../config/prisma');
 const { hashPassword, comparePassword } = require('../../utils/password');
 const { v4: uuidv4 } = require('uuid');
 const { deleteImage } = require('../../utils/cloudinary');
+const { sendNotification } = require('../../services/notification.service');
 
 // @desc    Get complete identity overview for the logged-in user
 // @route   GET /api/users/profile
@@ -336,7 +337,7 @@ exports.changePassword = async (req, res) => {
 // @desc    Update user's expo push token
 // @route   POST /api/users/push-token
 exports.updatePushToken = async (req, res) => {
-  console.log("=== PUSH TOKEN API HIT ===");
+  console.log("PUSH TOKEN API HIT");
 
   console.log("User ID:", req.user?.id);
 
@@ -357,5 +358,40 @@ exports.updatePushToken = async (req, res) => {
   } catch (err) {
     console.error('UPDATE PUSH TOKEN ERROR:', err);
     res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+exports.testNotification = async (req, res) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where: {
+        id: req.user.id
+      }
+    });
+
+    if (!user?.push_token) {
+      return res.status(400).json({
+        message: 'No push token found'
+      });
+    }
+
+    await sendNotification(
+      user.push_token,
+      'GoatBook 🐐',
+      'Notification system working successfully!'
+    );
+
+    return res.json({
+      success: true,
+      message: 'Notification sent'
+    });
+
+  } catch (error) {
+    console.error('TEST NOTIFICATION ERROR:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
   }
 };

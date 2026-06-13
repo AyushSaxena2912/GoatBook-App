@@ -4,5 +4,8 @@
   "scripts": {
     "start": "cd backend && npm start",
     "build": "cd backend && npm install && npx prisma generate"
+  },
+  "dependencies": {
+    "expo-server-sdk": "^6.1.0"
   }
 }

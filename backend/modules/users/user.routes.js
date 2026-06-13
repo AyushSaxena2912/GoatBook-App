@@ -14,6 +14,7 @@ router.post('/change-password', auth, userController.changePassword);
 
 // @route   POST api/users/push-token
 router.post('/push-token', auth, userController.updatePushToken);
+router.post('/test-notification', auth, userController.testNotification);
 
 // --- Employee Management (Owner Scoped) ---
 
