@@ -114,16 +114,8 @@ PENDING PENDING
     enum_animals_status status 
     Boolean is_ready_for_sale "❓"
     Decimal sale_price "❓"
-    Decimal sale_weight "❓"
-    Decimal sale_discount "❓"
-    Decimal net_sale_price "❓"
-    Decimal sale_rate "❓"
     Decimal current_weight "❓"
     String remark "❓"
-    String teeth_stage "❓"
-    Decimal purchase_weight "❓"
-    Decimal landing_cost "❓"
-    String treatment_record "❓"
     DateTime created_at 
     DateTime updated_at 
     String image_url "❓"
@@ -133,6 +125,14 @@ PENDING PENDING
     String sold_remark "❓"
     DateTime expected_delivery_date "❓"
     DateTime mating_date "❓"
+    String teeth_stage "❓"
+    Decimal landing_cost "❓"
+    Decimal purchase_weight "❓"
+    String treatment_record "❓"
+    Decimal net_sale_price "❓"
+    Decimal sale_discount "❓"
+    Decimal sale_rate "❓"
+    Decimal sale_weight "❓"
     }
   
 
@@ -172,18 +172,18 @@ PENDING PENDING
     String id "🗝️"
     String name 
     String location "❓"
-    String address "❓"
-    String city "❓"
-    String state "❓"
-    String country "❓"
-    String email "❓"
-    String phone "❓"
-    String phones "❓"
-    String logo_url "❓"
     String created_by_user_id "❓"
     String updated_by_user_id "❓"
     DateTime created_at 
     DateTime updated_at 
+    String address "❓"
+    String city "❓"
+    String country "❓"
+    String email "❓"
+    String phone "❓"
+    String state "❓"
+    String logo_url "❓"
+    String phones "❓"
     }
   
 
@@ -211,6 +211,7 @@ PENDING PENDING
     DateTime updated_at 
     String profile_photo_url "❓"
     String push_token "❓"
+    String language "❓"
     }
   
 
@@ -299,8 +300,8 @@ PENDING PENDING
     String message 
     DateTime remind_at 
     String status 
-    Boolean is_read 
     DateTime created_at 
+    Boolean is_read 
     }
   
 
@@ -331,10 +332,10 @@ PENDING PENDING
     enum_animals_birth_type birth_type 
     Int num_male 
     Int num_female 
-    Json kids_details "❓"
     String remark "❓"
     DateTime created_at 
     DateTime updated_at 
+    Json kids_details "❓"
     }
   
 
@@ -390,13 +391,13 @@ PENDING PENDING
     "matings" |o--|| "enum_mating_type" : "enum:mating_type"
     "matings" |o--|| "enum_mating_status" : "enum:status"
     "matings" }o--|| "animals" : "animals"
-    "matings" }o--|| "farms" : "farms"
     "matings" }o--|o "users" : "users_matings_created_by_user_idTousers"
+    "matings" }o--|| "farms" : "farms"
     "matings" }o--|o "users" : "users_matings_updated_by_user_idTousers"
     "breedings" |o--|| "enum_animals_birth_type" : "enum:birth_type"
     "breedings" }o--|| "animals" : "animals"
-    "breedings" }o--|| "farms" : "farms"
     "breedings" }o--|o "users" : "users_breedings_created_by_user_idTousers"
+    "breedings" }o--|| "farms" : "farms"
     "breedings" }o--|o "users" : "users_breedings_updated_by_user_idTousers"
     "subscriptions" |o--|| "enum_subscription_plan" : "enum:plan_name"
     "subscriptions" |o--|| "enum_subscription_status" : "enum:status"

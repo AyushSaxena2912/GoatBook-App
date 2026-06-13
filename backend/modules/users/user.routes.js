@@ -33,4 +33,7 @@ router.put('/employees/:id/status', auth, userController.updateEmployeeStatus);
 // @route   POST api/users/employees/:id/reset-password
 router.post('/employees/:id/reset-password', auth, userController.resetEmployeePassword);
 
+// @route  PATCH api/users/language
+router.patch('/language/', auth, userController.updateLanguage);
+
 module.exports = router;

@@ -38,18 +38,10 @@ model animals {
   status                                  enum_animals_status             @default(LIVE)
   is_ready_for_sale                       Boolean?                        @default(false)
   sale_price                              Decimal?                        @db.Decimal(10, 2)
-  sale_weight                             Decimal?                        @db.Decimal(6, 2)
-  sale_discount                           Decimal?                        @db.Decimal(10, 2)
-  net_sale_price                          Decimal?                        @db.Decimal(10, 2)
-  sale_rate                               Decimal?                        @db.Decimal(10, 2)
   current_weight                          Decimal?                        @db.Decimal(6, 2)
   remark                                  String?
-  teeth_stage                             String?                         @db.VarChar(255)
-  purchase_weight                         Decimal?                        @db.Decimal(6, 2)
-  landing_cost                            Decimal?                        @db.Decimal(10, 2)
   created_by_user_id                      String?                         @db.Uuid
   updated_by_user_id                      String?                         @db.Uuid
-  treatment_record                        String?
   created_at                              DateTime                        @default(now()) @db.Timestamptz(6)
   updated_at                              DateTime                        @updatedAt @db.Timestamptz(6)
   image_url                               String?
@@ -59,16 +51,24 @@ model animals {
   sold_remark                             String?
   expected_delivery_date                  DateTime?                       @db.Date
   mating_date                             DateTime?                       @db.Date
+  teeth_stage                             String?                         @db.VarChar(255)
+  landing_cost                            Decimal?                        @db.Decimal(10, 2)
+  purchase_weight                         Decimal?                        @db.Decimal(6, 2)
+  treatment_record                        String?
+  net_sale_price                          Decimal?                        @db.Decimal(10, 2)
+  sale_discount                           Decimal?                        @db.Decimal(10, 2)
+  sale_rate                               Decimal?                        @db.Decimal(10, 2)
+  sale_weight                             Decimal?                        @db.Decimal(6, 2)
   animal_transactions                     animal_transactions[]
   breeds                                  breeds                          @relation(fields: [breed_id], references: [id], onDelete: Cascade)
   users_animals_created_by_user_idTousers users?                          @relation("animals_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   farms                                   farms                           @relation(fields: [farm_id], references: [id], onDelete: Cascade)
   locations                               locations?                      @relation(fields: [location_id], references: [id])
   users_animals_updated_by_user_idTousers users?                          @relation("animals_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+  breedings                               breedings[]
+  matings                                 matings[]
   vaccination_records                     vaccination_records[]
   weights                                 weights[]
-  matings                                 matings[]
-  breedings                               breedings[]
 }
 
 model breeds {
@@ -83,14 +83,13 @@ model breeds {
   category                               String?   @db.VarChar(255)
   is_default                             Boolean   @default(false)
   origin                                 String?   @default("indian") @db.VarChar(50)
-
   animals                                animals[]
   users_breeds_created_by_user_idTousers users?    @relation("breeds_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   farms                                  farms?    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
   users_breeds_updated_by_user_idTousers users?    @relation("breeds_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 
-  @@index([origin])
   @@unique([farm_id, name, animal_type])
+  @@index([origin])
 }
 
 model employees {
@@ -125,30 +124,30 @@ model farms {
   id                  String                @id @db.Uuid
   name                String                @db.VarChar(255)
   location            String?               @db.VarChar(255)
-  address             String?               @db.Text
-  city                String?               @db.VarChar(255)
-  state               String?               @db.VarChar(255)
-  country             String?               @db.VarChar(255)
-  email               String?               @db.VarChar(255)
-  phone               String?               @db.VarChar(255)
-  phones              String?               @db.Text
-  logo_url            String?
   owner_employee_id   String                @db.Uuid
   created_by_user_id  String?               @db.Uuid
   updated_by_user_id  String?               @db.Uuid
   created_at          DateTime              @default(now()) @db.Timestamptz(6)
   updated_at          DateTime              @updatedAt @db.Timestamptz(6)
+  address             String?
+  city                String?               @db.VarChar(255)
+  country             String?               @db.VarChar(255)
+  email               String?               @db.VarChar(255)
+  phone               String?               @db.VarChar(255)
+  state               String?               @db.VarChar(255)
+  logo_url            String?
+  phones              String?
   animals             animals[]
+  breedings           breedings[]
   breeds              breeds[]
   farm_employees      farm_employees[]
   employees           employees             @relation(fields: [owner_employee_id], references: [id], onDelete: NoAction)
   locations           locations[]
+  matings             matings[]
+  subscription        subscriptions?
   vaccination_records vaccination_records[]
   vaccines            vaccines[]
   weights             weights[]
-  matings             matings[]
-  breedings           breedings[]
-  subscription        subscriptions?
 }
 
 model locations {
@@ -184,23 +183,24 @@ model users {
   updated_at                                                        DateTime              @default(now()) @updatedAt @db.Timestamptz(6)
   profile_photo_url                                                 String?
   push_token                                                        String?               @db.VarChar(511)
+  language                                                          String?               @default("en") @db.VarChar(20)
   animals_animals_created_by_user_idTousers                         animals[]             @relation("animals_created_by_user_idTousers")
   animals_animals_updated_by_user_idTousers                         animals[]             @relation("animals_updated_by_user_idTousers")
+  breedings_breedings_created_by_user_idTousers                     breedings[]           @relation("breedings_created_by_user_idTousers")
+  breedings_breedings_updated_by_user_idTousers                     breedings[]           @relation("breedings_updated_by_user_idTousers")
   breeds_breeds_created_by_user_idTousers                           breeds[]              @relation("breeds_created_by_user_idTousers")
   breeds_breeds_updated_by_user_idTousers                           breeds[]              @relation("breeds_updated_by_user_idTousers")
   employees                                                         employees[]
   locations_locations_created_by_user_idTousers                     locations[]           @relation("locations_created_by_user_idTousers")
   locations_locations_updated_by_user_idTousers                     locations[]           @relation("locations_updated_by_user_idTousers")
+  matings_matings_created_by_user_idTousers                         matings[]             @relation("matings_created_by_user_idTousers")
+  matings_matings_updated_by_user_idTousers                         matings[]             @relation("matings_updated_by_user_idTousers")
   vaccination_records_vaccination_records_created_by_user_idTousers vaccination_records[] @relation("vaccination_records_created_by_user_idTousers")
   vaccination_records_vaccination_records_updated_by_user_idTousers vaccination_records[] @relation("vaccination_records_updated_by_user_idTousers")
   vaccines_vaccines_created_by_user_idTousers                       vaccines[]            @relation("vaccines_created_by_user_idTousers")
   vaccines_vaccines_updated_by_user_idTousers                       vaccines[]            @relation("vaccines_updated_by_user_idTousers")
   weights_weights_created_by_user_idTousers                         weights[]             @relation("weights_created_by_user_idTousers")
   weights_weights_updated_by_user_idTousers                         weights[]             @relation("weights_updated_by_user_idTousers")
-  matings_matings_created_by_user_idTousers                         matings[]             @relation("matings_created_by_user_idTousers")
-  matings_matings_updated_by_user_idTousers                         matings[]             @relation("matings_updated_by_user_idTousers")
-  breedings_breedings_created_by_user_idTousers                     breedings[]           @relation("breedings_created_by_user_idTousers")
-  breedings_breedings_updated_by_user_idTousers                     breedings[]           @relation("breedings_updated_by_user_idTousers")
 }
 
 model vaccination_records {
@@ -306,6 +306,81 @@ model animal_transactions {
   animals           animals   @relation(fields: [animal_id], references: [id], onDelete: Cascade)
 }
 
+model reminders {
+  id                String   @id @db.Uuid
+  user_id           String   @db.Uuid
+  animal_id         String?  @db.Uuid
+  vaccine_record_id String?  @db.Uuid
+  title             String   @db.VarChar(255)
+  message           String
+  remind_at         DateTime @db.Timestamptz(6)
+  status            String   @default("PENDING") @db.VarChar(20)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  is_read           Boolean  @default(false)
+}
+
+model matings {
+  id                                      String             @id @db.Uuid
+  animal_id                               String             @db.Uuid
+  farm_id                                 String             @db.Uuid
+  mating_date                             DateTime           @db.Date
+  mating_type                             enum_mating_type
+  remark                                  String?
+  male_tag_id                             String?            @db.VarChar(255)
+  male_breed                              String?            @db.VarChar(255)
+  semen_id                                String?            @db.VarChar(255)
+  dose                                    String?            @db.VarChar(255)
+  technician                              String?            @db.VarChar(255)
+  time                                    String?            @db.VarChar(255)
+  embryo_id                               String?            @db.VarChar(255)
+  status                                  enum_mating_status @default(NOT_SUCCESSFUL)
+  expected_delivery_date                  DateTime?          @db.Date
+  miscarriage_date                        DateTime?          @db.Date
+  miscarriage_reason                      String?
+  created_by_user_id                      String?            @db.Uuid
+  updated_by_user_id                      String?            @db.Uuid
+  created_at                              DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime           @updatedAt @db.Timestamptz(6)
+  animals                                 animals            @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+  users_matings_created_by_user_idTousers users?             @relation("matings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                   farms              @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_matings_updated_by_user_idTousers users?             @relation("matings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model breedings {
+  id                                        String                  @id @db.Uuid
+  animal_id                                 String                  @db.Uuid
+  farm_id                                   String                  @db.Uuid
+  delivery_date                             DateTime                @db.Date
+  birth_type                                enum_animals_birth_type
+  num_male                                  Int                     @default(0)
+  num_female                                Int                     @default(0)
+  remark                                    String?
+  created_by_user_id                        String?                 @db.Uuid
+  updated_by_user_id                        String?                 @db.Uuid
+  created_at                                DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                                DateTime                @updatedAt @db.Timestamptz(6)
+  kids_details                              Json?
+  animals                                   animals                 @relation(fields: [animal_id], references: [id], onDelete: Cascade)
+  users_breedings_created_by_user_idTousers users?                  @relation("breedings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  farms                                     farms                   @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_breedings_updated_by_user_idTousers users?                  @relation("breedings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model subscriptions {
+  id                String                   @id @db.Uuid
+  farm_id           String                   @unique @db.Uuid
+  plan_name         enum_subscription_plan
+  status            enum_subscription_status @default(ACTIVE)
+  is_trial          Boolean                  @default(true)
+  start_date        DateTime                 @default(now()) @db.Timestamptz(6)
+  end_date          DateTime                 @db.Timestamptz(6)
+  cashfree_order_id String?                  @db.VarChar(255)
+  created_at        DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime                 @updatedAt @db.Timestamptz(6)
+  farms             farms                    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+}
+
 enum enum_animals_acquisition_method {
   BORN
   PURCHASED
@@ -351,19 +426,6 @@ enum enum_vaccination_records_creation_mode {
   MASS
 }
 
-model reminders {
-  id                 String   @id @db.Uuid
-  user_id            String   @db.Uuid
-  animal_id          String?  @db.Uuid
-  vaccine_record_id  String?  @db.Uuid
-  title              String   @db.VarChar(255)
-  message            String
-  remind_at          DateTime @db.Timestamptz(6)
-  status             String   @default("PENDING") @db.VarChar(20)
-  is_read            Boolean  @default(false)
-  created_at         DateTime @default(now()) @db.Timestamptz(6)
-}
-
 enum enum_mating_type {
   NATURAL
   AI
@@ -374,54 +436,6 @@ enum enum_mating_status {
   NOT_SUCCESSFUL
   PREGNANT
   MISCARRIAGE
-}
-
-model matings {
-  id                                      String             @id @db.Uuid
-  animal_id                               String             @db.Uuid
-  farm_id                                 String             @db.Uuid
-  mating_date                             DateTime           @db.Date
-  mating_type                             enum_mating_type
-  remark                                  String?
-  male_tag_id                             String?            @db.VarChar(255)
-  male_breed                              String?            @db.VarChar(255)
-  semen_id                                String?            @db.VarChar(255)
-  dose                                    String?            @db.VarChar(255)
-  technician                              String?            @db.VarChar(255)
-  time                                    String?            @db.VarChar(255)
-  embryo_id                               String?            @db.VarChar(255)
-  status                                  enum_mating_status @default(NOT_SUCCESSFUL)
-  expected_delivery_date                  DateTime?          @db.Date
-  miscarriage_date                        DateTime?          @db.Date
-  miscarriage_reason                      String?
-  created_by_user_id                      String?            @db.Uuid
-  updated_by_user_id                      String?            @db.Uuid
-  created_at                              DateTime           @default(now()) @db.Timestamptz(6)
-  updated_at                              DateTime           @updatedAt @db.Timestamptz(6)
-  animals                                 animals            @relation(fields: [animal_id], references: [id], onDelete: Cascade)
-  farms                                   farms              @relation(fields: [farm_id], references: [id], onDelete: Cascade)
-  users_matings_created_by_user_idTousers users?             @relation("matings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
-  users_matings_updated_by_user_idTousers users?             @relation("matings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
-}
-
-model breedings {
-  id                                        String                  @id @db.Uuid
-  animal_id                                 String                  @db.Uuid
-  farm_id                                   String                  @db.Uuid
-  delivery_date                             DateTime                @db.Date
-  birth_type                                enum_animals_birth_type
-  num_male                                  Int                     @default(0)
-  num_female                                Int                     @default(0)
-  kids_details                              Json?
-  remark                                    String?
-  created_by_user_id                        String?                 @db.Uuid
-  updated_by_user_id                        String?                 @db.Uuid
-  created_at                                DateTime                @default(now()) @db.Timestamptz(6)
-  updated_at                                DateTime                @updatedAt @db.Timestamptz(6)
-  animals                                   animals                 @relation(fields: [animal_id], references: [id], onDelete: Cascade)
-  farms                                     farms                   @relation(fields: [farm_id], references: [id], onDelete: Cascade)
-  users_breedings_created_by_user_idTousers users?                  @relation("breedings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
-  users_breedings_updated_by_user_idTousers users?                  @relation("breedings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 }
 
 enum enum_subscription_plan {
@@ -437,19 +451,3 @@ enum enum_subscription_status {
   CANCELLED
   PENDING
 }
-
-model subscriptions {
-  id                 String                   @id @db.Uuid
-  farm_id            String                   @unique @db.Uuid
-  plan_name          enum_subscription_plan
-  status             enum_subscription_status @default(ACTIVE)
-  is_trial           Boolean                  @default(true)
-  start_date         DateTime                 @default(now()) @db.Timestamptz(6)
-  end_date           DateTime                 @db.Timestamptz(6)
-  cashfree_order_id  String?                  @db.VarChar(255)
-  created_at         DateTime                 @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime                 @updatedAt @db.Timestamptz(6)
-
-  farms              farms                    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
-}
-
