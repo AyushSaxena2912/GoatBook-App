@@ -2,7 +2,7 @@ const prisma = require('../../config/prisma');
 const { hashPassword, comparePassword } = require('../../utils/password');
 const { v4: uuidv4 } = require('uuid');
 const { deleteImage } = require('../../utils/cloudinary');
-const { sendNotification } = require('../../services/notification.service');
+const { sendNotification } = require('../Services/notification.service');
 
 // @desc    Get complete identity overview for the logged-in user
 // @route   GET /api/users/profile
