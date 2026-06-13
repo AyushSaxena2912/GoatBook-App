@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "173494997302",
+    "project_id": "goatbook-app",
+    "storage_bucket": "goatbook-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173494997302:android:2932b3f9010d3457ade397",
+        "android_client_info": {
+          "package_name": "com.goatwala.farm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvF2Xi_cKcg4bEqdjfdz5M2nkx4DWXQf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

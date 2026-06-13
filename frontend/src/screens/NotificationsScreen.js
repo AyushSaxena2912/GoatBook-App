@@ -125,6 +125,32 @@ const NotificationsScreen = ({ navigation }) => {
         )}
       </View>
 
+      {/* Test Button - Only for testing */}
+      <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 5 }}>
+        <TouchableOpacity 
+          style={{ 
+            backgroundColor: theme.colors.primary + '20', 
+            padding: 10, 
+            borderRadius: 8, 
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: theme.colors.primary + '40'
+          }}
+          onPress={async () => {
+            try {
+              await api.post('/users/test-notification');
+              fetchNotifications();
+            } catch (err) {
+              console.error('Test notification failed', err);
+            }
+          }}
+        >
+          <Text style={{ color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }}>
+            🔔 Send Test Notification
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Content */}
       {loading ? (
         <View style={styles.centerContainer}>

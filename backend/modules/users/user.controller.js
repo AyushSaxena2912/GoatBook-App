@@ -375,15 +375,30 @@ exports.testNotification = async (req, res) => {
       });
     }
 
+    const { v4: uuidv4 } = require('uuid');
+
+    // Save it to the database so it shows up in the Notifications screen
+    await prisma.reminders.create({
+      data: {
+        id: uuidv4(),
+        user_id: user.id,
+        title: 'GoatBook 🐐 Test',
+        message: 'Your notification system is working perfectly!',
+        remind_at: new Date(),
+        status: 'SENT',
+        is_read: false
+      }
+    });
+
     await sendNotification(
       user.push_token,
-      'GoatBook 🐐',
-      'Notification system working successfully!'
+      'GoatBook 🐐 Test',
+      'Your notification system is working perfectly!'
     );
 
     return res.json({
       success: true,
-      message: 'Notification sent'
+      message: 'Notification sent and saved'
     });
 
   } catch (error) {

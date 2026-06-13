@@ -20,6 +20,7 @@
     "android": {
       "package": "com.goatwala.farm",
       "versionCode": 2,
+      "googleServicesFile": "./google-services.json",
       "newArchEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/splash-icon.png",
