@@ -299,6 +299,7 @@ PENDING PENDING
     String message 
     DateTime remind_at 
     String status 
+    Boolean is_read 
     DateTime created_at 
     }
   

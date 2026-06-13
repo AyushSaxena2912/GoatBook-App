@@ -52,6 +52,7 @@ app.use('/api/matings', require('./modules/matings/mating.routes'));
 app.use('/api/breedings', require('./modules/breedings/breeding.routes'));
 app.use('/api/subscriptions', require('./modules/subscriptions/subscription.routes'));
 app.use('/api/analytics', require('./modules/analytics/analytics.routes'));
+app.use('/api/notifications', require('./modules/notifications/notification.routes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -80,6 +81,6 @@ app.listen(PORT, '0.0.0.0', () => {
     });
   }, 300000); // 5 minutes
   
-  // WORKER DISABLED TEMPORARILY FOR EMERGENCY RECOVERY
-  // setupNotificationWorker();
+  // Notification Worker enabled
+  setupNotificationWorker();
 });

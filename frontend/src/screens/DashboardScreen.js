@@ -241,9 +241,22 @@ const DashboardScreen = ({ navigation }) => {
           {/* Notification Button */}
           <TouchableOpacity 
             style={styles.themeToggle}
-            onPress={() => setSoonVisible(true)}
+            onPress={() => navigation.navigate('Notifications')}
           >
             <Bell color="#FFF" size={24} strokeWidth={2} />
+            {analytics?.unreadNotifications > 0 && (
+              <View style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                width: 10,
+                height: 10,
+                backgroundColor: '#ef4444',
+                borderRadius: 5,
+                borderWidth: 2,
+                borderColor: theme.colors.primary
+              }} />
+            )}
           </TouchableOpacity>
 
           {/* Theme Toggle Button */}

@@ -55,6 +55,7 @@ import BreedingListScreen from './src/screens/BreedingListScreen';
 import LocationMenuScreen from './src/screens/LocationMenuScreen';
 import MassLocationScreen from './src/screens/MassLocationScreen';
 import MassVaccinationScreen from './src/screens/MassVaccinationScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import SideMenu from './src/components/SideMenu';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
@@ -130,6 +131,21 @@ function AppContent() {
       }
     }
   }, [fontsLoaded, initialRoute]);
+
+  useEffect(() => {
+    import('expo-notifications').then((Notifications) => {
+      const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+        // You can handle notification taps here, like navigating to the specific screen
+        console.log("Notification tapped!");
+        // We're already in App.js, so navigation ref is needed to do it globally,
+        // but for now, they can just open the app and click the bell icon.
+      });
+
+      return () => {
+        Notifications.removeNotificationSubscription(responseListener);
+      };
+    });
+  }, []);
 
   const checkSession = async () => {
     try {
@@ -228,6 +244,7 @@ function AppContent() {
           <Stack.Screen name="LocationMenu" component={LocationMenuScreen} />
           <Stack.Screen name="MassLocation" component={MassLocationScreen} />
           <Stack.Screen name="MassVaccination" component={MassVaccinationScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
