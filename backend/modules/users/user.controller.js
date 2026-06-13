@@ -3,7 +3,6 @@ const { hashPassword, comparePassword } = require('../../utils/password');
 const { v4: uuidv4 } = require('uuid');
 const { deleteImage } = require('../../utils/cloudinary');
 const { sendNotification } = require('../Services/notification.service');
-
 // @desc    Get complete identity overview for the logged-in user
 // @route   GET /api/users/profile
 exports.getProfile = async (req, res) => {
@@ -407,6 +406,29 @@ exports.testNotification = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server Error'
+    });
+  }
+};
+
+exports.updateLanguage = async (req, res) => {
+  try {
+    const { language } = req.body
+    const user = await prisma.users.update({
+      where: {
+        id: req.user.id,
+      },
+      data: {
+        language,
+      },
+    });
+    return res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };
