@@ -18,7 +18,21 @@ exports.getAnimals = async (req, res) => {
     if (!req.farmId) {
       return res.status(400).json({ message: 'No farm selected' });
     }
+    // Pagination with validation.
 
+    // const page = Number(req.query.page) || 1;
+    // const limit = Number(req.query.limit) || 30;
+
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+    const offset = (page - 1) * limit;
+
+    // Total Animals Count
+    const totalAnimals = await prisma.animals.count({
+      where: {
+        farm_id: req.farmId
+      }
+    });
     // 2. Fetch animals linked to this farm with breed and location details
     const animals = await prisma.animals.findMany({
       where: { farm_id: req.farmId },
@@ -26,7 +40,12 @@ exports.getAnimals = async (req, res) => {
         breeds: { select: { name: true, animal_type: true } },
         locations: { select: { name: true, code: true } }
       },
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
+
+      skip: offset,
+      take: limit
+
+
     });
 
     // 3. Transform database (snake_case) to API standard (camelCase)
@@ -79,8 +98,19 @@ exports.getAnimals = async (req, res) => {
       Breed: a.breeds ? { name: a.breeds.name, animalType: a.breeds.animal_type } : null,
       Location: a.locations ? { name: a.locations.name, code: a.locations.code } : null
     }));
+    const totalPages = Math.ceil(totalAnimals / limit);
+    res.json({
+      animals: mapped,
+      pagination: {
+        page,
+        limit,
+        totalAnimals,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      }
+    });
 
-    res.json(mapped);
   } catch (err) {
     console.error('FETCH ANIMALS ERROR:', err);
     res.status(500).json({ message: 'Server Error', error: err.message });
@@ -90,7 +120,7 @@ exports.getAnimals = async (req, res) => {
 // @desc    Add a new animal to the farm inventory
 // @route   POST /api/animals
 exports.addAnimal = async (req, res) => {
-  const { 
+  const {
     tagNumber, breedId, gender, color, birthDate, birthWeight, locationId,
     isBreeder, isQurbani, batchNo, acquisitionMethod,
     purchaseDate, purchasePrice, ageInMonths, femaleCondition,
@@ -102,7 +132,7 @@ exports.addAnimal = async (req, res) => {
     soldAt, soldRemark, treatmentRecord,
     saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
-  
+
   try {
     if (!req.farmId) {
       return res.status(400).json({ message: 'No farm selected' });
@@ -110,43 +140,43 @@ exports.addAnimal = async (req, res) => {
 
     // 0. SaaS Plan Limits Check
     if (req.subscription && req.subscription.plan_name === 'BASIC') {
-        const animalCount = await prisma.animals.count({ where: { farm_id: req.farmId } });
-        if (animalCount >= 50) {
-            return res.status(403).json({ 
-                message: 'Basic plan allows a maximum of 50 animals. Please upgrade your plan to add more animals.',
-                code: 'LIMIT_EXCEEDED'
-            });
-        }
+      const animalCount = await prisma.animals.count({ where: { farm_id: req.farmId } });
+      if (animalCount >= 50) {
+        return res.status(403).json({
+          message: 'Basic plan allows a maximum of 50 animals. Please upgrade your plan to add more animals.',
+          code: 'LIMIT_EXCEEDED'
+        });
+      }
     }
 
     // 1. Security Check: Verify breed is either farm-specific or global
 
-    const breed = await prisma.breeds.findFirst({ 
-      where: { 
+    const breed = await prisma.breeds.findFirst({
+      where: {
         id: breedId,
         OR: [{ farm_id: req.farmId }, { is_default: true }]
-      } 
+      }
     });
     if (!breed) return res.status(400).json({ message: 'Invalid breed selected' });
 
     // 2. Uniqueness: Tag number must be unique within the same farm
     if (tagNumber) {
-        const existingTag = await prisma.animals.findFirst({ 
-          where: { tag_number: tagNumber, farm_id: req.farmId } 
-        });
-        if (existingTag) return res.status(400).json({ message: 'Tag Number already exists in your farm' });
+      const existingTag = await prisma.animals.findFirst({
+        where: { tag_number: tagNumber, farm_id: req.farmId }
+      });
+      if (existingTag) return res.status(400).json({ message: 'Tag Number already exists in your farm' });
     }
 
     // 3. Pedigree check: Prevent animal being its own parent
     if (acquisitionMethod === 'BORN') {
-        if (motherTagId && motherTagId === tagNumber) return res.status(400).json({ message: 'Mother cannot be the same as animal' });
-        if (fatherTagId && fatherTagId === tagNumber) return res.status(400).json({ message: 'Father cannot be the same as animal' });
+      if (motherTagId && motherTagId === tagNumber) return res.status(400).json({ message: 'Mother cannot be the same as animal' });
+      if (fatherTagId && fatherTagId === tagNumber) return res.status(400).json({ message: 'Father cannot be the same as animal' });
     }
 
     // 4. Location check: Verify the shed/location belongs to this user
     if (locationId) {
-        const location = await prisma.locations.findFirst({ where: { id: locationId, farm_id: req.farmId } });
-        if (!location) return res.status(400).json({ message: 'Invalid location selected' });
+      const location = await prisma.locations.findFirst({ where: { id: locationId, farm_id: req.farmId } });
+      if (!location) return res.status(400).json({ message: 'Invalid location selected' });
     }
 
     // Business Logic: Only males can be marked as Breeder or Qurbani
@@ -273,7 +303,7 @@ exports.getAnimal = async (req, res) => {
 // @desc    Update animal attributes
 // @route   PUT /api/animals/:id
 exports.updateAnimal = async (req, res) => {
-  const { 
+  const {
     tagNumber, breedId, gender, color, birthDate, birthWeight, locationId,
     isBreeder, isQurbani, batchNo, acquisitionMethod,
     purchaseDate, purchasePrice, ageInMonths, femaleCondition,
@@ -285,7 +315,7 @@ exports.updateAnimal = async (req, res) => {
     soldAt, soldRemark, treatmentRecord,
     saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
-  
+
   try {
     // 1. Verify existence and ownership
     const animal = await prisma.animals.findFirst({
@@ -295,10 +325,10 @@ exports.updateAnimal = async (req, res) => {
 
     // 2. Uniqueness check if tag is changing
     if (tagNumber && tagNumber !== animal.tag_number) {
-        const existingTag = await prisma.animals.findFirst({ 
-          where: { tag_number: tagNumber, farm_id: req.farmId } 
-        });
-        if (existingTag) return res.status(400).json({ message: 'Tag Number already exists' });
+      const existingTag = await prisma.animals.findFirst({
+        where: { tag_number: tagNumber, farm_id: req.farmId }
+      });
+      if (existingTag) return res.status(400).json({ message: 'Tag Number already exists' });
     }
 
     const currentAcqMethod = (acquisitionMethod?.toUpperCase() || animal.acquisition_method)?.toUpperCase();
@@ -354,10 +384,10 @@ exports.updateAnimal = async (req, res) => {
 
     // Cleanup Cloudinary image if it was replaced or removed
     if (imageUrl !== undefined && imageUrl !== animal.image_url) {
-        if (animal.image_url) {
-            // Don't await to avoid slowing down the response, but log errors
-            deleteImage(animal.image_url).catch(err => console.error('Cloudinary Update Cleanup Error:', err));
-        }
+      if (animal.image_url) {
+        // Don't await to avoid slowing down the response, but log errors
+        deleteImage(animal.image_url).catch(err => console.error('Cloudinary Update Cleanup Error:', err));
+      }
     }
 
     res.json({ id: updated.id, status: updated.status });
@@ -389,16 +419,16 @@ exports.deleteAnimal = async (req, res) => {
     });
 
     if (parentCheck) {
-      return res.status(400).json({ 
-        message: `Cannot delete animal ${animal.tag_number} because it is a parent to other livestock.` 
+      return res.status(400).json({
+        message: `Cannot delete animal ${animal.tag_number} because it is a parent to other livestock.`
       });
     }
 
     await prisma.animals.delete({ where: { id: req.params.id } });
-    
+
     // Cleanup Cloudinary image if exists
     if (animal.image_url) {
-        deleteImage(animal.image_url).catch(err => console.error('Cloudinary Delete Cleanup Error:', err));
+      deleteImage(animal.image_url).catch(err => console.error('Cloudinary Delete Cleanup Error:', err));
     }
 
     res.json({ message: 'Animal removed successfully' });
@@ -412,9 +442,9 @@ exports.deleteAnimal = async (req, res) => {
 exports.checkTagExists = async (req, res) => {
   try {
     const animal = await prisma.animals.findFirst({
-      where: { 
-        tag_number: req.params.tagNumber, 
-        farm_id: req.farmId 
+      where: {
+        tag_number: req.params.tagNumber,
+        farm_id: req.farmId
       },
       include: {
         breeds: { select: { name: true } },
@@ -531,9 +561,9 @@ exports.updateBulkLocation = async (req, res) => {
       }
     });
 
-    res.json({ 
+    res.json({
       message: `Successfully updated location for ${result.count} animals`,
-      count: result.count 
+      count: result.count
     });
   } catch (err) {
     console.error('BULK LOCATION UPDATE ERROR:', err);
@@ -560,12 +590,12 @@ exports.deleteAnimalsBulk = async (req, res) => {
   try {
     // 0. Validate that farm_id and all animal_ids are correct UUID formats
     if (!isUUID(req.farmId)) {
-       throw new Error(`Invalid Farm ID format: ${req.farmId}`);
+      throw new Error(`Invalid Farm ID format: ${req.farmId}`);
     }
 
     const validIds = ids.filter(id => isUUID(id));
     if (validIds.length === 0) {
-       return res.status(400).json({ message: 'None of the provided IDs are valid animal UUIDs' });
+      return res.status(400).json({ message: 'None of the provided IDs are valid animal UUIDs' });
     }
 
     // 1. Fetch only animals that belong to this farm
@@ -597,8 +627,8 @@ exports.deleteAnimalsBulk = async (req, res) => {
     });
 
     if (childCount > 0) {
-      return res.status(400).json({ 
-        message: `Cannot delete these animals because some are parents to ${childCount} other livestock in the system.` 
+      return res.status(400).json({
+        message: `Cannot delete these animals because some are parents to ${childCount} other livestock in the system.`
       });
     }
 
@@ -611,21 +641,21 @@ exports.deleteAnimalsBulk = async (req, res) => {
 
     // Bulk cleanup Cloudinary images
     animalsToDelete.forEach(a => {
-        if (a.image_url) {
-            deleteImage(a.image_url).catch(err => console.error('Cloudinary Bulk Cleanup Error:', err));
-        }
+      if (a.image_url) {
+        deleteImage(a.image_url).catch(err => console.error('Cloudinary Bulk Cleanup Error:', err));
+      }
     });
 
-    res.json({ 
+    res.json({
       message: `Successfully deleted ${animalsToDelete.length} animals.`,
       deletedCount: animalsToDelete.length
     });
   } catch (err) {
     console.error('BULK DELETE ANIMALS ERROR:', err);
-    res.status(500).json({ 
-      message: 'Animal API Error (Bulk Delete)', 
+    res.status(500).json({
+      message: 'Animal API Error (Bulk Delete)',
       error: err.message,
-      code: err.code 
+      code: err.code
     });
   }
 };
