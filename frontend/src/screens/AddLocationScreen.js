@@ -8,9 +8,11 @@ import GSelect from '../components/GSelect';
 import api from '../api';
 import { Scan, HelpCircle, X, Tag, MapPin, Info } from 'lucide-react-native';
 import { SPACING, SHADOW } from '../theme';
+import { useTranslation } from 'react-i18next';
 
 const AddLocationScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
   const [tagNumber, setTagNumber] = useState('');
@@ -98,7 +100,7 @@ const AddLocationScreen = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Add Location/Shed" 
+        title={t('farmActivities.addLocation', 'Add Location/Shed')} 
         onBack={() => navigation.goBack()} 
         leftAlign={true}
       />
@@ -117,7 +119,7 @@ const AddLocationScreen = ({ navigation, route }) => {
             <View style={styles.inputRow}>
               <View style={styles.inputFlex}>
                 <GInput 
-                  label="Enter Tag ID*" 
+                  label={t('animalForm.tagId', 'Enter Tag ID*')} 
                   value={tagNumber} 
                   onChangeText={(val) => {
                     setTagNumber(val);
@@ -137,7 +139,7 @@ const AddLocationScreen = ({ navigation, route }) => {
                 activeOpacity={0.8}
                 disabled={searching}
               >
-                <Text style={styles.addBtnText}>{searching ? '...' : 'Add'}</Text>
+                <Text style={styles.addBtnText}>{searching ? '...' : t('common.add', 'Add')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -154,9 +156,9 @@ const AddLocationScreen = ({ navigation, route }) => {
                     <Text style={[styles.animalBreed, { color: theme.colors.textLight }]}>{animal.breedName}</Text>
                   </View>
                   <View style={styles.animalMetaRow}>
-                    <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{animal.gender}</Text>
+                    <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{animal.gender ? t('enums.' + animal.gender.toLowerCase(), animal.gender) : ''}</Text>
                     <View style={styles.dot} />
-                    <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{animal.ageInMonths} Months</Text>
+                    <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{animal.ageInMonths} {t('animalForm.months', 'Months')}</Text>
                     <View style={styles.dot} />
                     <View style={styles.currentLocBadge}>
                         <MapPin size={10} color={theme.colors.primary} />
@@ -170,8 +172,8 @@ const AddLocationScreen = ({ navigation, route }) => {
 
             {/* Location Selectors */}
             <GSelect 
-              label="Existing Location/Shed" 
-              placeholder="Select from your sheds"
+              label={t('farmActivities.existingLocation', 'Existing Location/Shed')} 
+              placeholder={t('farmActivities.selectShed', 'Select from your sheds')}
               value={locationId} 
               onSelect={(val) => {
                 setLocationId(val);
@@ -182,8 +184,8 @@ const AddLocationScreen = ({ navigation, route }) => {
             />
             
             <GInput 
-              label="Add New Location" 
-              placeholder="E.g. Shed B - North"
+              label={t('farmActivities.addNewLocation', 'Add New Location')} 
+              placeholder={t('farmActivities.egShed', 'E.g. Shed B - North')}
               value={newLocationName} 
               onChangeText={(val) => {
                 setNewLocationName(val);
@@ -193,8 +195,8 @@ const AddLocationScreen = ({ navigation, route }) => {
             />
 
             <GInput 
-              label="Remark" 
-              placeholder="Reason for movement (Optional)"
+              label={t('farmActivities.notes', 'Remark')} 
+              placeholder={t('farmActivities.notes', 'Reason for movement')}
               value={remark} 
               onChangeText={setRemark} 
               multiline
@@ -207,7 +209,7 @@ const AddLocationScreen = ({ navigation, route }) => {
       {/* Fixed Footer */}
       <View style={[styles.footer, { paddingBottom: Platform.OS === 'ios' ? 34 : 16 }]}>
         <GButton 
-          title="Submit" 
+          title={t('common.submit', 'Submit')} 
           onPress={handleSave}
           loading={loading}
           containerStyle={styles.submitBtn}

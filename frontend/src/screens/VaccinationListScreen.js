@@ -7,9 +7,11 @@ import { Syringe, Calendar, User, Tag, ChevronRight, Hash, AlertTriangle, CheckC
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 const VaccinationListScreen = ({ navigation, route }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme), [theme]);
   
   const [records, setRecords] = useState([]);
@@ -40,9 +42,9 @@ const VaccinationListScreen = ({ navigation, route }) => {
     const due = new Date(nextDueDate);
     const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
     
-    if (diffDays < 0) return { label: 'Overdue', color: '#EF4444', icon: <AlertTriangle size={12} color="#EF4444" /> };
-    if (diffDays <= 7) return { label: 'Due Soon', color: '#F59E0B', icon: <AlertTriangle size={12} color="#F59E0B" /> };
-    return { label: 'Active', color: '#10B981', icon: <CheckCircle2 size={12} color="#10B981" /> };
+    if (diffDays < 0) return { label: t('farmActivities.overdue', 'Overdue'), color: '#EF4444', icon: <AlertTriangle size={12} color="#EF4444" /> };
+    if (diffDays <= 7) return { label: t('farmActivities.dueSoon', 'Due Soon'), color: '#F59E0B', icon: <AlertTriangle size={12} color="#F59E0B" /> };
+    return { label: t('farmActivities.active', 'Active'), color: '#10B981', icon: <CheckCircle2 size={12} color="#10B981" /> };
   };
 
   const filteredRecords = useMemo(() => {
@@ -86,7 +88,7 @@ const VaccinationListScreen = ({ navigation, route }) => {
   const renderItem = ({ item }) => {
     const booster = getBoosterStatus(item.nextDueDate);
     const adminDateFormatted = new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const nextDueDateFormatted = item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+    const nextDueDateFormatted = item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na', 'N/A');
 
     return (
       <TouchableOpacity 
@@ -104,12 +106,12 @@ const VaccinationListScreen = ({ navigation, route }) => {
           
           <View style={styles.headerMain}>
             <Text style={[styles.vaccineNameText, { color: theme.colors.text }]} numberOfLines={1}>
-              {item.vaccine?.name || 'Unknown Vaccine'}
+              {item.vaccine?.name || t('farmActivities.unknownVaccine', 'Unknown Vaccine')}
             </Text>
             <View style={styles.tagInfoRow}>
               <View style={[styles.tagBadge, { backgroundColor: theme.colors.border + '30' }]}>
                 <Tag size={10} color={theme.colors.textLight} />
-                <Text style={[styles.tagText, { color: theme.colors.text }]}>#{item.animal?.tagNumber || 'No Tag'}</Text>
+                <Text style={[styles.tagText, { color: theme.colors.text }]}>#{item.animal?.tagNumber || t('farmActivities.noTag', 'No Tag')}</Text>
               </View>
               {booster && (
                 <View style={[styles.statusChip, { backgroundColor: booster.color + '15' }]}>
@@ -128,14 +130,14 @@ const VaccinationListScreen = ({ navigation, route }) => {
 
         <View style={styles.cardInfoGrid}>
           <View style={styles.infoCol}>
-            <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>LAST DOSE</Text>
+            <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>{t('farmActivities.lastDose', 'LAST DOSE')}</Text>
             <View style={styles.infoValueRow}>
               <Calendar size={14} color={theme.colors.textMuted} />
               <Text style={[styles.infoValue, { color: theme.colors.text }]}>{adminDateFormatted}</Text>
             </View>
           </View>
           <View style={styles.infoCol}>
-            <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>NEXT DUE</Text>
+            <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>{t('farmActivities.nextDue', 'NEXT DUE')}</Text>
             <View style={styles.infoValueRow}>
               <Calendar size={14} color={booster ? booster.color : theme.colors.textMuted} />
               <Text style={[styles.infoValue, { color: booster ? booster.color : theme.colors.text }]}>{nextDueDateFormatted}</Text>
@@ -146,7 +148,7 @@ const VaccinationListScreen = ({ navigation, route }) => {
         {item.creationMode === 'MASS' && (
           <View style={[styles.creationModeTag, { backgroundColor: theme.colors.info + '05' }]}>
             <Info size={10} color={theme.colors.info} />
-            <Text style={[styles.creationModeText, { color: theme.colors.info }]}>Recorded in Bulk</Text>
+            <Text style={[styles.creationModeText, { color: theme.colors.info }]}>{t('farmActivities.recordedBulk', 'Recorded in Bulk')}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -155,21 +157,21 @@ const VaccinationListScreen = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title="Vaccination Journal" onBack={() => navigation.goBack()} leftAlign={true} />
+      <GHeader title={t('farmActivities.vaccinationJournal', 'Vaccination Journal')} onBack={() => navigation.goBack()} leftAlign={true} />
       
       <View style={styles.headerDashboard}>
         <View style={styles.sectionHeader}>
           <LayoutDashboard size={14} color={theme.colors.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.colors.textLight }]}>HEALTH OVERVIEW</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textLight }]}>{t('farmActivities.healthOverview', 'HEALTH OVERVIEW')}</Text>
         </View>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
           contentContainerStyle={styles.statsScroll}
         >
-          {renderStatCard('Total Doses', stats.total, <Syringe />, theme.colors.primary)}
-          {renderStatCard('Due Soon', stats.upcoming, <AlertTriangle />, '#F59E0B')}
-          {renderStatCard('Overdue', stats.overdue, <AlertTriangle />, '#EF4444')}
+          {renderStatCard(t('farmActivities.totalDoses', 'Total Doses'), stats.total, <Syringe />, theme.colors.primary)}
+          {renderStatCard(t('farmActivities.dueSoon', 'Due Soon'), stats.upcoming, <AlertTriangle />, '#F59E0B')}
+          {renderStatCard(t('farmActivities.overdue', 'Overdue'), stats.overdue, <AlertTriangle />, '#EF4444')}
         </ScrollView>
       </View>
 
@@ -178,14 +180,14 @@ const VaccinationListScreen = ({ navigation, route }) => {
           <Search size={18} color={theme.colors.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: theme.colors.text }]}
-            placeholder="Search tag or vaccine..."
+            placeholder={t('farmActivities.searchVaccine', 'Search tag or vaccine...')}
             placeholderTextColor={theme.colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery !== '' && (
             <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-              <Text style={styles.clearText}>Clear</Text>
+              <Text style={styles.clearText}>{t('common.clear', 'Clear')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -207,9 +209,9 @@ const VaccinationListScreen = ({ navigation, route }) => {
               <View style={[styles.emptyIcon, { backgroundColor: theme.colors.surface }]}>
                 <Syringe size={40} color={theme.colors.textMuted} />
               </View>
-              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Records Found</Text>
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>{t('farmActivities.noRecords', 'No Records Found')}</Text>
               <Text style={[styles.emptySub, { color: theme.colors.textLight }]}>
-                {searchQuery ? 'Try another tag or vaccine name.' : 'Your farm health history will appear here.'}
+                {searchQuery ? t('farmActivities.tryAnotherTag', 'Try another tag or vaccine name.') : t('farmActivities.healthHistoryDesc', 'Your farm health history will appear here.')}
               </Text>
             </View>
           }

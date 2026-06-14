@@ -3,12 +3,14 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
-import { User, Lock, Home } from 'lucide-react-native';
+import { User, Lock, Home, Globe } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 
 const SettingsScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+  const { t } = useTranslation();
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,23 +34,30 @@ const SettingsScreen = ({ navigation }) => {
   const settingsOptions = [
     { 
       id: 'profile', 
-      title: 'Profile Settings', 
+      title: t('settings.profile', 'Profile Settings'), 
       icon: <User color={theme.colors.primary} size={32} />, 
       onPress: () => navigation.navigate('ProfileSettings'),
       visible: true
     },
     { 
       id: 'farm', 
-      title: 'Farm Settings', 
+      title: t('settings.farm', 'Farm Settings'), 
       icon: <Home color={theme.colors.primary} size={32} />, 
       onPress: () => navigation.navigate('FarmSettings'),
       visible: role === 'OWNER'
     },
     { 
       id: 'password', 
-      title: 'Change Password', 
+      title: t('settings.changePassword', 'Change Password'), 
       icon: <Lock color={theme.colors.primary} size={32} />, 
       onPress: () => navigation.navigate('ChangePassword'),
+      visible: true
+    },
+    { 
+      id: 'language', 
+      title: t('settings.language', 'Language'), 
+      icon: <Globe color={theme.colors.primary} size={32} />, 
+      onPress: () => navigation.navigate('LanguageSelection'),
       visible: true
     },
   ];
@@ -57,7 +66,7 @@ const SettingsScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title="Settings" onBack={() => navigation.goBack()} />
+      <GHeader title={t('settings.title', 'Settings')} onBack={() => navigation.goBack()} />
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />

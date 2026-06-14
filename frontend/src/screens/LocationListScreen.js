@@ -7,9 +7,11 @@ import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { SPACING, SHADOW } from '../theme';
 import GInput from '../components/GInput';
+import { useTranslation } from 'react-i18next';
 
 const LocationListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
@@ -76,7 +78,7 @@ const LocationListScreen = ({ navigation }) => {
         <View style={styles.metaRow}>
            <View style={[styles.metaBadge, { backgroundColor: theme.colors.background }]}>
               <Text style={[styles.metaText, { color: theme.colors.textLight }]}>
-                {item.animalCount || 0} Animals
+                {item.animalCount || 0} {t('animalForm.animals', 'Animals')}
               </Text>
            </View>
            <View style={styles.dot} />
@@ -94,7 +96,7 @@ const LocationListScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Shed List" 
+        title={t('farmActivities.locationsList', 'Shed List')} 
         onBack={() => navigation.goBack()}
         leftAlign={true}
         rightIcon={isSearchVisible ? <X size={24} color="#FFF" /> : <Search size={24} color="#FFF" />}
@@ -106,7 +108,7 @@ const LocationListScreen = ({ navigation }) => {
           <View style={styles.searchContainer}>
             <GInput 
               ref={searchInputRef}
-              placeholder="Search by name or code..."
+              placeholder={t('farmActivities.searchLocation', 'Search by name or code...')}
               value={searchQuery}
               onChangeText={setSearchQuery}
               leftIcon={<Search size={20} color={theme.colors.textMuted} />}
@@ -129,9 +131,9 @@ const LocationListScreen = ({ navigation }) => {
                   <View style={[styles.emptyIconWrapper, { backgroundColor: theme.colors.surface }]}>
                     <SearchX size={48} color={theme.colors.textMuted} />
                   </View>
-                  <Text style={[styles.noRecords, { color: theme.colors.text }]}>No records found</Text>
+                  <Text style={[styles.noRecords, { color: theme.colors.text }]}>{t('farmActivities.noRecords', 'No records found')}</Text>
                   <Text style={[styles.emptyDesc, { color: theme.colors.textLight }]}>
-                    Your farm locations will appear here once added.
+                    {t('farmActivities.noLocationsDesc', 'Your farm locations will appear here once added.')}
                   </Text>
               </View>
             }

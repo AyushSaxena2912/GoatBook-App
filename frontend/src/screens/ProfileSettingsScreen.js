@@ -7,12 +7,14 @@ import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import api from '../api';
+import { useTranslation } from 'react-i18next';
 import { User, Camera, ImageIcon, Trash2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToCloudinary as cloudinaryUpload } from '../utils/cloudinary';
 
 const ProfileSettingsScreen = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   
   const [formData, setFormData] = useState({
@@ -146,7 +148,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title="Profile Settings" onBack={() => navigation.goBack()} />
+      <GHeader title={t('settings.profileSettingsTitle', 'Profile Settings')} onBack={() => navigation.goBack()} />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
@@ -167,11 +169,11 @@ const ProfileSettingsScreen = ({ navigation }) => {
             <View style={styles.photoActions}>
               <TouchableOpacity style={[styles.photoBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={takePhoto}>
                 <Camera size={16} color={theme.colors.primary} />
-                <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>Camera</Text>
+                <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>{t('settings.camera', 'Camera')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.photoBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={pickImage}>
                 <ImageIcon size={16} color={theme.colors.primary} />
-                <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>Gallery</Text>
+                <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>{t('settings.gallery', 'Gallery')}</Text>
               </TouchableOpacity>
               {formData.profilePhotoUrl && (
                 <TouchableOpacity style={[styles.photoBtn, { backgroundColor: theme.colors.error + '10', borderColor: theme.colors.error + '30' }]} onPress={() => setFormData({ ...formData, profilePhotoUrl: null })}>
@@ -182,10 +184,10 @@ const ProfileSettingsScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.formContainer}>
-            <Text style={styles.sectionTitle}>Basic Information</Text>
+            <Text style={styles.sectionTitle}>{t('settings.basicInformation', 'Basic Information')}</Text>
             
             <GInput 
-              label="Full Name" 
+              label={t('settings.fullName', 'Full Name')} 
               value={formData.name} 
               onChangeText={(v) => setFormData({...formData, name: v})} 
               required 
@@ -194,7 +196,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
             
             <GInput 
-              label="Email Address" 
+              label={t('settings.emailAddress', 'Email Address')} 
               value={formData.email} 
               onChangeText={(v) => setFormData({...formData, email: v})} 
               keyboardType="email-address"
@@ -205,7 +207,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
             
             <GInput 
-              label="Phone Number" 
+              label={t('settings.phoneNumber', 'Phone Number')} 
               value={formData.phone} 
               onChangeText={(v) => setFormData({...formData, phone: v})}
               keyboardType="phone-pad"
@@ -214,24 +216,22 @@ const ProfileSettingsScreen = ({ navigation }) => {
             />
 
             {formData.employeeType !== 'OWNER' && (
-              <Text style={{ fontSize: 12, color: theme.colors.textLight, marginTop: 4, fontFamily: 'Inter_500Medium', fontStyle: 'italic' }}>
-                * Only the Farm Owner can update your phone number or email.
-              </Text>
+              <Text style={{ fontSize: 12, color: theme.colors.textLight, marginTop: 4, fontFamily: 'Inter_500Medium', fontStyle: 'italic' }}>{t('settings.ownerUpdateNote', '* Only the Farm Owner can update your phone number or email.')}</Text>
             )}
 
             <View style={styles.gap} />
 
             <GInput 
-              label="Role" 
+              label={t('settings.role', 'Role')} 
               value={formData.employeeType} 
               editable={false}
               containerStyle={{ opacity: 0.7 }}
             />
 
-            <Text style={[styles.sectionTitle, { marginTop: SPACING.xl }]}>Address Details</Text>
+            <Text style={[styles.sectionTitle, { marginTop: SPACING.xl }]}>{t('settings.addressDetails', 'Address Details')}</Text>
             
             <GInput 
-              label="Address" 
+              label={t('settings.address', 'Address')} 
               value={formData.address} 
               onChangeText={(v) => setFormData({...formData, address: v})} 
             />
@@ -239,7 +239,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
             
             <GSelect 
-              label="Country" 
+              label={t('settings.country', 'Country')} 
               value={formData.country} 
               onSelect={(v) => setFormData({...formData, country: v})}
               options={[
@@ -258,14 +258,14 @@ const ProfileSettingsScreen = ({ navigation }) => {
           <View style={styles.buttonRow}>
             <View style={styles.halfBtn}>
               <GButton 
-                title="Reset" 
+                title={t('common.reset', 'Reset')} 
                 variant="outline" 
                 onPress={handleReset}
               />
             </View>
             <View style={styles.halfBtn}>
               <GButton 
-                title={uploading ? "Uploading..." : "Save Changes"} 
+                title={uploading ? t('common.uploading', 'Uploading...') : t('common.saveChanges', 'Save Changes')} 
                 onPress={handleSave}
                 loading={saving}
                 disabled={uploading}

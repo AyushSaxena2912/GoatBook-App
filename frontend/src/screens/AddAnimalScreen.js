@@ -18,6 +18,7 @@ import {
   Heart, Baby, Milk, Shield, Camera, Trash2, Edit2, Calendar, Stethoscope
 } from 'lucide-react-native';
 import api from '../api';
+import { useTranslation } from 'react-i18next';
 import { getFromCache } from '../utils/cache';
 import { uploadToCloudinary as cloudinaryUpload } from '../utils/cloudinary';
 import { generateInvoice } from '../utils/InvoiceGenerator';
@@ -25,6 +26,7 @@ import { FileText } from 'lucide-react-native';
 
 const AddAnimalScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => getStyles(theme, isDarkMode, insets), [theme, isDarkMode, insets]);
 
@@ -514,7 +516,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
           onPress={() => setShowStatusModal(false)}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Status</Text>
+            <Text style={styles.modalTitle}>{t('animalForm.selectStatus', 'Select Status')}</Text>
             {['Live', 'Sold', 'Dead'].map((s) => (
               <TouchableOpacity
                 key={s}
@@ -528,7 +530,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                   fontSize: 16, 
                   fontFamily: status === s ? 'Inter_600SemiBold' : 'Inter_500Medium',
                   color: status === s ? theme.colors.primary : theme.colors.text
-                }}>{s}</Text>
+                }}>{t('enums.' + s.toLowerCase(), s)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -693,10 +695,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <ChevronLeft color="#FFF" size={28} strokeWidth={2.5} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>{isEditing ? 'Edit Animal' : 'Add Animal'}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{isEditing ? t('animalForm.editAnimal', 'Edit Animal') : t('animalForm.addAnimal', 'Add Animal')}</Text>
           <TouchableOpacity style={styles.statusContainer} onPress={() => setShowStatusModal(true)}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor() }]} />
-            <Text style={styles.statusText}>{status.charAt(0) + status.slice(1).toLowerCase()}</Text>
+            <Text style={styles.statusText}>{t('enums.' + status.toLowerCase(), status.charAt(0) + status.slice(1).toLowerCase())}</Text>
             <ChevronDown color="#FFF" size={14} strokeWidth={3} style={styles.statusChevron} />
           </TouchableOpacity>
         </View>
@@ -718,7 +720,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 <View style={styles.sectionIconBox}>
                   <Camera size={18} color={theme.colors.primary} />
                 </View>
-                <Text style={styles.sectionTitle}>Add Photo</Text>
+                <Text style={styles.sectionTitle}>{t('animalForm.addPhoto', 'Add Photo')}</Text>
               </View>
               {photoExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
             </TouchableOpacity>
@@ -749,14 +751,14 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       onPress={takePhoto}
                     >
                       <Camera size={24} color={theme.colors.textMuted} />
-                      <Text style={{ color: theme.colors.textMuted, marginTop: 4, fontSize: 12 }}>Camera</Text>
+                      <Text style={{ color: theme.colors.textMuted, marginTop: 4, fontSize: 12 }}>{t('animalForm.camera', 'Camera')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.photoPlaceholder, { borderColor: theme.colors.border, flex: 1 }]}
                       onPress={pickImage}
                     >
                       <Plus size={24} color={theme.colors.textMuted} />
-                      <Text style={{ color: theme.colors.textMuted, marginTop: 4, fontSize: 12 }}>Import</Text>
+                      <Text style={{ color: theme.colors.textMuted, marginTop: 4, fontSize: 12 }}>{t('animalForm.import', 'Import')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -766,13 +768,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
           {isEditing && status === 'Live' && (
             <View style={styles.readyToSellCard}>
                <View style={styles.readyHeaderRow}>
-                  <Text style={[styles.readyTitle, { color: theme.colors.error, fontFamily: 'Inter_600SemiBold' }]}>Ready to Sell</Text>
+                  <Text style={[styles.readyTitle, { color: theme.colors.error, fontFamily: 'Inter_600SemiBold' }]}>{t('animalForm.readyToSell', 'Ready to Sell')}</Text>
                   <HelpCircle size={18} color={theme.colors.textMuted} />
                </View>
                <View style={styles.readyOptions}>
-                  <CheckBox label="No" value={!isReadyForSale} onToggle={() => setIsReadyForSale(false)} />
+                  <CheckBox label={t('animalForm.no', 'No')} value={!isReadyForSale} onToggle={() => setIsReadyForSale(false)} />
                   <View style={{ width: 24 }} />
-                  <CheckBox label="Yes" value={isReadyForSale} onToggle={() => setIsReadyForSale(true)} />
+                  <CheckBox label={t('animalForm.yes', 'Yes')} value={isReadyForSale} onToggle={() => setIsReadyForSale(true)} />
                </View>
             </View>
           )}
@@ -780,22 +782,22 @@ const AddAnimalScreen = ({ navigation, route }) => {
           {status === 'Dead' && (
             <View style={styles.readyToSellCard}>
                <View style={styles.readyHeaderRow}>
-                  <Text style={[styles.readyTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>Dead Record</Text>
+                  <Text style={[styles.readyTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>{t('animalForm.deadRecord', 'Dead Record')}</Text>
                   <TouchableOpacity onPress={() => setShowDeadHelp(true)}>
                     <HelpCircle size={18} color={theme.colors.textMuted} />
                   </TouchableOpacity>
                </View>
                <View style={styles.formContainer}>
                   <GDatePicker 
-                    label="Date*" 
+                    label={t('animalForm.date', 'Date*')} 
                     value={deathDate} 
                     onDateChange={setDeathDate} 
                     containerStyle={styles.fullWidthField}
                   />
                   <GInput 
                     containerStyle={styles.fullWidthField}
-                    label="Reason" 
-                    placeholder="Reason" 
+                    label={t('animalForm.reason', 'Reason')} 
+                    placeholder={t('animalForm.reason', 'Reason')} 
                     value={deathReason} 
                     onChangeText={setDeathReason} 
                   />
@@ -806,7 +808,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
           {status === 'Sold' && (
             <View style={styles.readyToSellCard}>
                <View style={styles.readyHeaderRow}>
-                  <Text style={[styles.readyTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>Sold Record</Text>
+                  <Text style={[styles.readyTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>{t('animalForm.soldRecord', 'Sold Record')}</Text>
                   <TouchableOpacity onPress={() => setShowSoldHelp(true)}>
                     <HelpCircle size={18} color={theme.colors.textMuted} />
                   </TouchableOpacity>
@@ -814,14 +816,14 @@ const AddAnimalScreen = ({ navigation, route }) => {
                <View style={styles.formContainer}>
                   <View style={styles.row}>
                     <GDatePicker 
-                      label="Date*" 
+                      label={t('animalForm.date', 'Date*')} 
                       value={soldDate} 
                       onDateChange={setSoldDate} 
                       containerStyle={{ flex: 1, marginRight: 12 }}
                     />
                     <GInput 
-                      label="Weight (KG)" 
-                      placeholder="Weight" 
+                      label={t('animalForm.weightKg', 'Weight (KG)')} 
+                      placeholder={t('animalForm.weightKg', 'Weight (KG)')} 
                       value={saleWeight} 
                       onChangeText={(val) => {
                         setSaleWeight(val);
@@ -866,7 +868,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                   <View style={styles.row}>
                     <GInput 
                       label="Discount (Rs.)" 
-                      placeholder="Discount" 
+                      placeholder={t('animalForm.discount', 'Discount')} 
                       value={saleDiscount} 
                       onChangeText={setSaleDiscount} 
                       keyboardType="numeric"
@@ -888,7 +890,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                   <GInput 
                     containerStyle={styles.fullWidthField}
-                    label="Remark" 
+                    label={t('animalForm.remark', 'Remark')} 
                     placeholder="e.g. Healthy and active" 
                     value={soldRemark} 
                     onChangeText={setSoldRemark} 
@@ -983,8 +985,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         setBreedId(''); 
                       }}
                       options={[
-                        { label: 'Goat', value: 'Goat' },
-                        { label: 'Sheep', value: 'Sheep' }
+                        { label: t('enums.goat', 'Goat'), value: 'Goat' },
+                        { label: t('enums.sheep', 'Sheep'), value: 'Sheep' }
                       ]}
                       placeholder="Select Type"
                       required
@@ -1008,8 +1010,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       value={gender} 
                       onSelect={setGender}
                       options={[
-                        { label: 'Male', value: 'MALE' },
-                        { label: 'Female', value: 'FEMALE' }
+                        { label: t('enums.male', 'Male'), value: 'MALE' },
+                        { label: t('enums.female', 'Female'), value: 'FEMALE' }
                       ]}
                       required
                     />
@@ -1018,14 +1020,14 @@ const AddAnimalScreen = ({ navigation, route }) => {
                   <View style={styles.row}>
                     <GInput 
                       containerStyle={styles.halfWidth}
-                      label="Color" 
+                      label={t('animalForm.color', 'Color')} 
                       value={color}
                       onChangeText={setColor}
                       placeholder="Type"
                     />
                     <GInput 
                       containerStyle={styles.halfWidth}
-                      label="Batch No" 
+                      label={t('animalForm.batchNo', 'Batch No')} 
                       value={batchNo} 
                       onChangeText={setBatchNo} 
                       placeholder="e.g. Gshs"
@@ -1040,13 +1042,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       onSelect={setAcquisitionMethod}
                       options={[
                         { label: 'Born At Farm', value: 'BORN' },
-                        { label: 'Purchased', value: 'PURCHASED' }
+                        { label: t('enums.purchased', 'Purchased'), value: 'PURCHASED' }
                       ]}
                       required
                     />
                     <GSelect 
                       containerStyle={styles.halfWidth}
-                      label="Shed No." 
+                      label={t('animalForm.shedNo', 'Shed No.')} 
                       value={locationId} 
                       onSelect={setLocationId}
                       options={locations}
@@ -1068,7 +1070,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <CheckBox label="Breeder" value={isBreeder} onToggle={toggleBreeder} />
                         <View style={{ width: 12 }} />
-                        <CheckBox label="Qurbani" value={isQurbani} onToggle={toggleQurbani} />
+                        <CheckBox label={t('animalForm.qurbani', 'Qurbani')} value={isQurbani} onToggle={toggleQurbani} />
                       </View>
                     </View>
                   )}
@@ -1134,13 +1136,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       />
                       <GSelect 
                         containerStyle={styles.halfWidth}
-                        label="Birth Type" 
+                        label={t('animalForm.birthType', 'Birth Type')} 
                         value={birthType} 
                         onSelect={setBirthType}
                         options={[
-                          { label: 'Single', value: 'SINGLE' },
-                          { label: 'Twin', value: 'TWIN' },
-                          { label: 'Triplet', value: 'TRIPLET' },
+                          { label: t('enums.single', 'Single'), value: 'SINGLE' },
+                          { label: t('enums.twin', 'Twin'), value: 'TWIN' },
+                          { label: t('enums.triplet', 'Triplet'), value: 'TRIPLET' },
                           { label: 'Quadruplet', value: 'QUADRUPLET' }
                         ]}
                         placeholder="Select Type"
@@ -1151,15 +1153,15 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     {(acquisitionMethod === 'BORN' || acquisitionMethod === 'PURCHASED') && (
                       <GSelect 
                         containerStyle={styles.fullWidthField}
-                        label="Teeth Stage" 
+                        label={t('animalForm.teethStage', 'Teeth Stage')} 
                         value={teethStage} 
                         onSelect={setTeethStage}
                         options={[
                           { label: 'Boney Teeth', value: 'Boney Teeth' },
-                          { label: '2 Teeth', value: '2 Teeth' },
-                          { label: '4 Teeth', value: '4 Teeth' },
-                          { label: '6 Teeth', value: '6 Teeth' },
-                          { label: '8 Teeth', value: '8 Teeth' },
+                          { label: t('enums.teeth2', '2 Teeth'), value: '2 Teeth' },
+                          { label: t('enums.teeth4', '4 Teeth'), value: '4 Teeth' },
+                          { label: t('enums.teeth6', '6 Teeth'), value: '6 Teeth' },
+                          { label: t('enums.teeth8', '8 Teeth'), value: '8 Teeth' },
                           { label: 'More than 10 Teeth', value: 'More than 10 Teeth' }
                         ]}
                         placeholder="Select Stage"
@@ -1171,14 +1173,14 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       <View style={styles.row}>
                         <GInput 
                           containerStyle={styles.halfWidth}
-                          label="Mother Tag ID" 
+                          label={t('animalForm.motherTagId', 'Mother Tag ID')} 
                           value={motherTagId}
                           onChangeText={setMotherTagId}
                           placeholder="e.g. 2001"
                         />
                         <GInput 
                           containerStyle={styles.halfWidth}
-                          label="Father Tag ID" 
+                          label={t('animalForm.fatherTagId', 'Father Tag ID')} 
                           value={fatherTagId}
                           onChangeText={setFatherTagId}
                           placeholder="e.g. 2002"
@@ -1209,7 +1211,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           />
                           <GInput 
                             containerStyle={styles.halfWidth}
-                            label="Landing Cost" 
+                            label={t('animalForm.landingCost', 'Landing Cost')} 
                             value={landingCost} 
                             onChangeText={setLandingCost} 
                             keyboardType="number-pad"
@@ -1218,7 +1220,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         </View>
                         <GInput 
                           containerStyle={styles.fullWidthField}
-                          label="Purchase Wt (KG)" 
+                          label={t('animalForm.purchaseWt', 'Purchase Wt (KG)')} 
                           value={purchaseWeight} 
                           onChangeText={setPurchaseWeight} 
                           keyboardType="decimal-pad"
@@ -1231,7 +1233,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       <>
                         <GSelect 
                           containerStyle={styles.fullWidthField}
-                          label="Female Condition" 
+                          label={t('animalForm.femaleCondition', 'Female Condition')} 
                           value={femaleCondition} 
                           onSelect={(val) => {
                             setFemaleCondition(val);
@@ -1240,7 +1242,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           options={[
                             { label: 'Kid', value: 'KID' },
                             { label: 'Empty', value: 'EMPTY' },
-                            { label: 'Pregnant', value: 'PREGNANT' }
+                            { label: t('enums.pregnant', 'Pregnant'), value: 'PREGNANT' }
                           ]}
                           placeholder="Select"
                         />
@@ -1257,7 +1259,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                     <GInput 
                       containerStyle={styles.fullWidthField}
-                      label="Remark" 
+                      label={t('animalForm.remark', 'Remark')} 
                       value={remark} 
                       onChangeText={setRemark} 
                       placeholder="e.g. Healthy and active"
@@ -1579,7 +1581,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       <GInput 
                         containerStyle={styles.fullWidthField}
                         label="Insurance Company" 
-                        placeholder="Company Name" 
+                        placeholder={t('animalForm.companyName', 'Company Name')} 
                         value={insuranceCompany}
                         onChangeText={setInsuranceCompany}
                       />
@@ -1592,14 +1594,14 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       />
                       <GDatePicker 
                         containerStyle={styles.fullWidthField}
-                        label="Policy Start Date" 
+                        label={t('animalForm.policyStartDate', 'Policy Start Date')} 
                         placeholder="Start Date" 
                         value={policyStartDate}
                         onDateChange={setPolicyStartDate}
                       />
                       <GDatePicker 
                         containerStyle={styles.fullWidthField}
-                        label="Policy Expiry Date" 
+                        label={t('animalForm.policyExpiryDate', 'Policy Expiry Date')} 
                         placeholder="Expiry Date" 
                         value={policyExpiryDate}
                         onDateChange={setPolicyExpiryDate}
@@ -1655,7 +1657,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
           <View style={styles.buttonRow}>
             <View style={[styles.halfBtn, { marginRight: 8 }]}>
               <GButton 
-                title="Delete" 
+                title={t('animalForm.delete', 'Delete')} 
                 variant="outline" 
                 onPress={handleDelete}
                 loading={deleting}
@@ -1663,7 +1665,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.halfBtn}>
               <GButton 
-                title="Save Changes" 
+                title={t('animalForm.saveChanges', 'Save Changes')} 
                 onPress={handleSave}
                 loading={loading}
               />

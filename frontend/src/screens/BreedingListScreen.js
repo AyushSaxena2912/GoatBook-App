@@ -7,21 +7,27 @@ import { Search, Plus, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, Check } 
 import { SPACING } from '../theme';
 import api from '../api';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 
-const BIRTH_TYPES = [
-  { label: 'Single', value: 'SINGLE', count: 1 },
-  { label: 'Twin', value: 'TWIN', count: 2 },
-  { label: 'Triplet', value: 'TRIPLET', count: 3 },
-  { label: 'Quadruplet', value: 'QUADRUPLET', count: 4 },
-];
 
-const GENDERS = [
-  { label: 'Male', value: 'MALE' },
-  { label: 'Female', value: 'FEMALE' },
-];
 
 const BreedingListScreen = ({ navigation, route }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
+
+  const GENDERS = [
+  { label: t('enums.male', 'Male'), value: 'MALE' },
+  { label: t('enums.female', 'Female'), value: 'FEMALE' },
+];
+
+
+  const BIRTH_TYPES = [
+  { label: t('enums.single', 'Single'), value: 'SINGLE', count: 1 },
+  { label: t('enums.twin', 'Twin'), value: 'TWIN', count: 2 },
+  { label: t('enums.triplet', 'Triplet'), value: 'TRIPLET', count: 3 },
+  { label: t('enums.quadruplet', 'Quadruplet'), value: 'QUADRUPLET', count: 4 },
+];
+
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   
   const [searchTag, setSearchTag] = useState('');
@@ -221,7 +227,7 @@ const BreedingListScreen = ({ navigation, route }) => {
   };
 
   const renderKidFields = (kid, index) => {
-    const kidLabels = ['First', 'Second', 'Third', 'Fourth'];
+    const kidLabels = [t('farmActivities.first', 'First'), t('farmActivities.second', 'Second'), t('farmActivities.third', 'Third'), t('farmActivities.fourth', 'Fourth')];
     const labelPrefix = kidLabels[index] || `${index + 1}th`;
 
     // Calculate zIndex to ensure dropdowns overlap subsequent rows
@@ -231,7 +237,7 @@ const BreedingListScreen = ({ navigation, route }) => {
       <View key={index} style={[styles.kidSection, { zIndex: sectionZIndex }]}>
         <View style={[styles.row, { zIndex: sectionZIndex + 2 }]}>
           <View style={[styles.halfWidth, { zIndex: 1 }]}>
-            <Text style={styles.inputLabel}>{labelPrefix} Kid Tag ID*</Text>
+            <Text style={styles.inputLabel}>{labelPrefix} {t('farmActivities.kidTagId', 'Kid Tag ID*').replace('*', '')}*</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -244,7 +250,7 @@ const BreedingListScreen = ({ navigation, route }) => {
           </View>
           
           <View style={[styles.halfWidth, { zIndex: 999 }]}>
-            <Text style={styles.inputLabel}>Gender*</Text>
+            <Text style={styles.inputLabel}>{t('farmActivities.gender', 'Gender*')}</Text>
             <TouchableOpacity 
               style={styles.dropdownButton}
               onPress={() => setActiveGenderDropdown(activeGenderDropdown === index ? null : index)}
@@ -276,7 +282,7 @@ const BreedingListScreen = ({ navigation, route }) => {
 
         <View style={[styles.row, { zIndex: sectionZIndex + 1 }]}>
           <View style={styles.halfWidth}>
-            <Text style={styles.inputLabel}>Birth Wt</Text>
+            <Text style={styles.inputLabel}>{t('farmActivities.birthWt', 'Birth Wt')}</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -290,7 +296,7 @@ const BreedingListScreen = ({ navigation, route }) => {
           </View>
           
           <View style={styles.halfWidth}>
-            <Text style={styles.inputLabel}>Remark</Text>
+            <Text style={styles.inputLabel}>{t('farmActivities.notes', 'Remark')}</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -308,12 +314,12 @@ const BreedingListScreen = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title="Add Breeding" onBack={() => navigation.goBack()} />
+      <GHeader title={t('farmActivities.addBreeding', 'Add Breeding')} onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Search Section */}
         <View style={styles.searchSection}>
-          <Text style={styles.searchLabel}>Scan / Enter Tag Id*</Text>
+          <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
           <View style={styles.searchRow}>
             <View style={[styles.searchInputContainer, { borderColor: theme.colors.border }]}>
               <TextInput
@@ -343,7 +349,7 @@ const BreedingListScreen = ({ navigation, route }) => {
               style={styles.accordionHeader}
               onPress={() => setAccordionOpen(!accordionOpen)}
             >
-              <Text style={styles.accordionTitle}>Breeding/Delivery Records</Text>
+              <Text style={styles.accordionTitle}>{t('farmActivities.breedingRecords', 'Breeding/Delivery Records')}</Text>
               {accordionOpen ? <ChevronUp size={20} color={theme.colors.text} /> : <ChevronDown size={20} color={theme.colors.text} />}
             </TouchableOpacity>
 
@@ -355,7 +361,7 @@ const BreedingListScreen = ({ navigation, route }) => {
                   onPress={openAddModal}
                 >
                   <Plus size={16} color="#FFF" />
-                  <Text style={styles.addNewRecordText}>Add New Record</Text>
+                  <Text style={styles.addNewRecordText}>{t('farmActivities.addNewRecord', 'Add New Record')}</Text>
                 </TouchableOpacity>
 
                 {breedingsLoading ? (
@@ -402,7 +408,7 @@ const BreedingListScreen = ({ navigation, route }) => {
             <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
               
               <View style={[styles.modalHeader, { backgroundColor: theme.colors.primary }]}>
-                <Text style={styles.modalTitle}>{isEditing ? 'Edit Breeding' : 'Add Breeding'}</Text>
+                <Text style={styles.modalTitle}>{isEditing ? t('farmActivities.editBreeding', 'Edit Breeding') : t('farmActivities.addBreeding', 'Add Breeding')}</Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
                   <Text style={styles.closeBtnText}>X</Text>
                 </TouchableOpacity>
@@ -412,7 +418,7 @@ const BreedingListScreen = ({ navigation, route }) => {
                 <View style={styles.row}>
                   {/* Mother Tag ID */}
                   <View style={styles.halfWidth}>
-                    <Text style={styles.inputLabel}>Mother Tag ID</Text>
+                    <Text style={styles.inputLabel}>{t('farmActivities.motherTagId', 'Mother Tag ID')}</Text>
                     <View style={[styles.inputContainer, { backgroundColor: theme.colors.background }]}>
                       <TextInput
                         style={[styles.input, { color: theme.colors.textMuted }]}
@@ -424,7 +430,7 @@ const BreedingListScreen = ({ navigation, route }) => {
 
                   {/* Delivery Date */}
                   <View style={styles.halfWidth}>
-                    <Text style={styles.inputLabel}>Delivery Date*</Text>
+                    <Text style={styles.inputLabel}>{t('farmActivities.deliveryDate', 'Delivery Date*')}</Text>
                     <TouchableOpacity 
                       style={styles.dateButton}
                       onPress={() => setShowDatePicker(true)}
@@ -449,7 +455,7 @@ const BreedingListScreen = ({ navigation, route }) => {
                 <View style={[styles.row, { zIndex: 999 }]}>
                   {/* Birth Type */}
                   <View style={[styles.halfWidth, { zIndex: 999 }]}>
-                    <Text style={styles.inputLabel}>Birth Type</Text>
+                    <Text style={styles.inputLabel}>{t('farmActivities.birthType', 'Birth Type')}</Text>
                     <TouchableOpacity 
                       style={styles.dropdownButton}
                       onPress={() => {
@@ -487,7 +493,7 @@ const BreedingListScreen = ({ navigation, route }) => {
                   onPress={handleSave}
                   disabled={isSaving}
                 >
-                  {isSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveButtonText}>Save</Text>}
+                  {isSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveButtonText}>{t('common.save', 'Save')}</Text>}
                 </TouchableOpacity>
                 <View style={{ height: 40 }} />
               </ScrollView>

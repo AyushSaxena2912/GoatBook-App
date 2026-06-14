@@ -39,11 +39,24 @@ const MassLocationScreen = ({ navigation }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [animalsRes, locationsRes] = await Promise.all([
-        api.get('/animals'),
-        api.get('/locations')
-      ]);
-      setAnimals(animalsRes.data);
+      // Fetch all animals sequentially to handle pagination
+      let allAnimals = [];
+      let currentPage = 1;
+      let totalPages = 1;
+      
+      do {
+        const animalsRes = await api.get(`/animals?page=${currentPage}&limit=100`);
+        const { animals, pagination } = animalsRes.data;
+        if (animals) {
+            allAnimals = [...allAnimals, ...animals];
+        }
+        totalPages = pagination?.totalPages || 1;
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      const locationsRes = await api.get('/locations');
+      
+      setAnimals(allAnimals);
       setLocations(locationsRes.data.map(loc => ({
         label: `${loc.displayName || loc.name}`,
         value: loc.id

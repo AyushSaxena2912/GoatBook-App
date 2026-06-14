@@ -11,10 +11,12 @@ import { Scan, X, Search, CheckCircle2, Info, Calendar } from 'lucide-react-nati
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 const AddVaccinationScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, insets), [theme, insets]);
   
   const existingRecord = route.params?.record;
@@ -130,7 +132,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
         });
       }
       setLoading(false);
-      setSuccessMessage(isEditing ? 'Success! Record updated' : 'Success! Vaccination recorded');
+      setSuccessMessage(isEditing ? t('farmActivities.vaccineUpdateSuccess', 'Success! Record updated') : t('farmActivities.vaccineSuccess', 'Success! Vaccination recorded'));
       setShowSuccessModal(true);
     } catch (error) {
       setLoading(false);
@@ -148,7 +150,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title={isEditing ? "Edit Record" : "Add Vaccination"} 
+        title={isEditing ? t('farmActivities.editRecord', 'Edit Record') : t('farmActivities.addVaccination', 'Add Vaccination')} 
         onBack={() => navigation.goBack()} 
         leftAlign={true}
       />
@@ -165,11 +167,11 @@ const AddVaccinationScreen = ({ navigation, route }) => {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Identify Animal</Text>
+              <Text style={styles.sectionTitle}>{t('farmActivities.identifyAnimal', 'Identify Animal')}</Text>
               <View style={styles.inputRow}>
                 <View style={{ flex: 1 }}>
                   <GInput 
-                    label="Scan/Enter Tag ID" 
+                    label={t('farmActivities.scanEnterTagId', 'Scan/Enter Tag ID')} 
                     value={tagNumber} 
                     onChangeText={setTagNumber}
                     rightIcon={tagNumber ? (
@@ -187,7 +189,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
                     onPress={handleSearchAnimal}
                     disabled={searching}
                   >
-                    {searching ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.findBtnText}>Find</Text>}
+                    {searching ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.findBtnText}>{t('common.find', 'Find')}</Text>}
                   </TouchableOpacity>
                 )}
               </View>
@@ -199,66 +201,66 @@ const AddVaccinationScreen = ({ navigation, route }) => {
                     <Text style={[styles.animalBreed, { color: theme.colors.textLight }]}>{animal.breedName}</Text>
                   </View>
                   <Text style={[styles.animalMeta, { color: theme.colors.textLight }]}>
-                    {animal.gender} • {animal.ageInMonths} Months • Current: {animal.currentLocationName}
+                    {animal.gender} • {animal.ageInMonths} Months • {t('farmActivities.currentLoc', 'Current: ')} {animal.currentLocationName}
                   </Text>
                 </View>
               )}
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Administration Details</Text>
+              <Text style={styles.sectionTitle}>{t('farmActivities.administrationDetails', 'Administration Details')}</Text>
               <GDatePicker 
-                label="Vaccination Date*" 
+                label={t('farmActivities.vaccinationDate', 'Vaccination Date*')} 
                 value={date} 
                 onDateChange={setDate}
                 containerStyle={{ marginBottom: 16 }}
               />
               
               <GSelect 
-                label="Select Vaccine*" 
+                label={t('farmActivities.selectVaccine', 'Select Vaccine*')} 
                 value={vaccineId} 
                 onSelect={setVaccineId}
                 options={vaccines}
-                placeholder="Choose from Catalog"
+                placeholder={t('farmActivities.chooseCatalog', 'Choose from Catalog')}
                 disabled={isEditing}
               />
 
               {selectedVaccine && (
                 <View style={[styles.detailsBox, { borderColor: theme.colors.border + '30' }]}>
                   <View style={styles.detailItem}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Dose</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>{t('farmActivities.dose', 'Dose')}</Text>
                     <Text style={[styles.detailValue, { color: theme.colors.text }]}>{selectedVaccine.dose || 0} ml</Text>
                   </View>
                   <View style={styles.detailItem}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Route</Text>
-                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{selectedVaccine.route || 'N/A'}</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>{t('farmActivities.route', 'Route')}</Text>
+                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{selectedVaccine.route || t('common.na', 'N/A')}</Text>
                   </View>
                 </View>
               )}
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Next Appointment</Text>
+              <Text style={styles.sectionTitle}>{t('farmActivities.nextAppointment', 'Next Appointment')}</Text>
               <GDatePicker 
-                label="Next Due Date" 
+                label={t('farmActivities.nextDueDate', 'Next Due Date')} 
                 value={nextDueDate} 
                 onDateChange={setNextDueDate}
-                placeholder="Auto-calculated"
+                placeholder={t('farmActivities.autoCalculated', 'Auto-calculated')}
               />
               <View style={[styles.infoBox, { backgroundColor: theme.colors.primary + '08', borderColor: theme.colors.primary + '20' }]}>
                 <Info size={16} color={theme.colors.primary} />
                 <Text style={[styles.infoText, { color: theme.colors.textLight }]}>
-                  Setting a due date will trigger a notification {selectedVaccine?.daysBetween || ''} days after this administration.
+                  {t('farmActivities.dueNotification', 'Setting a due date will trigger a notification {{days}} days after this administration.', { days: selectedVaccine?.daysBetween || '' })}
                 </Text>
               </View>
             </View>
 
             <View style={styles.section}>
               <GInput 
-                label="Remarks (Optional)" 
+                label={t('farmActivities.remarksOptional', 'Remarks (Optional)')} 
                 value={remark} 
                 onChangeText={setRemark} 
-                placeholder="Condition of animal, lot number, etc."
+                placeholder={t('farmActivities.remarksPlaceholder', 'Condition of animal, lot number, etc.')}
                 multiline
                 numberOfLines={3}
               />
@@ -282,19 +284,19 @@ const AddVaccinationScreen = ({ navigation, route }) => {
           onPress={() => setShowDeleteModal(false)}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Delete Record</Text>
+            <Text style={styles.modalTitle}>{t('animalForm.deleteRecord', 'Delete Record')}</Text>
             <Text style={styles.modalMessage}>
-              Are you sure you want to remove this vaccination record permanently? This action cannot be undone.
+              {t('animalForm.deleteRecordConfirm', 'Are you sure you want to remove this vaccination record permanently? This action cannot be undone.')}
             </Text>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setShowDeleteModal(false)} style={styles.modalBtn}>
-                <Text style={styles.modalCancelText}>CANCEL</Text>
+                <Text style={styles.modalCancelText}>{t('common.cancel', 'CANCEL').toUpperCase()}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={confirmDelete} style={styles.modalBtn} disabled={deleting}>
                 {deleting ? (
                   <ActivityIndicator size="small" color={theme.colors.error} />
                 ) : (
-                  <Text style={styles.modalDeleteText}>DELETE</Text>
+                  <Text style={styles.modalDeleteText}>{t('common.delete', 'DELETE').toUpperCase()}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -331,7 +333,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
         {isEditing ? (
           <View style={styles.footerColumn}>
             <GButton 
-              title="Update Record" 
+              title={t('animalForm.updateRecord', 'Update Record')} 
               onPress={handleSave} 
               loading={loading}
               containerStyle={{ marginBottom: 12 }}
@@ -346,7 +348,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
           </View>
         ) : (
           <GButton 
-            title="Save Vaccination" 
+            title={t('farmActivities.saveVaccination', 'Save Vaccination')} 
             onPress={handleSave} 
             loading={loading}
           />

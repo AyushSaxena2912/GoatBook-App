@@ -9,6 +9,7 @@ import { Search, Plus, ChevronRight, X, SearchX, Square, CheckSquare, Trash2, Ch
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFromCache, saveToCache } from '../utils/cache';
+import { useTranslation } from 'react-i18next';
 
 const BreedListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -19,6 +20,7 @@ const BreedListScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useTranslation();
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'info' });
 
   const showAlert = (title, message, type = 'info') => setAlertConfig({ visible: true, title, message, type });
@@ -92,7 +94,7 @@ const BreedListScreen = ({ navigation }) => {
         setSelectedIds([item.id]);
       }
     } else {
-      showAlert('System Breed', 'This is a default breed and cannot be deleted.', 'info');
+      showAlert(t('breedList.systemBreedTitle', 'System Breed'), t('breedList.systemBreedMsg', 'This is a default breed and cannot be deleted.'), 'info');
     }
   };
 
@@ -135,11 +137,11 @@ const BreedListScreen = ({ navigation }) => {
         setBreeds(prev => prev.filter(b => !selectedIds.includes(b.id)));
         setFilteredBreeds(prev => prev.filter(b => !selectedIds.includes(b.id)));
         exitSelectionMode();
-        Alert.alert('Success', 'Selected breeds deleted successfully.');
+        Alert.alert(t('common.success', 'Success'), t('breedList.deleteSuccess', 'Selected breeds deleted successfully.'));
       }
     } catch (error) {
       console.error('Bulk delete failed', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to delete some breeds. They might be assigned to animals.');
+      Alert.alert(t('common.error', 'Error'), error.response?.data?.message || t('breedList.deleteError', 'Failed to delete some breeds. They might be assigned to animals.'));
     } finally {
       setIsDeleting(false);
       setLoading(false);
@@ -163,7 +165,7 @@ const BreedListScreen = ({ navigation }) => {
         <View style={styles.breedInfo}>
           <Text style={[styles.breedName, { color: theme.colors.text }]}>{item.name}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-            <Text style={[styles.animalType, { color: theme.colors.textLight, fontSize: 13 }]}>{item.animalType}</Text>
+            <Text style={[styles.animalType, { color: theme.colors.textLight, fontSize: 13 }]}>{item.animalType === 'Goat' ? t('enums.goat', 'Goat') : (item.animalType === 'Sheep' ? t('enums.sheep', 'Sheep') : item.animalType)}</Text>
             <View style={[
               styles.originBadge, 
               { 
@@ -211,10 +213,10 @@ const BreedListScreen = ({ navigation }) => {
     const customBreeds = filteredBreeds.filter(b => !b.isDefault);
     const result = [];
     if (customBreeds.length > 0) {
-      result.push({ title: 'Custom Breeds', data: customBreeds });
+      result.push({ title: t('breedList.customBreeds', 'Custom Breeds'), data: customBreeds });
     }
     if (defaultBreeds.length > 0) {
-      result.push({ title: 'System Default', data: defaultBreeds });
+      result.push({ title: t('breedList.systemDefault', 'System Default'), data: defaultBreeds });
     }
     return result;
   }, [filteredBreeds]);
@@ -238,22 +240,22 @@ const BreedListScreen = ({ navigation }) => {
       {isSelectionMode ? (
         <View style={[styles.selectionHeader, { paddingTop: insets.top + 10, paddingBottom: 10 }]}>
             <TouchableOpacity onPress={exitSelectionMode} style={styles.headerButton}>
-                <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>Cancel</Text>
+                <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>{t('common.cancel', 'Cancel')}</Text>
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={[styles.selectionTitle, { color: theme.colors.text }]}>
-                    {selectedIds.length === 0 ? 'Select items' : `${selectedIds.length} selected`}
+                    {selectedIds.length === 0 ? t('common.selectItems', 'Select items') : t('common.selectedCount', '{{count}} selected', {count: selectedIds.length})}
                 </Text>
             </View>
             <TouchableOpacity onPress={handleSelectAll} style={[styles.headerButton, { alignItems: 'flex-end' }]}>
                 <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>
-                    {isAllSelected ? 'None' : 'All'}
+                    {isAllSelected ? t('common.none', 'None') : t('common.all', 'All')}
                 </Text>
             </TouchableOpacity>
         </View>
       ) : (
         <GHeader 
-          title="Breeds List" 
+          title={t('breedList.title', 'Breeds List')} 
           onMenu={() => navigation.openDrawer()} 
           onBack={() => navigation.goBack()}
           leftAlign={true}
@@ -273,7 +275,7 @@ const BreedListScreen = ({ navigation }) => {
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search name, type or origin..."
+              placeholder={t('breedList.searchPlaceholder', 'Search name, type or origin...')}
               placeholderTextColor={theme.colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -298,7 +300,7 @@ const BreedListScreen = ({ navigation }) => {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                   <SearchX size={64} color={theme.colors.border} />
-                  <Text style={[styles.noRecords, { color: theme.colors.text }]}>No Breeds Found</Text>
+                  <Text style={[styles.noRecords, { color: theme.colors.text }]}>{t('breedList.noBreeds', 'No Breeds Found')}</Text>
               </View>
             }
             contentContainerStyle={styles.listContent}
@@ -323,7 +325,7 @@ const BreedListScreen = ({ navigation }) => {
                     disabled={isDeleting || selectedIds.length === 0}
                 >
                     <Trash2 size={26} color={theme.colors.primary} />
-                    <Text style={[styles.deleteText, { color: theme.colors.primary }]}>Delete</Text>
+                    <Text style={[styles.deleteText, { color: theme.colors.primary }]}>{t('common.delete', 'Delete')}</Text>
                 </TouchableOpacity>
             </View>
           )}
@@ -343,9 +345,9 @@ const BreedListScreen = ({ navigation }) => {
                   </View>
                 </View>
                 
-                <Text style={styles.modalTitle}>Confirm Delete?</Text>
+                <Text style={styles.modalTitle}>{t('common.confirmDelete', 'Confirm Delete?')}</Text>
                 <Text style={styles.modalSubtitle}>
-                  Are you sure you want to delete {selectedIds.length === 1 ? 'this breed' : `these ${selectedIds.length} breeds`}? This action cannot be undone.
+                  {selectedIds.length === 1 ? t('breedList.deleteConfirmMsgSingle', 'Are you sure you want to delete this breed? This action cannot be undone.') : t('breedList.deleteConfirmMsg', 'Are you sure you want to delete these {{count}} breeds? This action cannot be undone.', {count: selectedIds.length})}
                 </Text>
                 
                 <View style={styles.modalButtons}>
@@ -353,14 +355,14 @@ const BreedListScreen = ({ navigation }) => {
                     style={styles.modalCancelButton} 
                     onPress={() => setIsDeleteModalVisible(false)}
                   >
-                    <Text style={styles.modalCancelText}>Cancel</Text>
+                    <Text style={styles.modalCancelText}>{t('common.cancel', 'Cancel')}</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity 
                     style={styles.modalDeleteButton} 
                     onPress={confirmBulkDelete}
                   >
-                    <Text style={styles.modalDeleteText}>Delete</Text>
+                    <Text style={styles.modalDeleteText}>{t('common.delete', 'Delete')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

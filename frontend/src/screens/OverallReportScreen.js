@@ -5,9 +5,11 @@ import GHeader from '../components/GHeader';
 import { ChevronDown } from 'lucide-react-native';
 import api from '../api';
 import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 
 const OverallReportScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,9 +39,9 @@ const OverallReportScreen = ({ navigation }) => {
     const circumference = 2 * Math.PI * radius;
 
     const data = [
-      { label: 'Male', value: stats.male, color: '#F59E0B' },
-      { label: 'Female', value: stats.female, color: '#10B981' },
-      { label: 'Kids', value: stats.kids0_3 + stats.kids3_6 + stats.kids6_9, color: '#3B82F6' },
+      { label: t('enums.male', 'Male'), value: stats.male, color: '#F59E0B' },
+      { label: t('enums.female', 'Female'), value: stats.female, color: '#10B981' },
+      { label: t('enums.kids', 'Kids'), value: stats.kids0_3 + stats.kids3_6 + stats.kids6_9, color: '#3B82F6' },
     ].filter(d => d.value > 0);
 
     let currentAngle = -90;
@@ -78,9 +80,7 @@ const OverallReportScreen = ({ navigation }) => {
             fontSize="16"
             fontWeight="600"
             fill={theme.colors.text}
-          >
-            Total
-          </SvgText>
+          >{t('reports.total', 'Total')}</SvgText>
           <SvgText
             x={center}
             y={center + 15}
@@ -109,7 +109,7 @@ const OverallReportScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title="Animal Report" subTitle="Overall Records" onBack={() => navigation.goBack()} />
+      <GHeader title={t('reports.animalReportTitle', 'Animal Report')} subTitle={t('reports.overallRecords', 'Overall Records')} onBack={() => navigation.goBack()} />
 
       {loading ? (
         <View style={styles.center}>
@@ -118,20 +118,20 @@ const OverallReportScreen = ({ navigation }) => {
       ) : (
         <ScrollView style={styles.flex} contentContainerStyle={{ paddingBottom: 40 }}>
           <View style={[styles.chartCard, { backgroundColor: theme.colors.surface, ...theme.shadow.md }]}>
-            <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Inventory Status</Text>
+            <Text style={[styles.chartTitle, { color: theme.colors.text }]}>{t('reports.inventoryStatus', 'Inventory Status')}</Text>
             <View style={styles.chartContainer}>
               {renderDonut(stats.total)}
             </View>
             
             <View style={styles.legendGrid}>
                {[
-                { label: 'Male', color: '#F59E0B' },
-                { label: 'Female', color: '#10B981' },
-                { label: 'Breeder', color: '#06B6D4' },
-                { label: 'Pregnant', color: '#EF4444' },
-                { label: 'Kids(0-3)', color: '#3B82F6' },
-                { label: 'Kids(3-6)', color: '#8B5CF6' },
-                { label: 'Kids(6-9)', color: '#FACC15' },
+                { label: t('enums.male', 'Male'), color: '#F59E0B' },
+                { label: t('enums.female', 'Female'), color: '#10B981' },
+                { label: t('enums.breeder', 'Breeder'), color: '#06B6D4' },
+                { label: t('enums.pregnant', 'Pregnant'), color: '#EF4444' },
+                { label: t('reports.kids0_3_short', 'Kids(0-3)'), color: '#3B82F6' },
+                { label: t('reports.kids3_6_short', 'Kids(3-6)'), color: '#8B5CF6' },
+                { label: t('reports.kids6_9_short', 'Kids(6-9)'), color: '#FACC15' },
                ].map((item, idx) => (
                  <View key={idx} style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: item.color }]} />
@@ -143,21 +143,21 @@ const OverallReportScreen = ({ navigation }) => {
 
           <View style={styles.listSection}>
             <StatRow 
-              label="Total Animal" 
+              label={t('reports.totalAnimal', 'Total Animal')} 
               value={stats.total} 
               color="#4F46E5" 
               onPress={() => navigation.navigate('AnimalList')}
             />
             <View style={styles.gridRow}>
                 <StatRow 
-                    label="Male" 
+                    label={t('enums.male', 'Male')} 
                     value={stats.male} 
                     color="#F59E0B" 
                     half
                     onPress={() => navigation.navigate('AnimalList', { gender: 'MALE' })}
                 />
                 <StatRow 
-                    label="Female" 
+                    label={t('enums.female', 'Female')} 
                     value={stats.female} 
                     color="#10B981" 
                     half
@@ -166,14 +166,14 @@ const OverallReportScreen = ({ navigation }) => {
             </View>
             <View style={styles.gridRow}>
                 <StatRow 
-                    label="Breeder" 
+                    label={t('enums.breeder', 'Breeder')} 
                     value={stats.breeder} 
                     color="#06B6D4" 
                     half
                     onPress={() => navigation.navigate('AnimalList', { isBreeder: true })}
                 />
                 <StatRow 
-                    label="Pregnant" 
+                    label={t('enums.pregnant', 'Pregnant')} 
                     value={stats.pregnant} 
                     color="#EF4444" 
                     half
@@ -181,19 +181,19 @@ const OverallReportScreen = ({ navigation }) => {
                 />
             </View>
             <StatRow 
-              label="Kids (0 - 3 months)" 
+              label={t('reports.kids0_3', 'Kids (0 - 3 months)')} 
               value={stats.kids0_3} 
               color="#3B82F6" 
               onPress={() => navigation.navigate('AnimalList', { ageRange: '0-3' })}
             />
             <StatRow 
-              label="Kids (3 - 6 months)" 
+              label={t('reports.kids3_6', 'Kids (3 - 6 months)')} 
               value={stats.kids3_6} 
               color="#8B5CF6" 
               onPress={() => navigation.navigate('AnimalList', { ageRange: '3-6' })}
             />
             <StatRow 
-              label="Kids (6 - 9 months)" 
+              label={t('reports.kids6_9', 'Kids (6 - 9 months)')} 
               value={stats.kids6_9} 
               color="#FACC15" 
               onPress={() => navigation.navigate('AnimalList', { ageRange: '6-9' })}

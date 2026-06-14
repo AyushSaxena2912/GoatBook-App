@@ -10,11 +10,13 @@ import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import { ShieldAlert, Store, Camera, ImageIcon, Trash2, Plus, MinusCircle } from 'lucide-react-native';
 import api from '../api';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToCloudinary as cloudinaryUpload } from '../utils/cloudinary';
 
 const FarmSettingsScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => getStyles(theme, isDarkMode, insets), [theme, isDarkMode, insets]);
 
@@ -218,7 +220,7 @@ const FarmSettingsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <GHeader title="Farm Settings" onBack={() => navigation.goBack()} />
+      <GHeader title={t('settings.farmSettingsTitle', 'Farm Settings')} onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
@@ -236,9 +238,7 @@ const FarmSettingsScreen = ({ navigation }) => {
               borderColor: isDarkMode ? '#F59E0B66' : '#FEF3C7',
             }]}>
               <ShieldAlert size={18} color={isDarkMode ? '#F59E0B' : '#B45309'} />
-              <Text style={[styles.infoText, { color: isDarkMode ? '#FCD34D' : '#92400E' }]}>
-                Only farm owners can modify these settings.
-              </Text>
+              <Text style={[styles.infoText, { color: isDarkMode ? '#FCD34D' : '#92400E' }]}>{t('settings.farmOwnerNote', 'Only farm owners can modify these settings.')}</Text>
             </View>
           )}
 
@@ -258,11 +258,11 @@ const FarmSettingsScreen = ({ navigation }) => {
               <View style={styles.photoActions}>
                 <TouchableOpacity style={[styles.photoBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={takePhoto}>
                   <Camera size={16} color={theme.colors.primary} />
-                  <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>Camera</Text>
+                  <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>{t('settings.camera', 'Camera')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.photoBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={pickImage}>
                   <ImageIcon size={16} color={theme.colors.primary} />
-                  <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>Gallery</Text>
+                  <Text style={[styles.photoBtnText, { color: theme.colors.text }]}>{t('settings.gallery', 'Gallery')}</Text>
                 </TouchableOpacity>
                 {formData.logoUrl && (
                   <TouchableOpacity style={[styles.photoBtn, { backgroundColor: theme.colors.error + '10', borderColor: theme.colors.error + '30' }]} onPress={() => setFormData({ ...formData, logoUrl: null })}>
@@ -271,14 +271,14 @@ const FarmSettingsScreen = ({ navigation }) => {
                 )}
               </View>
             )}
-            <Text style={[styles.photoHint, { color: theme.colors.textMuted }]}>Farm Logo (Used in Invoices)</Text>
+            <Text style={[styles.photoHint, { color: theme.colors.textMuted }]}>{t('settings.farmLogoNote', 'Farm Logo (Used in Invoices)')}</Text>
           </View>
 
           <View style={styles.formContainer}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Basic Details</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('settings.basicDetails', 'Basic Details')}</Text>
             
             <GInput
-              label="Farm Name"
+              label={t('settings.farmName', 'Farm Name')}
               value={formData.name}
               onChangeText={(v) => setFormData({...formData, name: v})}
               placeholder="e.g. Goatwala Farm"
@@ -288,7 +288,7 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             <GInput
-              label="Short Location"
+              label={t('settings.shortLocation', 'Short Location')}
               value={formData.location}
               onChangeText={(v) => setFormData({...formData, location: v})}
               placeholder="e.g. Village, District"
@@ -297,7 +297,7 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             <GInput
-              label="Farm Email"
+              label={t('settings.farmEmail', 'Farm Email')}
               value={formData.email}
               onChangeText={(v) => setFormData({...formData, email: v})}
               placeholder="farm@email.com"
@@ -307,12 +307,12 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             {/* Dynamic Phones */}
-            <Text style={[styles.subTitle, { color: theme.colors.text }]}>Farm Phone Numbers</Text>
+            <Text style={[styles.subTitle, { color: theme.colors.text }]}>{t('settings.farmPhoneNumbers', 'Farm Phone Numbers')}</Text>
             {phones.map((p, index) => (
               <View key={index.toString()} style={styles.phoneRow}>
                 <View style={{ flex: 1 }}>
                   <GInput
-                    label={`Phone Number ${index + 1}`}
+                    label={`${t('settings.phoneNumber', 'Phone Number')} ${index + 1}`}
                     value={p}
                     onChangeText={(v) => handlePhoneChange(v, index)}
                     placeholder="9876543210"
@@ -334,15 +334,15 @@ const FarmSettingsScreen = ({ navigation }) => {
             {isOwner && (
               <TouchableOpacity style={styles.addPhoneBtn} onPress={addPhoneField}>
                 <Plus size={16} color={theme.colors.primary} />
-                <Text style={[styles.addPhoneText, { color: theme.colors.primary }]}>Add Another Phone Number</Text>
+                <Text style={[styles.addPhoneText, { color: theme.colors.primary }]}>{t('settings.addAnotherPhone', 'Add Another Phone Number')}</Text>
               </TouchableOpacity>
             )}
 
             <View style={styles.gap} />
-            <Text style={[styles.sectionTitle, { color: theme.colors.text, marginTop: SPACING.xl }]}>Full Address</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text, marginTop: SPACING.xl }]}>{t('settings.fullAddress', 'Full Address')}</Text>
             
             <GInput
-              label="Address Line"
+              label={t('settings.addressLine', 'Address Line')}
               value={formData.address}
               onChangeText={(v) => setFormData({...formData, address: v})}
               placeholder="Street / Area / Colony"
@@ -353,7 +353,7 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             <GInput
-              label="City / District"
+              label={t('settings.cityDistrict', 'City / District')}
               value={formData.city}
               onChangeText={(v) => setFormData({...formData, city: v})}
               placeholder="City Name"
@@ -362,7 +362,7 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             <GSelect
-              label="State"
+              label={t('settings.state', 'State')}
               value={formData.state}
               onSelect={(v) => setFormData({...formData, state: v})}
               options={INDIAN_STATES}
@@ -372,7 +372,7 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             <GSelect
-              label="Country"
+              label={t('settings.country', 'Country')}
               value={formData.country}
               onSelect={(v) => setFormData({...formData, country: v})}
               options={[
@@ -392,7 +392,7 @@ const FarmSettingsScreen = ({ navigation }) => {
           <View style={styles.buttonRow}>
             <View style={styles.halfBtn}>
               <GButton 
-                title="Reset" 
+                title={t('common.reset', 'Reset')} 
                 variant="outline" 
                 onPress={handleReset}
                 disabled={loading || uploading}
@@ -400,7 +400,7 @@ const FarmSettingsScreen = ({ navigation }) => {
             </View>
             <View style={styles.halfBtn}>
               <GButton 
-                title={uploading ? "Uploading..." : "Save Changes"} 
+                title={uploading ? t('common.uploading', 'Uploading...') : t('common.saveChanges', 'Save Changes')} 
                 onPress={handleUpdate}
                 loading={loading || uploading}
               />

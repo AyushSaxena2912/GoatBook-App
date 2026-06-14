@@ -5,10 +5,12 @@ import GHeader from '../components/GHeader';
 import GConfirmModal from '../components/GConfirmModal';
 import { Plus, ChevronRight, User, Briefcase, Mail, Phone, Search, X, SearchX } from 'lucide-react-native';
 import api from '../api';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 
 const EmployeeListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,9 +110,7 @@ const EmployeeListScreen = ({ navigation }) => {
               <Text style={[
                 styles.stateText, 
                 { color: (item.state === 'Terminated') ? theme.colors.error : theme.colors.success }
-              ]}>
-                {((item.state || 'Active').charAt(0).toUpperCase() + (item.state || 'Active').slice(1).toLowerCase())}
-              </Text>
+              ]}>{item.state === 'Terminated' ? t('enums.terminated', 'Terminated') : (item.state === 'Working' ? t('enums.working', 'Working') : t('enums.active', 'Active'))}</Text>
             </View>
           )}
         </View>
@@ -147,7 +147,7 @@ const EmployeeListScreen = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Employee List" 
+        title={t('employees.employeeList', 'Employee List')} 
         onBack={() => navigation.goBack()} 
         leftAlign
         rightIcon={isSearching ? <X color="#FFFFFF" size={26} /> : <Search color="#FFFFFF" size={26} />}
@@ -166,7 +166,7 @@ const EmployeeListScreen = ({ navigation }) => {
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search by name, email or role..."
+              placeholder={t('employees.searchPlaceholder', 'Search by name, email or role...')}
               placeholderTextColor={theme.colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -193,7 +193,7 @@ const EmployeeListScreen = ({ navigation }) => {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={[styles.emptyText, { color: theme.colors.textLight }]}>No employees added yet.</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textLight }]}>{t('employees.noEmployeesAdded', 'No employees added yet.')}</Text>
             </View>
           }
         />
@@ -209,10 +209,10 @@ const EmployeeListScreen = ({ navigation }) => {
 
       <GConfirmModal
         visible={showUpgradeModal}
-        title="Employees Not Included"
-        message={`Your current Basic Plan allows Single User Access only.\n\nTo add employees (managers, workers, vets, etc.), please upgrade to the Standard, Advanced, or Ultimate plan.`}
-        confirmText="View Plans"
-        cancelText="Cancel"
+        title={t('employees.notIncludedTitle', 'Employees Not Included')}
+        message={t('employees.notIncludedMessage', 'Your current Basic Plan allows Single User Access only.\n\nTo add employees (managers, workers, vets, etc.), please upgrade to the Standard, Advanced, or Ultimate plan.')}
+        confirmText={t('common.viewPlans', 'View Plans')}
+        cancelText={t('common.cancel', 'Cancel')}
         onConfirm={() => {
           setShowUpgradeModal(false);
           navigation.navigate('SubscriptionScreen');

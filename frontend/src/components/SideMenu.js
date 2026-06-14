@@ -12,9 +12,11 @@ import api, { setAuthToken, setSelectedFarm } from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { Modal } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const SideMenu = (props) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const { navigation } = props;
   const [farmName, setFarmName] = useState('GoatBook');
   const [userName, setUserName] = useState('User');
@@ -59,23 +61,23 @@ const SideMenu = (props) => {
   };
 
   const menuItems = [
-    { title: 'Dashboard', icon: <Home size={22} />, screen: 'Dashboard' },
-    { title: 'Animals', icon: <PawPrint size={22} />, screen: 'AnimalList' },
-    { title: 'Breeds', icon: <GitBranch size={22} />, screen: 'BreedList' },
-    { title: 'Employee', icon: <User size={22} />, screen: 'EmployeeList', role: 'OWNER' },
-    { title: 'My Subscription', icon: <Crown size={22} />, screen: 'SubscriptionScreen', role: 'OWNER' },
-    { title: 'Locations', icon: <MapPin size={22} />, screen: 'LocationMenu' },
-    { title: 'Vaccines', icon: <Syringe size={22} />, screen: 'VaccinesMenu' },
-    { title: 'Weight', icon: <Scale size={22} />, screen: 'AddWeight' },
-    { title: 'Mating', icon: <Heart size={22} />, screen: 'MatingList' },
-    { title: 'Breeding', icon: <Activity size={22} />, screen: 'BreedingList' },
-    { title: 'Reports', icon: <ClipboardList size={22} />, screen: 'ReportsMenu' },
-    { title: 'Language', icon: <Globe size={22} />, screen: null },
-    { title: 'Financials', icon: <Briefcase size={22} />, screen: null },
-    { title: 'Replace Tag', icon: <RefreshCcw size={22} />, screen: 'ReplaceTag' },
-    { title: 'Milk Records', icon: <Milk size={22} />, screen: null },
-    { title: 'Farm Setting', icon: <Sliders size={22} />, screen: null },
-    { title: 'Settings', icon: <Settings size={22} />, screen: 'Settings' },
+    { title: t('menu.dashboard', 'Dashboard'), icon: <Home size={22} />, screen: 'Dashboard' },
+    { title: t('menu.animals', 'Animals'), icon: <PawPrint size={22} />, screen: 'AnimalList' },
+    { title: t('menu.breeds', 'Breeds'), icon: <GitBranch size={22} />, screen: 'BreedList' },
+    { title: t('menu.employee', 'Employee'), icon: <User size={22} />, screen: 'EmployeeList', role: 'OWNER' },
+    { title: t('menu.mySubscription', 'My Subscription'), icon: <Crown size={22} />, screen: 'SubscriptionScreen', role: 'OWNER' },
+    { title: t('menu.locations', 'Locations'), icon: <MapPin size={22} />, screen: 'LocationMenu' },
+    { title: t('menu.vaccines', 'Vaccines'), icon: <Syringe size={22} />, screen: 'VaccinesMenu' },
+    { title: t('menu.weight', 'Weight'), icon: <Scale size={22} />, screen: 'AddWeight' },
+    { title: t('menu.mating', 'Mating'), icon: <Heart size={22} />, screen: 'MatingList' },
+    { title: t('menu.breeding', 'Breeding'), icon: <Activity size={22} />, screen: 'BreedingList' },
+    { title: t('menu.reports', 'Reports'), icon: <ClipboardList size={22} />, screen: 'ReportsMenu' },
+    { title: t('actions.language', 'Language'), icon: <Globe size={22} />, screen: null },
+    { title: t('actions.financials', 'Financials'), icon: <Briefcase size={22} />, screen: null },
+    { title: t('actions.replaceTag', 'Replace Tag'), icon: <RefreshCcw size={22} />, screen: 'ReplaceTag' },
+    { title: t('actions.milkRecords', 'Milk Records'), icon: <Milk size={22} />, screen: null },
+    { title: t('actions.farmSetting', 'Farm Setting'), icon: <Sliders size={22} />, screen: null },
+    { title: t('actions.settings', 'Settings'), icon: <Settings size={22} />, screen: 'Settings' },
   ].filter(item => !item.role || item.role === userRole);
 
   const handleLogout = async () => {
@@ -150,7 +152,7 @@ const SideMenu = (props) => {
       {/* Logout at bottom */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <LogOut color={theme.colors.error} size={22} />
-        <Text style={[styles.logoutText, { color: theme.colors.error }]}>Log Out</Text>
+        <Text style={[styles.logoutText, { color: theme.colors.error }]}>{t('menu.logOut', 'Log Out')}</Text>
       </TouchableOpacity>
 
       {/* Coming Soon Modal */}

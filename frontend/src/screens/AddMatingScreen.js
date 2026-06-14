@@ -6,21 +6,27 @@ import { Search, ChevronDown, Calendar, CheckCircle, Tag } from 'lucide-react-na
 import { SPACING } from '../theme';
 import api from '../api';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 
-const MATING_TYPES = [
-  { label: 'Natural', value: 'NATURAL' },
-  { label: 'Artificial Insemination', value: 'AI' },
-  { label: 'Embryo Transplant', value: 'ET' },
-];
 
-const MATING_STATUSES = [
-  { label: 'Not Successful', value: 'NOT_SUCCESSFUL' },
-  { label: 'Pregnant', value: 'PREGNANT' },
-  { label: 'Miscarriage', value: 'MISCARRIAGE' },
-];
 
 const AddMatingScreen = ({ navigation, route }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
+
+  const MATING_STATUSES = [
+  { label: t('enums.not_successful', 'Not Successful'), value: 'NOT_SUCCESSFUL' },
+  { label: t('enums.pregnant', 'Pregnant'), value: 'PREGNANT' },
+  { label: t('enums.miscarriage', 'Miscarriage'), value: 'MISCARRIAGE' },
+];
+
+
+  const MATING_TYPES = [
+  { label: t('enums.natural', 'Natural'), value: 'NATURAL' },
+  { label: t('enums.ai', 'Artificial Insemination'), value: 'AI' },
+  { label: t('enums.et', 'Embryo Transplant'), value: 'ET' },
+];
+
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   
   const preSelectedAnimal = route.params?.preSelectedAnimal || null;
@@ -159,7 +165,7 @@ const AddMatingScreen = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title={isEditing ? 'Edit Mating Record' : 'Add Mating Record'} onBack={() => navigation.goBack()} />
+      <GHeader title={isEditing ? t('farmActivities.editMating', 'Edit Mating Record') : t('farmActivities.addMating', 'Add Mating Record')} onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -167,7 +173,7 @@ const AddMatingScreen = ({ navigation, route }) => {
           {/* Search Section */}
           {!preSelectedAnimal ? (
             <View style={styles.searchSection}>
-              <Text style={styles.searchLabel}>Scan / Enter Tag Id*</Text>
+              <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
               <View style={styles.searchRow}>
                 <View style={[styles.searchInputContainer, { borderColor: theme.colors.border }]}>
                   <TextInput
@@ -185,7 +191,7 @@ const AddMatingScreen = ({ navigation, route }) => {
                   onPress={() => handleSearch()}
                   disabled={isSearching}
                 >
-                  {isSearching ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.addButtonText}>Search</Text>}
+                  {isSearching ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.addButtonText}>{t('common.search', 'Search')}</Text>}
                 </TouchableOpacity>
               </View>
 
@@ -205,7 +211,7 @@ const AddMatingScreen = ({ navigation, route }) => {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Tag size={16} color={theme.colors.primary} />
                 <Text style={[styles.animalFoundTag, { color: theme.colors.text, marginLeft: 8 }]}>
-                  Mother Tag ID: {animal?.tag_number || animal?.tagNumber}
+                  {t('farmActivities.motherTagId', 'Mother Tag ID')}: {animal?.tag_number || animal?.tagNumber}
                 </Text>
               </View>
             </View>
@@ -214,7 +220,7 @@ const AddMatingScreen = ({ navigation, route }) => {
           <View style={[styles.row, { zIndex: 9, marginTop: 16 }]}>
             {/* Mating Date */}
             <View style={styles.halfWidth}>
-              <Text style={styles.inputLabel}>Mating Date*</Text>
+              <Text style={styles.inputLabel}>{t('farmActivities.matingDate', 'Mating Date*')}</Text>
               <TouchableOpacity 
                 style={styles.dateButton}
                 onPress={() => setShowDatePicker(true)}
@@ -237,7 +243,7 @@ const AddMatingScreen = ({ navigation, route }) => {
             
             {/* Mating Type */}
             <View style={[styles.halfWidth, { zIndex: 999 }]}>
-              <Text style={styles.inputLabel}>Mating Type*</Text>
+              <Text style={styles.inputLabel}>{t('farmActivities.matingType', 'Mating Type*')}</Text>
               <TouchableOpacity 
                 style={styles.dropdownButton}
                 onPress={() => setShowTypeDropdown(!showTypeDropdown)}
@@ -272,13 +278,13 @@ const AddMatingScreen = ({ navigation, route }) => {
             {matingType === 'NATURAL' && (
               <>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Male Tag ID</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.maleTagId', 'Male Tag ID')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={maleTagId} onChangeText={setMaleTagId} />
                   </View>
                 </View>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Male Breed</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.maleBreed', 'Male Breed')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={maleBreed} onChangeText={setMaleBreed} />
                   </View>
@@ -289,7 +295,7 @@ const AddMatingScreen = ({ navigation, route }) => {
             {matingType === 'AI' && (
               <>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Semen</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.semen', 'Semen')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={semenId} onChangeText={setSemenId} />
                   </View>
@@ -301,13 +307,13 @@ const AddMatingScreen = ({ navigation, route }) => {
                   </View>
                 </View>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Technician/Medical Professional</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.technician', 'Technician/Medical Professional')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={technician} onChangeText={setTechnician} />
                   </View>
                 </View>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Time</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.time', 'Time')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={time} onChangeText={setTime} />
                   </View>
@@ -318,19 +324,19 @@ const AddMatingScreen = ({ navigation, route }) => {
             {matingType === 'ET' && (
               <>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Embryo</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.embryo', 'Embryo')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={embryoId} onChangeText={setEmbryoId} />
                   </View>
                 </View>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Technician/Medical Professional</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.technician', 'Technician/Medical Professional')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={technician} onChangeText={setTechnician} />
                   </View>
                 </View>
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Time</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.time', 'Time')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput style={styles.input} value={time} onChangeText={setTime} />
                   </View>
@@ -339,7 +345,7 @@ const AddMatingScreen = ({ navigation, route }) => {
             )}
 
             <View style={styles.fullWidthField}>
-              <Text style={styles.inputLabel}>Remark</Text>
+              <Text style={styles.inputLabel}>{t('farmActivities.notes', 'Remark')}</Text>
               <View style={styles.inputContainer}>
                 <TextInput style={styles.input} value={remark} onChangeText={setRemark} placeholder="Notes" placeholderTextColor={theme.colors.textMuted}/>
               </View>
@@ -349,7 +355,7 @@ const AddMatingScreen = ({ navigation, route }) => {
           {/* Edit Mode Only: Status Fields */}
           {isEditing && (
             <View style={styles.statusSection}>
-              <Text style={styles.inputLabel}>Mating Status</Text>
+              <Text style={styles.inputLabel}>{t('farmActivities.matingStatus', 'Mating Status')}</Text>
               <View style={styles.radioGroup}>
                 {MATING_STATUSES.map(s => (
                   <TouchableOpacity key={s.value} style={styles.radioOption} onPress={() => setStatus(s.value)}>
@@ -363,7 +369,7 @@ const AddMatingScreen = ({ navigation, route }) => {
 
               {status === 'PREGNANT' && (
                 <View style={styles.fullWidthField}>
-                  <Text style={styles.inputLabel}>Expected Delivery Due Date*</Text>
+                  <Text style={styles.inputLabel}>{t('farmActivities.expectedDelivery', 'Expected Delivery Due Date*')}</Text>
                   <TouchableOpacity 
                     style={styles.dateButton}
                     onPress={() => setShowExpectedDatePicker(true)}
@@ -388,7 +394,7 @@ const AddMatingScreen = ({ navigation, route }) => {
               {status === 'MISCARRIAGE' && (
                 <>
                   <View style={styles.fullWidthField}>
-                    <Text style={styles.inputLabel}>Miscarriage Date*</Text>
+                    <Text style={styles.inputLabel}>{t('farmActivities.miscarriageDate', 'Miscarriage Date*')}</Text>
                     <TouchableOpacity 
                       style={styles.dateButton}
                       onPress={() => setShowMiscarriageDatePicker(true)}
@@ -409,7 +415,7 @@ const AddMatingScreen = ({ navigation, route }) => {
                     )}
                   </View>
                   <View style={styles.fullWidthField}>
-                    <Text style={styles.inputLabel}>Miscarriage Reason</Text>
+                    <Text style={styles.inputLabel}>{t('farmActivities.miscarriageReason', 'Miscarriage Reason')}</Text>
                     <View style={styles.inputContainer}>
                       <TextInput style={styles.input} value={miscarriageReason} onChangeText={setMiscarriageReason} />
                     </View>
@@ -422,16 +428,16 @@ const AddMatingScreen = ({ navigation, route }) => {
           {/* Heat/Estrus Helper Box */}
           <View style={styles.estrusBox}>
             <View style={styles.estrusHeader}>
-              <Text style={styles.estrusTitle}>Heat/Estrus Detection Date</Text>
+              <Text style={styles.estrusTitle}>{t('farmActivities.heatEstrusDate', 'Heat/Estrus Detection Date')}</Text>
             </View>
             <View style={styles.estrusBody}>
               <View style={styles.estrusItem}>
-                <Text style={styles.estrusDays}>21 Days</Text>
+                <Text style={styles.estrusDays}>{t('farmActivities.days21', '21 Days')}</Text>
                 <Text style={styles.estrusDate}>{calculateDate(21)}</Text>
               </View>
               <View style={styles.estrusDivider} />
               <View style={styles.estrusItem}>
-                <Text style={styles.estrusDays}>45 Days</Text>
+                <Text style={styles.estrusDays}>{t('farmActivities.days45', '45 Days')}</Text>
                 <Text style={styles.estrusDate}>{calculateDate(45)}</Text>
               </View>
             </View>
@@ -442,7 +448,7 @@ const AddMatingScreen = ({ navigation, route }) => {
             onPress={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveButtonText}>Save</Text>}
+            {isSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveButtonText}>{t('common.save', 'Save')}</Text>}
           </TouchableOpacity>
           <View style={{ height: 40 }} />
         </ScrollView>

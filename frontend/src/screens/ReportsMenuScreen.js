@@ -4,34 +4,36 @@ import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
 import { ClipboardList, Heart, Calculator, Printer } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 const ReportsMenuScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   
   // Menu items for the reports center
   const options = [
     { 
       id: 'overall', 
-      title: 'Animal Overall Report', 
+      title: t('reports.animalOverall', 'Animal Overall Report'), 
       icon: <ClipboardList color={theme.colors.primary} size={32} />, 
       onPress: () => navigation.navigate('OverallReport') // Link to detailed stats
     },
     { 
       id: 'condition', 
-      title: 'Female Condition Report', 
+      title: t('reports.femaleCondition', 'Female Condition Report'), 
       icon: <Heart color={theme.colors.primary} size={32} />, 
       onPress: null // Coming Soon
     },
     { 
       id: 'vaccination', 
-      title: 'Vaccination Report', 
+      title: t('reports.vaccinationReport', 'Vaccination Report'), 
       icon: <Calculator color={theme.colors.primary} size={32} />, 
       onPress: null // Coming Soon
     },
     { 
       id: 'sales', 
-      title: 'Generate Sales Report', 
+      title: t('reports.salesReport', 'Generate Sales Report'), 
       icon: <Printer color={theme.colors.primary} size={32} />, 
       onPress: null // Coming Soon
     },
@@ -39,7 +41,7 @@ const ReportsMenuScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title="Reports Center" onBack={() => navigation.goBack()} />
+      <GHeader title={t('reports.reportsCenter', 'Reports Center')} onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.grid}>
           {options.map((item) => (

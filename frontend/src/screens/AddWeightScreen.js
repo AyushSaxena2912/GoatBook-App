@@ -10,10 +10,12 @@ import { Scan, Info } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import GAlert from '../components/GAlert';
+import { useTranslation } from 'react-i18next';
 
 const AddWeightScreen = ({ route, navigation }) => {
   const { isDarkMode, theme } = useTheme();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+  const { t } = useTranslation();
   const existingRecord = route.params?.record;
   const isEditing = !!existingRecord;
 
@@ -134,7 +136,7 @@ const AddWeightScreen = ({ route, navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title={isEditing ? "Edit Weight" : "Add Weight"} 
+        title={isEditing ? t('farmActivities.editWeight', 'Edit Weight') : t('farmActivities.addWeight', 'Add Weight')} 
         onBack={() => navigation.goBack()} 
         leftAlign={true}
       />
@@ -144,7 +146,7 @@ const AddWeightScreen = ({ route, navigation }) => {
           <View style={styles.row}>
             <View style={styles.flex}>
               <GInput 
-                label="Tag ID" 
+                label={t('animalForm.tagId', 'Tag ID*')} 
                 value={tagNumber} 
                 onChangeText={handleTagChange} 
                 placeholder="2912"
@@ -157,7 +159,7 @@ const AddWeightScreen = ({ route, navigation }) => {
 
           {fetchingAnimal && (
             <View style={styles.infoBox}>
-              <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>Fetching animal details...</Text>
+              <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>{t('animalForm.fetchingAnimal', 'Fetching animal details...')}</Text>
             </View>
           )}
 
@@ -165,20 +167,20 @@ const AddWeightScreen = ({ route, navigation }) => {
             <View style={styles.animalDetailCard}>
                <View style={styles.detailRow}>
                 <Info size={16} color={theme.colors.primary} />
-                <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Breed: </Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>{t('animalForm.breed', 'Breed')}: </Text>
                 <Text style={[styles.detailValue, { color: theme.colors.text }]}>{animalInfo.breed?.name || animalInfo.Breed?.name}</Text>
               </View>
               <View style={styles.detailRow}>
                 <Info size={16} color={theme.colors.primary} />
-                <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>Gender: </Text>
-                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{animalInfo.gender}</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>{t('animalForm.gender', 'Gender')}: </Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{animalInfo.gender ? t('enums.' + animalInfo.gender.toLowerCase(), animalInfo.gender) : ''}</Text>
               </View>
             </View>
           )}
 
           <View style={styles.row}>
             <GDatePicker 
-              label="Date" 
+              label={t('farmActivities.date', 'Date')} 
               value={date} 
               onDateChange={setDate}
               placeholder="09-09-2025"
@@ -188,7 +190,7 @@ const AddWeightScreen = ({ route, navigation }) => {
 
           <View style={styles.row}>
             <GInput 
-              label="Weight" 
+              label={t('farmActivities.weight', 'Weight')} 
               value={weight} 
               onChangeText={setWeight} 
               keyboardType="decimal-pad"
@@ -199,7 +201,7 @@ const AddWeightScreen = ({ route, navigation }) => {
 
           <View style={styles.row}>
             <GInput 
-              label="Height" 
+              label={t('farmActivities.height', 'Height')} 
               value={height} 
               onChangeText={setHeight} 
               keyboardType="decimal-pad"
@@ -209,7 +211,7 @@ const AddWeightScreen = ({ route, navigation }) => {
 
           <View style={styles.row}>
             <GInput 
-              label="Remark" 
+              label={t('farmActivities.notes', 'Notes')} 
               value={remark} 
               onChangeText={setRemark} 
               placeholder="New!"
@@ -225,7 +227,7 @@ const AddWeightScreen = ({ route, navigation }) => {
         {isEditing ? (
           <View style={{ width: '100%' }}>
             <GButton 
-              title="Update Record" 
+              title={t('animalForm.updateRecord', 'Update Record')} 
               onPress={handleSubmit} 
               loading={loading}
               containerStyle={{ marginBottom: 12 }}
@@ -235,12 +237,12 @@ const AddWeightScreen = ({ route, navigation }) => {
               onPress={handleDelete}
               disabled={loading || deleting}
             >
-              <Text style={[styles.deleteOutlineBtnText, { color: theme.colors.error }]}>Delete Record</Text>
+              <Text style={[styles.deleteOutlineBtnText, { color: theme.colors.error }]}>{t('animalForm.deleteRecord', 'Delete Record')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <GButton 
-            title="Submit Record" 
+            title={t('animalForm.submitRecord', 'Submit Record')} 
             onPress={handleSubmit} 
             loading={loading}
           />
@@ -260,19 +262,19 @@ const AddWeightScreen = ({ route, navigation }) => {
           onPress={() => setShowDeleteModal(false)}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Delete Record</Text>
+            <Text style={styles.modalTitle}>{t('animalForm.deleteRecord', 'Delete Record')}</Text>
             <Text style={styles.modalMessage}>
-              Are you sure you want to remove this weight record permanently? This action cannot be undone.
+              {t('animalForm.deleteRecordConfirm', 'Are you sure you want to remove this record permanently? This action cannot be undone.')}
             </Text>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setShowDeleteModal(false)} style={styles.modalBtn}>
-                <Text style={styles.modalCancelText}>CANCEL</Text>
+                <Text style={styles.modalCancelText}>{t('common.cancel', 'CANCEL').toUpperCase()}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={confirmDelete} style={styles.modalBtn} disabled={deleting}>
                 {deleting ? (
                   <ActivityIndicator size="small" color={theme.colors.error} />
                 ) : (
-                  <Text style={styles.modalDeleteText}>DELETE</Text>
+                  <Text style={styles.modalDeleteText}>{t('common.delete', 'DELETE').toUpperCase()}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -282,10 +284,10 @@ const AddWeightScreen = ({ route, navigation }) => {
 
       <GAlert 
         visible={successVisible}
-        title="Success!"
+        title={t('common.successEx', 'Success!')}
         message={successMessage}
         type="success"
-        confirmText="Excellent"
+        confirmText={t('common.excellent', 'Excellent')}
         onClose={() => {
           setSuccessVisible(false);
           navigation.goBack();

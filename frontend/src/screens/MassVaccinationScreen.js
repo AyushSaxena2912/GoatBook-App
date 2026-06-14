@@ -41,9 +41,24 @@ const MassVaccinationScreen = ({ navigation }) => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [vRes, aRes, lRes] = await Promise.all([
+
+      // Fetch all animals sequentially to handle pagination
+      let allAnimals = [];
+      let currentPage = 1;
+      let totalPages = 1;
+      
+      do {
+        const aRes = await api.get(`/animals?page=${currentPage}&limit=100`);
+        const { animals, pagination } = aRes.data;
+        if (animals) {
+            allAnimals = [...allAnimals, ...animals];
+        }
+        totalPages = pagination?.totalPages || 1;
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      const [vRes, lRes] = await Promise.all([
         api.get('/vaccines'),
-        api.get('/animals'),
         api.get('/locations')
       ]);
 
@@ -55,7 +70,7 @@ const MassVaccinationScreen = ({ navigation }) => {
         route: v.applicationRoute 
       })));
       
-      setAnimals(aRes.data);
+      setAnimals(allAnimals);
       
       const locOptions = [{ label: 'All Sheds', value: 'ALL' }];
       lRes.data.forEach(loc => {

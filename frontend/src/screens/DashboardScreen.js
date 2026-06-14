@@ -18,10 +18,12 @@ import AnimalIcon from '../components/AnimalIcon';
 import MatingIcon from '../components/MatingIcon';
 import BreedIcon from '../components/BreedIcon';
 import BreedingIcon from '../components/BreedingIcon';
+import { useTranslation } from 'react-i18next';
 
 
 const DashboardScreen = ({ navigation }) => {
   const { theme, isDarkMode, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [farmName, setFarmName] = useState('Goatwala Farm');
   const [userRole, setUserRole] = useState(null);
@@ -79,21 +81,21 @@ const DashboardScreen = ({ navigation }) => {
 
   const tiles = useMemo(() => {
     const allTiles = [
-      { id: '1', title: 'Breed', icon: <BreedIcon size={32} color={theme.colors.primary} />, screen: 'BreedList' },
-      { id: '2', title: 'Animals', icon: <AnimalIcon size={32} color={theme.colors.primary} />, screen: 'AnimalList' },
-      { id: '3', title: 'Employee', icon: <User color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'EmployeeList' },
-      { id: '4', title: 'Animal Shed', icon: <Home color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'LocationMenu' },
-      { id: '5', title: 'Vaccines', icon: <Syringe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'VaccinesMenu' },
-      { id: '6', title: 'Weight', icon: <Scale color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'AddWeight' },
-      { id: '7', title: 'Mating', icon: <MatingIcon size={32} color={theme.colors.primary} />, screen: 'MatingList' },
-      { id: '8', title: 'Breeding', icon: <BreedingIcon size={32} color={theme.colors.primary} />, screen: 'BreedingList' },
-      { id: '9', title: 'Report', icon: <ClipboardList color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReportsMenu' },
-      { id: '10', title: 'Language', icon: <Globe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
-      { id: '11', title: 'Settings', icon: <Settings color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'Settings' },
-      { id: '12', title: 'Financials', icon: <Briefcase color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
-      { id: '13', title: 'Replace Tag', icon: <RefreshCcw color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReplaceTag' },
-      { id: '14', title: 'Milk Records', icon: <Milk color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
-      { id: '15', title: 'Farm Setting', icon: <Sliders color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
+      { id: '1', title: t('actions.breed', 'Breed'), icon: <BreedIcon size={32} color={theme.colors.primary} />, screen: 'BreedList' },
+      { id: '2', title: t('actions.animals', 'Animals'), icon: <AnimalIcon size={32} color={theme.colors.primary} />, screen: 'AnimalList' },
+      { id: '3', title: t('actions.employee', 'Employee'), icon: <User color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'EmployeeList' },
+      { id: '4', title: t('actions.animalShed', 'Animal Shed'), icon: <Home color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'LocationMenu' },
+      { id: '5', title: t('actions.vaccines', 'Vaccines'), icon: <Syringe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'VaccinesMenu' },
+      { id: '6', title: t('actions.weight', 'Weight'), icon: <Scale color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'AddWeight' },
+      { id: '7', title: t('actions.mating', 'Mating'), icon: <MatingIcon size={32} color={theme.colors.primary} />, screen: 'MatingList' },
+      { id: '8', title: t('actions.breeding', 'Breeding'), icon: <BreedingIcon size={32} color={theme.colors.primary} />, screen: 'BreedingList' },
+      { id: '9', title: t('actions.report', 'Report'), icon: <ClipboardList color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReportsMenu' },
+      { id: '10', title: t('actions.language', 'Language'), icon: <Globe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'LanguageSelection' },
+      { id: '11', title: t('actions.settings', 'Settings'), icon: <Settings color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'Settings' },
+      { id: '12', title: t('actions.financials', 'Financials'), icon: <Briefcase color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
+      { id: '13', title: t('actions.replaceTag', 'Replace Tag'), icon: <RefreshCcw color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReplaceTag' },
+      { id: '14', title: t('actions.milkRecords', 'Milk Records'), icon: <Milk color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
+      { id: '15', title: t('actions.farmSetting', 'Farm Setting'), icon: <Sliders color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
     ];
 
     // Filter out 'Employee' tile for non-OWNER roles
@@ -101,7 +103,7 @@ const DashboardScreen = ({ navigation }) => {
       if (tile.id === '3' && userRole && userRole !== 'OWNER') return false;
       return true;
     });
-  }, [theme, userRole]);
+  }, [theme, userRole, t]);
 
   const renderTile = ({ item }) => (
     <TouchableOpacity 
@@ -137,15 +139,15 @@ const DashboardScreen = ({ navigation }) => {
 
     return (
       <View>
-        <Text style={styles.sectionTitle}>Overview</Text>
+        <Text style={styles.sectionTitle}>{t('dashboard.overview', 'Overview')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiScroll}>
           {/* Total Animals */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
-                <PawPrint color={theme.colors.primary} size={18} />
+              <View style={[styles.kpiIconContainer, { backgroundColor: '#f59e0b15' }]}>
+                <PawPrint color="#f59e0b" size={18} />
               </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>Total Animals</Text>
+              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.totalAnimals', 'Total Animals')}</Text>
             </View>
             <Text style={styles.kpiValue}>{metrics.totalAnimals}</Text>
           </View>
@@ -156,7 +158,7 @@ const DashboardScreen = ({ navigation }) => {
               <View style={[styles.kpiIconContainer, { backgroundColor: '#10b98115' }]}>
                 <Heart color="#10b981" size={18} />
               </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>Breeding Does</Text>
+              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.breedingDoes', 'Breeding Does')}</Text>
             </View>
             <Text style={styles.kpiValue}>{metrics.breedingDoes}</Text>
           </View>
@@ -167,7 +169,7 @@ const DashboardScreen = ({ navigation }) => {
               <View style={[styles.kpiIconContainer, { backgroundColor: '#3b82f615' }]}>
                 <Activity color="#3b82f6" size={18} />
               </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>Kids Born</Text>
+              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.kidsBorn', 'Kids Born')}</Text>
             </View>
             <Text style={styles.kpiValue}>{metrics.kidsBorn}</Text>
           </View>
@@ -178,17 +180,17 @@ const DashboardScreen = ({ navigation }) => {
               <View style={[styles.kpiIconContainer, { backgroundColor: '#ef444415' }]}>
                 <TrendingDown color="#ef4444" size={18} />
               </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>Mortality</Text>
+              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.mortality', 'Mortality')}</Text>
             </View>
             <Text style={styles.kpiValue}>{metrics.mortalityRate}</Text>
           </View>
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>Herd Composition</Text>
+        <Text style={styles.sectionTitle}>{t('dashboard.herdComposition', 'Herd Composition')}</Text>
         <View style={styles.compositionCard}>
           <View style={styles.compHeader}>
             <GitBranch color={theme.colors.primary} size={20} />
-            <Text style={styles.compTitle}>By Gender & Age</Text>
+            <Text style={styles.compTitle}>{t('dashboard.byGenderAndAge', 'By Gender & Age')}</Text>
           </View>
 
           {/* Custom Horizontal Bar */}
@@ -202,23 +204,23 @@ const DashboardScreen = ({ navigation }) => {
           <View style={styles.compLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} />
-              <Text style={styles.legendText}>Bucks</Text>
+              <Text style={styles.legendText}>{t('dashboard.bucks', 'Bucks')}</Text>
               <Text style={styles.legendValue}>{Math.round(bucksPct)}%</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
-              <Text style={styles.legendText}>Does</Text>
+              <Text style={styles.legendText}>{t('dashboard.does', 'Does')}</Text>
               <Text style={styles.legendValue}>{Math.round(doesPct)}%</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
-              <Text style={styles.legendText}>Kids</Text>
+              <Text style={styles.legendText}>{t('dashboard.kids', 'Kids')}</Text>
               <Text style={styles.legendValue}>{Math.round(kidsPct)}%</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>{t('dashboard.quickActions', 'Quick Actions')}</Text>
       </View>
     );
   };
@@ -304,15 +306,15 @@ const DashboardScreen = ({ navigation }) => {
              <View style={styles.modalIconContainer}>
                 <Activity color={theme.colors.primary} size={40} strokeWidth={1.5} />
              </View>
-             <Text style={styles.modalTitle}>Coming Soon!</Text>
+             <Text style={styles.modalTitle}>{t('dashboard.comingSoon', 'Coming Soon!')}</Text>
              <Text style={styles.modalMessage}>
-                We are currently working on this module. This feature will be available soon!
+                {t('dashboard.comingSoonDesc', 'We are currently working on this module. This feature will be available soon!')}
              </Text>
              <TouchableOpacity 
                 style={styles.modalButton}
                 onPress={() => setSoonVisible(false)}
              >
-                <Text style={styles.modalButtonText}>Got it</Text>
+                <Text style={styles.modalButtonText}>{t('common.gotIt', 'Got it')}</Text>
              </TouchableOpacity>
           </View>
         </TouchableOpacity>

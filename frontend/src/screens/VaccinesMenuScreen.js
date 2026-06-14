@@ -4,27 +4,29 @@ import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import { ListPlus, Syringe, Users, History, Bell } from 'lucide-react-native';
 import { SPACING, SHADOW } from '../theme';
+import { useTranslation } from 'react-i18next';
 
 const VaccinesMenuScreen = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme), [theme]);
   
   const options = [
     { 
       id: 'add_vaccine', 
-      title: 'Add Vaccine Name', 
+      title: t('farmActivities.addVaccineName', 'Add Vaccine Name'), 
       icon: <ListPlus color={theme.colors.primary} size={32} strokeWidth={1.5} />, 
       onPress: () => navigation.navigate('VaccineDefinitions') 
     },
     { 
       id: 'single_vaccination', 
-      title: 'Single Vaccination', 
+      title: t('farmActivities.singleVaccination', 'Single Vaccination'), 
       icon: <Syringe color={theme.colors.primary} size={32} strokeWidth={1.5} />, 
       onPress: () => navigation.navigate('AddVaccination', { mode: 'single' }) 
     },
     { 
       id: 'mass_vaccination', 
-      title: 'Mass Vaccination', 
+      title: t('farmActivities.massVaccination', 'Mass Vaccination'), 
       icon: <Users color={theme.colors.primary} size={32} strokeWidth={1.5} />, 
       onPress: () => navigation.navigate('MassVaccination') 
     },
@@ -33,7 +35,7 @@ const VaccinesMenuScreen = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Vaccination Module" 
+        title={t('farmActivities.vaccinationModule', 'Vaccination Module')} 
         onBack={() => navigation.goBack()}
         leftAlign={true}
       />

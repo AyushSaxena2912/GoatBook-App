@@ -4,21 +4,23 @@ import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import { MapPin, Users, Search } from 'lucide-react-native';
 import { SPACING, SHADOW } from '../theme';
+import { useTranslation } from 'react-i18next';
 
 const LocationMenuScreen = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme), [theme]);
 
   const menuItems = [
     {
       id: 'single',
-      title: 'Single Location/Shed',
+      title: t('farmActivities.addLocation', 'Single Location/Shed'),
       icon: <MapPin color={theme.colors.primary} size={32} strokeWidth={1.5} />,
       screen: 'AddLocation',
     },
     {
       id: 'mass',
-      title: 'Mass Location/Shed',
+      title: t('farmActivities.massLocation', 'Mass Location/Shed'),
       icon: <Users color={theme.colors.primary} size={32} strokeWidth={1.5} />,
       screen: 'MassLocation',
     },
@@ -27,7 +29,7 @@ const LocationMenuScreen = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title="Location" 
+        title={t('farmActivities.locationMenu', 'Location')} 
         onBack={() => navigation.goBack()}
         leftAlign={true}
         // Removing Search icon for now as it's not in the target reference style for this menu type

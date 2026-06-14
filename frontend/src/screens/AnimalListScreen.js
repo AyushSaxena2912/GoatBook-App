@@ -10,6 +10,7 @@ import GAlert from '../components/GAlert';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFromCache, saveToCache } from '../utils/cache';
 import AnimalFilterModal from '../components/AnimalFilterModal';
+import { useTranslation } from 'react-i18next';
 
 const AnimalListScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
@@ -21,6 +22,12 @@ const AnimalListScreen = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
+  const { t } = useTranslation();
+
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
@@ -37,7 +44,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchAnimals();
+      fetchAnimals(1);
       if (route.params?.initialSearch) {
         setSearchQuery(route.params.initialSearch);
         setIsSearching(true);
@@ -82,12 +89,30 @@ const AnimalListScreen = ({ navigation, route }) => {
     }
     
     // Apply Advanced Filters
-    if (activeFilters.sheds?.length > 0) result = result.filter(a => activeFilters.sheds.includes(a.Location?.name));
-    if (activeFilters.status?.length > 0) result = result.filter(a => activeFilters.status.includes(a.status));
-    if (activeFilters.gender?.length > 0) result = result.filter(a => activeFilters.gender.includes(a.gender));
-    if (activeFilters.breeds?.length > 0) result = result.filter(a => activeFilters.breeds.includes(a.Breed?.name));
-    if (activeFilters.animalTypes?.length > 0) result = result.filter(a => activeFilters.animalTypes.includes(a.animalType));
-    if (activeFilters.origins?.length > 0) result = result.filter(a => activeFilters.origins.includes(a.acquisitionMethod));
+    if (activeFilters.sheds?.length > 0) {
+      const lowerSheds = activeFilters.sheds.map(s => s.toLowerCase());
+      result = result.filter(a => lowerSheds.includes((a.Location?.name || '').toLowerCase()));
+    }
+    if (activeFilters.status?.length > 0) {
+      const lowerStatus = activeFilters.status.map(s => s.toLowerCase());
+      result = result.filter(a => lowerStatus.includes((a.status || '').toLowerCase()));
+    }
+    if (activeFilters.gender?.length > 0) {
+      const lowerGender = activeFilters.gender.map(s => s.toLowerCase());
+      result = result.filter(a => lowerGender.includes((a.gender || '').toLowerCase()));
+    }
+    if (activeFilters.breeds?.length > 0) {
+      const lowerBreeds = activeFilters.breeds.map(s => s.toLowerCase());
+      result = result.filter(a => lowerBreeds.includes((a.Breed?.name || '').toLowerCase()));
+    }
+    if (activeFilters.animalTypes?.length > 0) {
+      const lowerTypes = activeFilters.animalTypes.map(s => s.toLowerCase());
+      result = result.filter(a => lowerTypes.includes((a.animalType || '').toLowerCase()));
+    }
+    if (activeFilters.origins?.length > 0) {
+      const lowerOrigins = activeFilters.origins.map(s => s.toLowerCase());
+      result = result.filter(a => lowerOrigins.includes((a.acquisitionMethod || '').toLowerCase()));
+    }
 
     if (activeFilters.timeAdded && activeFilters.timeAdded !== 'All') {
       const timeDate = new Date();
@@ -127,28 +152,51 @@ const AnimalListScreen = ({ navigation, route }) => {
     setFilteredAnimals(result);
   }, [searchQuery, animals, route.params, activeFilters]);
 
-  const fetchAnimals = async () => {
+  const fetchAnimals = async (pageNumber = 1) => {
     try {
-      setLoading(true);
-      const response = await api.get('/animals');
+      if (pageNumber === 1) setLoading(true);
+      else setIsFetchingMore(true);
+
+      const response = await api.get(`/animals?page=${pageNumber}&limit=30`);
       
-      // Cache data
-      await saveToCache('animals', response.data);
+      const fetchedAnimals = response.data.animals || [];
+      const paginationInfo = response.data.pagination || { page: 1, totalPages: 1 };
       
-      setAnimals(response.data);
-      setFilteredAnimals(response.data);
+      if (pageNumber === 1) {
+        await saveToCache('animals', fetchedAnimals);
+        setAnimals(fetchedAnimals);
+      } else {
+        setAnimals(prev => {
+          const newAnimals = [...prev, ...fetchedAnimals];
+          return newAnimals.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i); // Ensure no duplicates
+        });
+      }
+      
+      setPage(paginationInfo.page);
+      setTotalPages(paginationInfo.totalPages);
+
       setLoading(false);
+      setIsFetchingMore(false);
     } catch (error) {
       console.warn('Fetch animals failed, looking for cache...', error);
       
-      const cachedData = await getFromCache('animals');
-      if (cachedData) {
-        setAnimals(cachedData);
-        setFilteredAnimals(cachedData);
-      } else {
-        console.error('No cached animals found.');
+      if (pageNumber === 1) {
+        const cachedData = await getFromCache('animals');
+        if (cachedData) {
+          setAnimals(cachedData);
+          setFilteredAnimals(cachedData);
+        } else {
+          console.error('No cached animals found.');
+        }
       }
       setLoading(false);
+      setIsFetchingMore(false);
+    }
+  };
+
+  const loadMoreAnimals = () => {
+    if (!isFetchingMore && page < totalPages && !loading) {
+      fetchAnimals(page + 1);
     }
   };
 
@@ -196,9 +244,9 @@ const AnimalListScreen = ({ navigation, route }) => {
     try {
       await api.delete('/animals/bulk', { data: { ids: selectedIds } });
       // Success - refresh list
-      await fetchAnimals();
+      await fetchAnimals(1);
       exitSelectionMode();
-      showAlert('Deleted', `Successfully removed ${selectedIds.length} animals.`, 'success');
+      showAlert(t('common.deleted', 'Deleted'), t('animalList.deleteSuccess', 'Successfully removed {{count}} animals.', {count: selectedIds.length}), 'success');
     } catch (error) {
       const message = error.response?.data?.error || error.response?.data?.message || 'Failed to delete animals';
       showAlert('Delete Error', message, 'error');
@@ -243,7 +291,7 @@ const AnimalListScreen = ({ navigation, route }) => {
           <Image source={{ uri: item.imageUrl }} style={styles.animalThumbnail} />
         ) : (
           <View style={[styles.animalThumbnail, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6', justifyContent: 'center', alignItems: 'center' }]}>
-             <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>No Image</Text>
+             <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>{t('common.noImage', 'No Image')}</Text>
           </View>
         )}
 
@@ -252,7 +300,7 @@ const AnimalListScreen = ({ navigation, route }) => {
             <Text style={[styles.tagNumber, { color: theme.colors.text }]}>{item.tagNumber}</Text>
           </View>
           <Text style={[styles.breedName, { color: theme.colors.textLight }]}>
-            {item.Breed?.name} • {item.gender ? item.gender.charAt(0).toUpperCase() + item.gender.slice(1).toLowerCase() : ''}
+            {item.Breed?.name} • {item.gender ? t('enums.' + item.gender.toLowerCase(), item.gender.charAt(0).toUpperCase() + item.gender.slice(1).toLowerCase()) : ''}
           </Text>
           {item.Location && (
             <View style={[styles.locationTag, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}>
@@ -265,7 +313,7 @@ const AnimalListScreen = ({ navigation, route }) => {
         </View>
         <View style={[styles.statusBadge, styles[`status${item.status}`]]}>
           <Text style={styles.statusText}>
-            {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1).toLowerCase() : ''}
+            {item.status ? t('enums.' + item.status.toLowerCase(), item.status.charAt(0).toUpperCase() + item.status.slice(1).toLowerCase()) : ''}
           </Text>
         </View>
         
@@ -290,11 +338,11 @@ const AnimalListScreen = ({ navigation, route }) => {
     <View style={styles.emptyContainer}>
       <SearchX size={64} color={theme.colors.border} />
       <Text style={[styles.noRecords, { color: theme.colors.text }]}>
-        {searchQuery ? "No matching animals found" : "No Animals found"}
+        {searchQuery ? t('animalList.noMatch', "No matching animals found") : t('animalList.noAnimals', "No Animals found")}
       </Text>
       {!searchQuery && (
         <Text style={[styles.emptyDescription, { color: theme.colors.textLight }]}>
-          Start managing your farm by adding your first goat or sheep. Click the button below to register an animal.
+          {t('animalList.emptyDesc', 'Start managing your farm by adding your first goat or sheep. Click the button below to register an animal.')}
         </Text>
       )}
     </View>
@@ -324,22 +372,22 @@ const AnimalListScreen = ({ navigation, route }) => {
       {isSelectionMode ? (
         <View style={[styles.selectionHeader, { paddingTop: insets.top + 10, paddingBottom: 10 }]}>
             <TouchableOpacity onPress={exitSelectionMode} style={styles.headerButton}>
-                <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>Cancel</Text>
+                <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>{t('common.cancel', 'Cancel')}</Text>
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={[styles.selectionTitle, { color: theme.colors.text }]}>
-                    {selectedIds.length === 0 ? 'Select items' : `${selectedIds.length} selected`}
+                    {selectedIds.length === 0 ? t('common.selectItems', 'Select items') : t('common.selectedCount', '{{count}} selected', {count: selectedIds.length})}
                 </Text>
             </View>
             <TouchableOpacity onPress={handleSelectAll} style={[styles.headerButton, { alignItems: 'flex-end' }]}>
                 <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>
-                    {selectedIds.length === filteredAnimals.length ? 'None' : 'All'}
+                    {selectedIds.length === filteredAnimals.length ? t('common.none', 'None') : t('common.all', 'All')}
                 </Text>
             </TouchableOpacity>
         </View>
       ) : (
         <GHeader 
-          title="Animals List" 
+          title={t('animalList.title', 'Animals List')} 
           onMenu={!navigation.canGoBack() ? () => navigation.openDrawer() : undefined} 
           onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} 
           leftAlign={true}
@@ -365,7 +413,7 @@ const AnimalListScreen = ({ navigation, route }) => {
             <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search tag, breed, location or gender..."
+              placeholder={t('animalList.searchPlaceholder', "Search tag, breed, location or gender...")}
               placeholderTextColor={theme.colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -397,6 +445,15 @@ const AnimalListScreen = ({ navigation, route }) => {
               isSelectionMode && { paddingBottom: 120 }
             ]}
             keyboardShouldPersistTaps="handled"
+            onEndReached={loadMoreAnimals}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              isFetchingMore ? (
+                <View style={{ paddingVertical: 20 }}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                </View>
+              ) : null
+            }
           />
 
           {!isSelectionMode && (
@@ -417,7 +474,7 @@ const AnimalListScreen = ({ navigation, route }) => {
                 disabled={selectedIds.length === 0}
               >
                 <Trash2 color={selectedIds.length === 0 ? theme.colors.textMuted : theme.colors.primary} size={24} />
-                <Text style={[styles.deleteText, { color: selectedIds.length === 0 ? theme.colors.textMuted : theme.colors.primary }]}>Delete</Text>
+                <Text style={[styles.deleteText, { color: selectedIds.length === 0 ? theme.colors.textMuted : theme.colors.primary }]}>{t('common.delete', 'Delete')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -437,9 +494,11 @@ const AnimalListScreen = ({ navigation, route }) => {
                   </View>
                 </View>
                 
-                <Text style={styles.modalTitle}>Confirm Delete?</Text>
+                <Text style={styles.modalTitle}>{t('common.confirmDelete', 'Confirm Delete?')}</Text>
                 <Text style={styles.modalSubtitle}>
-                  Are you sure you want to delete {selectedIds.length === 1 ? 'this animal' : `these ${selectedIds.length} animals`}? This action cannot be undone.
+                  {selectedIds.length === 1 
+                    ? t('animalList.deleteConfirmMsgSingle', 'Are you sure you want to delete this animal? This action cannot be undone.') 
+                    : t('animalList.deleteConfirmMsg', 'Are you sure you want to delete these {{count}} animals? This action cannot be undone.', {count: selectedIds.length})}
                 </Text>
                 
                 <View style={styles.modalButtons}>
@@ -447,14 +506,14 @@ const AnimalListScreen = ({ navigation, route }) => {
                     style={styles.modalCancelButton} 
                     onPress={() => setIsDeleteModalVisible(false)}
                   >
-                    <Text style={styles.modalCancelText}>Cancel</Text>
+                    <Text style={styles.modalCancelText}>{t('common.cancel', 'Cancel')}</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity 
                     style={styles.modalDeleteButton} 
                     onPress={confirmBulkDelete}
                   >
-                    <Text style={styles.modalDeleteText}>Delete</Text>
+                    <Text style={styles.modalDeleteText}>{t('common.delete', 'Delete')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

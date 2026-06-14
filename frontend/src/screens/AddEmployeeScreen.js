@@ -8,12 +8,14 @@ import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import GConfirmModal from '../components/GConfirmModal';
 import api from '../api';
+import { useTranslation } from 'react-i18next';
 import { KeyRound, Mail, UserRound, Camera, ImageIcon, Trash2, X, AlertTriangle } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToCloudinary as cloudinaryUpload } from '../utils/cloudinary';
 
 const AddEmployeeScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const isEditing = !!route.params?.employee;
   const existingEmployee = route.params?.employee;
@@ -174,7 +176,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GHeader 
-        title={isEditing ? "Edit employee" : "Add employee"} 
+        title={isEditing ? t('employees.editEmployee', 'Edit employee') : t('employees.addEmployee', 'Add employee')} 
         onBack={() => navigation.goBack()} 
         leftAlign
       />
@@ -219,18 +221,16 @@ const AddEmployeeScreen = ({ navigation, route }) => {
                   borderColor: state === 'Terminated' ? theme.colors.error + '30' : theme.colors.success + '30' }
               ]}>
                 <View style={[styles.statusDot, { backgroundColor: state === 'Terminated' ? theme.colors.error : theme.colors.success }]} />
-                <Text style={[styles.statusText, { color: state === 'Terminated' ? theme.colors.error : theme.colors.success }]}>
-                  {state.charAt(0).toUpperCase() + state.slice(1).toLowerCase()}
-                </Text>
+                <Text style={[styles.statusText, { color: state === 'Terminated' ? theme.colors.error : theme.colors.success }]}>{state === 'Terminated' ? t('enums.terminated', 'Terminated') : t('enums.working', 'Working')}</Text>
               </View>
             )}
           </View>
  
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Identity Details</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>{t('employees.identityDetails', 'Identity Details')}</Text>
             
             <GInput 
-              label="First Name" 
+              label={t('employees.firstName', 'First Name')} 
               value={firstName} 
               onChangeText={setFirstName} 
               placeholder="Deepak"
@@ -240,7 +240,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
             <View style={styles.gap} />
             
             <GInput 
-              label="Last Name" 
+              label={t('employees.lastName', 'Last Name')} 
               value={lastName} 
               onChangeText={setLastName} 
               placeholder="Kumar"
@@ -249,7 +249,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
             <View style={styles.gap} />
             
             <GInput 
-              label="Phone Number" 
+              label={t('settings.phoneNumber', 'Phone Number')} 
               value={phone} 
               onChangeText={setPhone} 
               keyboardType="phone-pad"
@@ -259,7 +259,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
             <View style={styles.gap} />
             
             <GInput 
-              label="Email Address" 
+              label={t('settings.emailAddress', 'Email Address')} 
               value={email} 
               onChangeText={setEmail} 
               keyboardType="email-address"
@@ -271,7 +271,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
               <>
                 <View style={styles.gap} />
                 <GInput 
-                  label="Temporary Password" 
+                  label={t('employees.tempPassword', 'Temporary Password')} 
                   value={password} 
                   onChangeText={setPassword} 
                   secureTextEntry 
@@ -283,29 +283,29 @@ const AddEmployeeScreen = ({ navigation, route }) => {
           </View>
  
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Work Role</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>{t('employees.workRole', 'Work Role')}</Text>
             {existingEmployee?.role === 'OWNER' ? (
               <View style={[styles.readOnlyRole, { backgroundColor: theme.colors.primary + '10', borderColor: theme.colors.primary + '30' }]}>
                 <View style={[styles.roleIconCircle, { backgroundColor: theme.colors.primary + '20' }]}>
                   <KeyRound size={18} color={theme.colors.primary} />
                 </View>
                 <View style={styles.roleTextContainer}>
-                  <Text style={[styles.readOnlyRoleText, { color: theme.colors.text }]}>Owner (Primary Access)</Text>
-                  <Text style={[styles.roleSubtext, { color: theme.colors.textLight }]}>This account has full farm management control</Text>
+                  <Text style={[styles.readOnlyRoleText, { color: theme.colors.text }]}>{t('employees.ownerAccess', 'Owner (Primary Access)')}</Text>
+                  <Text style={[styles.roleSubtext, { color: theme.colors.textLight }]}>{t('employees.ownerDesc', 'This account has full farm management control')}</Text>
                 </View>
               </View>
             ) : (
               <GSelect 
-                label="Assigned Role" 
+                label={t('employees.assignedRole', 'Assigned Role')} 
                 value={role} 
                 onSelect={setRole}
                 options={[
-                  { label: 'Manager', value: 'MANAGER' },
-                  { label: 'Supervisor', value: 'SUPERVISOR' },
-                  { label: 'Veterinarian', value: 'VETERINARIAN' },
-                  { label: 'Farm Worker', value: 'EMPLOYEE' },
-                  { label: 'Butcher', value: 'BUTCHER' },
-                  { label: 'Agent', value: 'AGENT' }
+                  { label: t('roles.manager', 'Manager'), value: 'MANAGER' },
+                  { label: t('roles.supervisor', 'Supervisor'), value: 'SUPERVISOR' },
+                  { label: t('roles.veterinarian', 'Veterinarian'), value: 'VETERINARIAN' },
+                  { label: t('roles.farmWorker', 'Farm Worker'), value: 'EMPLOYEE' },
+                  { label: t('roles.butcher', 'Butcher'), value: 'BUTCHER' },
+                  { label: t('roles.agent', 'Agent'), value: 'AGENT' }
                 ]}
                 required
               />
@@ -320,14 +320,12 @@ const AddEmployeeScreen = ({ navigation, route }) => {
                   onPress={() => setShowPasswordReset(true)}
                 >
                   <KeyRound size={20} color={theme.colors.primary} />
-                  <Text style={[styles.resetTriggerText, { color: theme.colors.primary }]}>
-                    {existingEmployee?.role === 'OWNER' ? "Reset Account Password" : "Reset Employee Password"}
-                  </Text>
+                  <Text style={[styles.resetTriggerText, { color: theme.colors.primary }]}>{existingEmployee?.role === 'OWNER' ? t('employees.resetAccountPassword', 'Reset Account Password') : t('employees.resetEmployeePassword', 'Reset Employee Password')}</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.resetBox}>
                   <GInput 
-                    label="New Password" 
+                    label={t('employees.newPassword', 'New Password')} 
                     value={password} 
                     onChangeText={setPassword} 
                     secureTextEntry 
@@ -335,10 +333,10 @@ const AddEmployeeScreen = ({ navigation, route }) => {
                   />
                   <View style={styles.resetActions}>
                     <TouchableOpacity onPress={() => setShowPasswordReset(false)}>
-                      <Text style={[styles.cancelText, { color: theme.colors.textLight }]}>Cancel</Text>
+                      <Text style={[styles.cancelText, { color: theme.colors.textLight }]}>{t('common.cancel', 'Cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleResetPassword}>
-                      <Text style={[styles.confirmText, { color: theme.colors.error }]}>Reset Now</Text>
+                      <Text style={[styles.confirmText, { color: theme.colors.error }]}>{t('employees.resetNow', 'Reset Now')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -354,7 +352,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
       {/* Modern Fixed Footer */}
       <View style={[styles.footerContainer, { paddingBottom: Platform.OS === 'ios' ? 34 : 24 }]}>
         <GButton 
-          title={uploading ? "Uploading photo..." : (isEditing ? "Save changes" : "Create employee")} 
+          title={uploading ? t('employees.uploadingPhoto', 'Uploading photo...') : (isEditing ? t('common.saveChanges', 'Save changes') : t('employees.createEmployee', 'Create employee'))} 
           onPress={handleSave}
           loading={loading && !showPasswordReset}
           disabled={uploading}
@@ -366,9 +364,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
             onPress={handleStatusToggle}
             activeOpacity={0.6}
           >
-            <Text style={[styles.terminateBtnText, { color: state === 'Working' ? theme.colors.error : theme.colors.primary }]}>
-              {state === 'Working' ? "Terminate Employee Access" : "Re-activate Employee Access"}
-            </Text>
+            <Text style={[styles.terminateBtnText, { color: state === 'Working' ? theme.colors.error : theme.colors.primary }]}>{state === 'Working' ? t('employees.terminateAccess', 'Terminate Employee Access') : t('employees.reactivateAccess', 'Re-activate Employee Access')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -387,7 +383,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
         >
           <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Upload Photo</Text>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{t('common.uploadPhoto', 'Upload Photo')}</Text>
               <TouchableOpacity onPress={() => setShowImagePicker(false)}>
                 <X size={24} color={theme.colors.textLight} />
               </TouchableOpacity>
@@ -398,14 +394,14 @@ const AddEmployeeScreen = ({ navigation, route }) => {
                 <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary + '15' }]}>
                   <Camera size={24} color={theme.colors.primary} />
                 </View>
-                <Text style={[styles.optionText, { color: theme.colors.text }]}>Take Photo</Text>
+                <Text style={[styles.optionText, { color: theme.colors.text }]}>{t('settings.camera', 'Take Photo')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.modalOption} onPress={pickImage}>
                 <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary + '15' }]}>
                   <ImageIcon size={24} color={theme.colors.primary} />
                 </View>
-                <Text style={[styles.optionText, { color: theme.colors.text }]}>Choose From Gallery</Text>
+                <Text style={[styles.optionText, { color: theme.colors.text }]}>{t('settings.gallery', 'Choose From Gallery')}</Text>
               </TouchableOpacity>
 
               {profilePhoto && (
@@ -413,7 +409,7 @@ const AddEmployeeScreen = ({ navigation, route }) => {
                   <View style={[styles.iconCircle, { backgroundColor: theme.colors.error + '15' }]}>
                     <Trash2 size={24} color={theme.colors.error} />
                   </View>
-                  <Text style={[styles.optionText, { color: theme.colors.error }]}>Remove Photo</Text>
+                  <Text style={[styles.optionText, { color: theme.colors.error }]}>{t('common.removePhoto', 'Remove Photo')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -423,12 +419,9 @@ const AddEmployeeScreen = ({ navigation, route }) => {
 
       <GConfirmModal
         visible={showConfirmModal}
-        title={state === 'Working' ? "Terminate Employee?" : "Re-activate Employee?"}
-        message={state === 'Working' 
-          ? 'Are you sure you want to terminate this employee? They will lose all access immediately and cannot log in, but all historical records and changes they made will be safely preserved in the farm logs.'
-          : 'This will restore the employee\'s access to the farm. They will be able to log in with their existing credentials.'
-        }
-        confirmText={state === 'Working' ? "Yes, Terminate" : "Yes, Re-activate"}
+        title={state === 'Working' ? t('employees.terminateConfirmTitle', 'Terminate Employee?') : t('employees.reactivateConfirmTitle', 'Re-activate Employee?')}
+        message={state === 'Working' ? t('employees.terminateConfirmMsg', 'Are you sure you want to terminate this employee? They will lose all access immediately and cannot log in, but all historical records and changes they made will be safely preserved in the farm logs.') : t('employees.reactivateConfirmMsg', "This will restore the employee's access to the farm. They will be able to log in with their existing credentials.")}
+        confirmText={state === 'Working' ? t('employees.yesTerminate', 'Yes, Terminate') : t('employees.yesReactivate', 'Yes, Re-activate')}
         onConfirm={performToggle}
         onCancel={() => setShowConfirmModal(false)}
         variant={state === 'Working' ? "destructive" : "primary"}
@@ -437,10 +430,10 @@ const AddEmployeeScreen = ({ navigation, route }) => {
 
       <GConfirmModal
         visible={showUpgradeModal}
-        title="Plan Limit Reached"
+        title={t('employees.planLimitReached', 'Plan Limit Reached')}
         message={upgradeMessage}
-        confirmText="View Plans"
-        cancelText="Cancel"
+        confirmText={t('common.viewPlans', 'View Plans')}
+        cancelText={t('common.cancel', 'Cancel')}
         onConfirm={() => {
             setShowUpgradeModal(false);
             navigation.navigate('SubscriptionScreen');

@@ -59,6 +59,9 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import SideMenu from './src/components/SideMenu';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
+import i18n from './src/i18n';
+import api from './src/api';
+import LanguageSelectionScreen from './src/screens/LanguageSelectionScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -172,6 +175,15 @@ function AppContent() {
       console.log("Token:", token, "FarmId:", farmId);
       if (token && farmId) {
         setInitialRoute('MainDrawer');
+        // Fetch user profile to get their preferred language
+        try {
+          const profileRes = await api.get('/users/profile');
+          if (profileRes.data?.user?.language) {
+            i18n.changeLanguage(profileRes.data.user.language);
+          }
+        } catch (langError) {
+          console.error("Error fetching language preference:", langError);
+        }
       } else {
         setInitialRoute('Login');
       }
@@ -245,6 +257,7 @@ function AppContent() {
           <Stack.Screen name="MassLocation" component={MassLocationScreen} />
           <Stack.Screen name="MassVaccination" component={MassVaccinationScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

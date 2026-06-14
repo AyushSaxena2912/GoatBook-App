@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, TextInput,
 import { useTheme } from '../theme/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFilters }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   
   const defaultFilters = {
@@ -75,7 +77,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
     onApply(filters);
   };
 
-  const renderChips = (title, key, options) => {
+  const renderChips = (title, key, options, isEnum = false) => {
     if (!options || options.length === 0) return null;
     return (
       <View style={styles.section}>
@@ -97,7 +99,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
                   styles.chipText,
                   { color: isSelected ? theme.colors.primary : theme.colors.textMuted },
                   isSelected && styles.chipTextSelected
-                ]}>{opt}</Text>
+                ]}>{isEnum ? t('enums.' + opt.toLowerCase(), opt) : opt}</Text>
               </TouchableOpacity>
             );
           })}
@@ -108,9 +110,10 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
 
   const renderTimeChips = () => {
     const options = ['All', 'Recently (24h)', 'Last 1 Week', 'Last 1 Month', 'Last 3 Months', 'Last 6 Months', 'Last 1 Year'];
+    const optKeys = {'All': 'all', 'Recently (24h)': 'recently', 'Last 1 Week': 'last1Week', 'Last 1 Month': 'last1Month', 'Last 3 Months': 'last3Months', 'Last 6 Months': 'last6Months', 'Last 1 Year': 'last1Year'};
     return (
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Time Added</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('filterModal.timeAdded', 'Time Added')}</Text>
         <View style={styles.chipsContainer}>
           {options.map(opt => {
             const isSelected = filters.timeAdded === opt;
@@ -128,7 +131,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
                   styles.chipText,
                   { color: isSelected ? theme.colors.primary : theme.colors.textMuted },
                   isSelected && styles.chipTextSelected
-                ]}>{opt}</Text>
+                ]}>{optKeys[opt] ? t('filterModal.' + optKeys[opt], opt) : opt}</Text>
               </TouchableOpacity>
             );
           })}
@@ -139,6 +142,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
 
   const renderNumberInput = (title, conditionKey, valKey, maxValKey) => {
     const conditions = ['Above', 'Below', 'Between'];
+    const condKeys = {'Above': 'above', 'Below': 'below', 'Between': 'between'};
     const selectedCondition = filters[conditionKey] || 'Above';
     
     return (
@@ -157,7 +161,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
               <Text style={[
                 styles.conditionTabText, 
                 { color: selectedCondition === cond ? '#FFF' : theme.colors.textMuted }
-              ]}>{cond}</Text>
+              ]}>{condKeys[cond] ? t('filterModal.' + condKeys[cond], cond) : cond}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -165,7 +169,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
         <View style={styles.inputRow}>
           <TextInput
             style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-            placeholder={selectedCondition === 'Between' ? "Min value" : "Enter value"}
+            placeholder={selectedCondition === 'Between' ? t('filterModal.minValue', 'Min value') : t('filterModal.enterValue', 'Enter value')}
             placeholderTextColor={theme.colors.textMuted}
             keyboardType="numeric"
             value={filters[valKey]}
@@ -176,7 +180,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
               <Text style={{ color: theme.colors.textMuted, marginHorizontal: 10 }}>-</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-                placeholder="Max value"
+                placeholder={t('filterModal.maxValue', 'Max value')}
                 placeholderTextColor={theme.colors.textMuted}
                 keyboardType="numeric"
                 value={filters[maxValKey]}
@@ -198,7 +202,7 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
         <View style={[styles.modalContent, { backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF', paddingBottom: Platform.OS === 'ios' ? insets.bottom : 20, paddingTop: insets.top }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Filters</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('filterModal.filters', 'Filters')}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <X color={theme.colors.textMuted} size={24} />
             </TouchableOpacity>
@@ -207,17 +211,17 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
           {/* Body */}
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
-            {renderChips('Animal Shed (Location)', 'sheds', uniqueOptions.sheds)}
-            {renderChips('Status', 'status', ['Live', 'Sold', 'Dead'])}
-            {renderChips('Gender', 'gender', ['Male', 'Female'])}
-            {renderChips('Animal Type', 'animalTypes', uniqueOptions.types)}
-            {renderChips('Breed', 'breeds', uniqueOptions.breeds)}
-            {renderChips('Origin', 'origins', uniqueOptions.origins)}
+            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', uniqueOptions.sheds)}
+            {renderChips(t('filterModal.status', 'Status'), 'status', ['Live', 'Sold', 'Dead'], true)}
+            {renderChips(t('filterModal.gender', 'Gender'), 'gender', ['Male', 'Female'], true)}
+            {renderChips(t('filterModal.animalType', 'Animal Type'), 'animalTypes', uniqueOptions.types, true)}
+            {renderChips(t('filterModal.breed', 'Breed'), 'breeds', uniqueOptions.breeds)}
+            {renderChips(t('filterModal.origin', 'Origin'), 'origins', uniqueOptions.origins, true)}
             
             {renderTimeChips()}
             
-            {renderNumberInput('Weight (kg)', 'weightCondition', 'weightValue', 'weightMax')}
-            {renderNumberInput('Net Price', 'priceCondition', 'priceValue', 'priceMax')}
+            {renderNumberInput(t('filterModal.weight', 'Weight (kg)'), 'weightCondition', 'weightValue', 'weightMax')}
+            {renderNumberInput(t('filterModal.netPrice', 'Net Price'), 'priceCondition', 'priceValue', 'priceMax')}
 
             <View style={{ height: 40 }} />
           </ScrollView>
@@ -225,10 +229,10 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: theme.colors.border }]}>
             <TouchableOpacity style={[styles.btn, styles.clearBtn, { borderColor: theme.colors.border }]} onPress={clearFilters}>
-              <Text style={[styles.clearBtnText, { color: theme.colors.text }]}>Clear All</Text>
+              <Text style={[styles.clearBtnText, { color: theme.colors.text }]}>{t('filterModal.clearAll', 'Clear All')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.applyBtn, { backgroundColor: theme.colors.primary }]} onPress={handleApply}>
-              <Text style={styles.applyBtnText}>Apply Filters</Text>
+              <Text style={styles.applyBtnText}>{t('filterModal.applyFilters', 'Apply Filters')}</Text>
             </TouchableOpacity>
           </View>
         </View>
