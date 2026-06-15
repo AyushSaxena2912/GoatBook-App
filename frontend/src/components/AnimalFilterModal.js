@@ -205,11 +205,11 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
           {/* Body */}
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
-            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', Array.from(new Set(allLocations.map(l => l.name).filter(Boolean))).sort())}
+            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', Array.from(new Set((Array.isArray(allLocations) ? allLocations : []).map(l => l.name).filter(Boolean))).sort())}
             {renderChips(t('filterModal.status', 'Status'), 'status', ['Live', 'Sold', 'Dead'], true)}
             {renderChips(t('filterModal.gender', 'Gender'), 'gender', ['Male', 'Female'], true)}
             {renderChips(t('filterModal.animalType', 'Animal Type'), 'animalTypes', ['Goat', 'Sheep'], true)}
-            {renderChips(t('filterModal.breed', 'Breed'), 'breeds', Array.from(new Set(allBreeds.map(b => b.name).filter(Boolean))).sort())}
+            {renderChips(t('filterModal.breed', 'Breed'), 'breeds', Array.from(new Set((Array.isArray(allBreeds) ? allBreeds : []).map(b => b.name).filter(Boolean))).sort())}
             {renderChips(t('filterModal.origin', 'Origin'), 'origins', uniqueOptions.origins, true)}
             
             {renderTimeChips()}
