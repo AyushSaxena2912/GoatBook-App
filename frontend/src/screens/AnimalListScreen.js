@@ -133,7 +133,7 @@ const AnimalListScreen = ({ navigation, route }) => {
     }
     if (activeFilters.origins?.length > 0) {
       const lowerOrigins = activeFilters.origins.map(s => s.toLowerCase());
-      result = result.filter(a => lowerOrigins.includes((a.acquisitionMethod || '').toLowerCase()));
+      result = result.filter(a => lowerOrigins.includes((a.Breed?.origin || '').toLowerCase()));
     }
 
     if (activeFilters.timeAdded && activeFilters.timeAdded !== 'All') {

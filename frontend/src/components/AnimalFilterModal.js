@@ -46,6 +46,22 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
     };
   }, [animals]);
 
+  const { goatBreeds, sheepBreeds } = useMemo(() => {
+    const list = Array.isArray(allBreeds) ? allBreeds : [];
+    const goats = Array.from(new Set(list.filter(b => b.animalType?.toLowerCase() === 'goat').map(b => b.name).filter(Boolean))).sort();
+    const sheeps = Array.from(new Set(list.filter(b => b.animalType?.toLowerCase() === 'sheep').map(b => b.name).filter(Boolean))).sort();
+    
+    // Fallback: If no breed has animalType 'goat' or 'sheep', put all in goats
+    if (goats.length === 0 && sheeps.length === 0 && list.length > 0) {
+      return {
+        goatBreeds: Array.from(new Set(list.map(b => b.name).filter(Boolean))).sort(),
+        sheepBreeds: []
+      };
+    }
+    
+    return { goatBreeds: goats, sheepBreeds: sheeps };
+  }, [allBreeds]);
+
   useEffect(() => {
     if (visible) {
       setFilters(initialFilters ? { ...defaultFilters, ...initialFilters } : defaultFilters);
@@ -205,17 +221,92 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
           {/* Body */}
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
-            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', Array.from(new Set((Array.isArray(allLocations) ? allLocations : []).map(l => l.name).filter(Boolean))).sort())}
-            {renderChips(t('filterModal.status', 'Status'), 'status', ['Live', 'Sold', 'Dead'], true)}
-            {renderChips(t('filterModal.gender', 'Gender'), 'gender', ['Male', 'Female'], true)}
+            {/* 1. Animal Type */}
             {renderChips(t('filterModal.animalType', 'Animal Type'), 'animalTypes', ['Goat', 'Sheep'], true)}
-            {renderChips(t('filterModal.breed', 'Breed'), 'breeds', Array.from(new Set((Array.isArray(allBreeds) ? allBreeds : []).map(b => b.name).filter(Boolean))).sort())}
-            {renderChips(t('filterModal.origin', 'Origin'), 'origins', uniqueOptions.origins, true)}
-            
-            {renderTimeChips()}
-            
+
+            {/* 2. Origin */}
+            {renderChips(t('filterModal.origin', 'Origin'), 'origins', ['Indian', 'Exotic'], true)}
+
+            {/* 3. Breed (Categorized by Goat / Sheep) */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('filterModal.breed', 'Breed')}</Text>
+              
+              {/* Goat Breeds sub-category */}
+              {goatBreeds.length > 0 && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={[styles.subSectionTitle, { color: theme.colors.textLight }]}>{t('enums.goat', 'Goat')} {t('filterModal.breed', 'Breed')}</Text>
+                  <View style={styles.chipsContainer}>
+                    {goatBreeds.map(opt => {
+                      const isSelected = (filters.breeds || []).includes(opt);
+                      return (
+                        <TouchableOpacity
+                          key={opt}
+                          style={[
+                            styles.chip,
+                            { backgroundColor: isDarkMode ? '#2C2C2C' : '#F3F4F6', borderColor: isSelected ? theme.colors.primary : 'transparent' },
+                            isSelected && { backgroundColor: isDarkMode ? `${theme.colors.primary}20` : `${theme.colors.primary}15` }
+                          ]}
+                          onPress={() => toggleArrayItem('breeds', opt)}
+                        >
+                          <Text style={[
+                            styles.chipText,
+                            { color: isSelected ? theme.colors.primary : theme.colors.textMuted },
+                            isSelected && styles.chipTextSelected
+                          ]}>{opt}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              {/* Sheep Breeds sub-category */}
+              {sheepBreeds.length > 0 && (
+                <View>
+                  <Text style={[styles.subSectionTitle, { color: theme.colors.textLight }]}>{t('enums.sheep', 'Sheep')} {t('filterModal.breed', 'Breed')}</Text>
+                  <View style={styles.chipsContainer}>
+                    {sheepBreeds.map(opt => {
+                      const isSelected = (filters.breeds || []).includes(opt);
+                      return (
+                        <TouchableOpacity
+                          key={opt}
+                          style={[
+                            styles.chip,
+                            { backgroundColor: isDarkMode ? '#2C2C2C' : '#F3F4F6', borderColor: isSelected ? theme.colors.primary : 'transparent' },
+                            isSelected && { backgroundColor: isDarkMode ? `${theme.colors.primary}20` : `${theme.colors.primary}15` }
+                          ]}
+                          onPress={() => toggleArrayItem('breeds', opt)}
+                        >
+                          <Text style={[
+                            styles.chipText,
+                            { color: isSelected ? theme.colors.primary : theme.colors.textMuted },
+                            isSelected && styles.chipTextSelected
+                          ]}>{opt}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* 4. Gender */}
+            {renderChips(t('filterModal.gender', 'Gender'), 'gender', ['Male', 'Female'], true)}
+
+            {/* 5. Animal Shed */}
+            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', Array.from(new Set((Array.isArray(allLocations) ? allLocations : []).map(l => l.name).filter(Boolean))).sort())}
+
+            {/* Status (Live/Sold/Dead) */}
+            {renderChips(t('filterModal.status', 'Status'), 'status', ['Live', 'Sold', 'Dead'], true)}
+
+            {/* 6. Animal Weight */}
             {renderNumberInput(t('filterModal.weight', 'Weight (kg)'), 'weightCondition', 'weightValue', 'weightMax')}
+
+            {/* 7. Net Price */}
             {renderNumberInput(t('filterModal.netPrice', 'Net Price'), 'priceCondition', 'priceValue', 'priceMax')}
+
+            {/* Time Added */}
+            {renderTimeChips()}
 
             <View style={{ height: 40 }} />
           </ScrollView>
@@ -276,6 +367,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter-SemiBold',
     marginBottom: 14,
+  },
+  subSectionTitle: {
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    marginTop: 8,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   chipsContainer: {
     flexDirection: 'row',
