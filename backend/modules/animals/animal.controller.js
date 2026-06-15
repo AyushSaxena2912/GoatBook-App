@@ -27,24 +27,83 @@ exports.getAnimals = async (req, res) => {
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
     const offset = (page - 1) * limit;
 
+    // Filtering
+    const where = {
+      farm_id: req.farmId
+    };
+
+    if (req.query.gender) {
+      where.gender = req.query.gender.toUpperCase();
+    }
+    if (req.query.animalType) {
+      where.animalType = req.query.animalType.toUpperCase();
+    }
+    if (req.query.status) {
+      where.status = req.query.status.toUpperCase();
+    }
+    if (req.query.breedId) {
+      where.breedId = req.query.breedId;
+    }
+    if (req.query.locationId) {
+      where.locationId = req.query.locationId;
+    }
+
+    if (req.query.timeAdded) {
+      const date = new Date();
+
+      switch (req.query.timeAdded) {
+
+        case "Today":
+          date.setHours(0, 0, 0, 0);
+          break;
+
+        case "24h":
+          date.setHours(date.getHours() - 24);
+          break;
+
+        case "1week":
+          date.setDate(date.getDate() - 7);
+          break;
+
+        case "1month":
+          date.setMonth(date.getMonth() - 1);
+          break;
+
+        case "3months":
+          date.setMonth(date.getMonth() - 3);
+          break;
+
+        case "6months":
+          date.setMonth(date.getMonth() - 6);
+          break;
+
+        case "1year":
+          date.setFullYear(date.getFullYear() - 1);
+          break;
+      }
+      where.created_at = {
+        gte: date
+
+      };
+
+    }
+
+
     // Total Animals Count
     const totalAnimals = await prisma.animals.count({
-      where: {
-        farm_id: req.farmId
-      }
+      where
     });
+
     // 2. Fetch animals linked to this farm with breed and location details
     const animals = await prisma.animals.findMany({
-      where: { farm_id: req.farmId },
+      where,
       include: {
         breeds: { select: { name: true, animal_type: true } },
         locations: { select: { name: true, code: true } }
       },
       orderBy: { created_at: 'desc' },
-
       skip: offset,
       take: limit
-
 
     });
 

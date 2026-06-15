@@ -26,7 +26,11 @@
         "foregroundImage": "./assets/splash-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,7 +45,8 @@
           "cameraPermission": "The app accesses your camera to let you take photos of your livestock and profile."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-localization"
     ],
     "extra": {
       "eas": {

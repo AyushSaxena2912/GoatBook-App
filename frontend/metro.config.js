@@ -20,4 +20,10 @@ if (config.serializer && typeof config.serializer.getPolyfills === 'function') {
   };
 }
 
+// Force Babel to transpile packages that use private class fields (#field syntax)
+// so they work across all Hermes versions (avoids "private properties not supported" error).
+config.transformIgnorePatterns = [
+  'node_modules/(?!(react-native|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|react-native-vector-icons|react-native-web|react-native-worklets|@react-native|expo|@expo|@react-navigation|lucide-react-native)/)',
+];
+
 module.exports = config;

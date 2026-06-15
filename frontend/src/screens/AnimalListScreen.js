@@ -16,6 +16,8 @@ const AnimalListScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [animals, setAnimals] = useState([]);
+  const [allBreeds, setAllBreeds] = useState([]);
+  const [allLocations, setAllLocations] = useState([]);
   const [filteredAnimals, setFilteredAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -45,12 +47,32 @@ const AnimalListScreen = ({ navigation, route }) => {
   useFocusEffect(
     useCallback(() => {
       fetchAnimals(1);
+      fetchBreeds();
+      fetchLocations();
       if (route.params?.initialSearch) {
         setSearchQuery(route.params.initialSearch);
         setIsSearching(true);
       }
     }, [route.params])
   );
+
+  const fetchBreeds = async () => {
+    try {
+      const response = await api.get('/breeds');
+      setAllBreeds(response.data || []);
+    } catch (e) {
+      console.warn('Failed to fetch breeds', e);
+    }
+  };
+
+  const fetchLocations = async () => {
+    try {
+      const response = await api.get('/locations');
+      setAllLocations(response.data || []);
+    } catch (e) {
+      console.warn('Failed to fetch locations', e);
+    }
+  };
 
   useEffect(() => {
     let result = animals;
@@ -116,7 +138,8 @@ const AnimalListScreen = ({ navigation, route }) => {
 
     if (activeFilters.timeAdded && activeFilters.timeAdded !== 'All') {
       const timeDate = new Date();
-      if (activeFilters.timeAdded === 'Recently (24h)') timeDate.setHours(timeDate.getHours() - 24);
+      if (activeFilters.timeAdded === 'Today') timeDate.setHours(0, 0, 0, 0);
+      else if (activeFilters.timeAdded === 'Recently (24h)') timeDate.setHours(timeDate.getHours() - 24);
       else if (activeFilters.timeAdded === 'Last 1 Week') timeDate.setDate(timeDate.getDate() - 7);
       else if (activeFilters.timeAdded === 'Last 1 Month') timeDate.setMonth(timeDate.getMonth() - 1);
       else if (activeFilters.timeAdded === 'Last 3 Months') timeDate.setMonth(timeDate.getMonth() - 3);
@@ -152,12 +175,65 @@ const AnimalListScreen = ({ navigation, route }) => {
     setFilteredAnimals(result);
   }, [searchQuery, animals, route.params, activeFilters]);
 
-  const fetchAnimals = async (pageNumber = 1) => {
+  const fetchAnimals = async (pageNumber = 1, filtersOverride = null) => {
     try {
       if (pageNumber === 1) setLoading(true);
       else setIsFetchingMore(true);
 
-      const response = await api.get(`/animals?page=${pageNumber}&limit=30`);
+      // Use passed-in filters if provided (needed because setState is async)
+      const filtersToApply = filtersOverride !== null ? filtersOverride : activeFilters;
+      const genderArr = filtersToApply?.gender || [];
+
+      // Build query string — send gender to backend when exactly one is selected.
+      // Selecting both Male & Female = no restriction, so we skip the param.
+      let url = `/animals?page=${pageNumber}&limit=30`;
+      if (genderArr.length === 1) {
+        url += `&gender=${genderArr[0].toUpperCase()}`;
+      }
+
+      const typeArr = filtersToApply?.animalTypes || [];
+      if (typeArr.length === 1) {
+        url += `&animalType=${typeArr[0].toUpperCase()}`;
+      }
+
+      const statusArr = filtersToApply?.status || [];
+      if (statusArr.length === 1) {
+        url += `&status=${statusArr[0].toUpperCase()}`;
+      }
+
+      const breedArr = filtersToApply?.breeds || [];
+      if (breedArr.length === 1 && allBreeds.length > 0) {
+        const selectedBreed = allBreeds.find(b => b.name === breedArr[0]);
+        if (selectedBreed) {
+          url += `&breedId=${selectedBreed.id}`;
+        }
+      }
+
+      const shedArr = filtersToApply?.sheds || [];
+      if (shedArr.length === 1 && allLocations.length > 0) {
+        const selectedLoc = allLocations.find(l => l.name === shedArr[0]);
+        if (selectedLoc) {
+          url += `&locationId=${selectedLoc.id}`;
+        }
+      }
+
+      const timeAddedVal = filtersToApply?.timeAdded;
+      if (timeAddedVal && timeAddedVal !== 'All') {
+        let backendTime = '';
+        if (timeAddedVal === 'Today') backendTime = 'Today';
+        else if (timeAddedVal === 'Recently (24h)') backendTime = '24h';
+        else if (timeAddedVal === 'Last 1 Week') backendTime = '1week';
+        else if (timeAddedVal === 'Last 1 Month') backendTime = '1month';
+        else if (timeAddedVal === 'Last 3 Months') backendTime = '3months';
+        else if (timeAddedVal === 'Last 6 Months') backendTime = '6months';
+        else if (timeAddedVal === 'Last 1 Year') backendTime = '1year';
+
+        if (backendTime) {
+          url += `&timeAdded=${backendTime}`;
+        }
+      }
+
+      const response = await api.get(url);
       
       const fetchedAnimals = response.data.animals || [];
       const paginationInfo = response.data.pagination || { page: 1, totalPages: 1 };
@@ -196,7 +272,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   const loadMoreAnimals = () => {
     if (!isFetchingMore && page < totalPages && !loading) {
-      fetchAnimals(page + 1);
+      fetchAnimals(page + 1, activeFilters);
     }
   };
 
@@ -363,9 +439,13 @@ const AnimalListScreen = ({ navigation, route }) => {
         onClose={() => setIsFilterModalVisible(false)}
         animals={animals}
         initialFilters={activeFilters}
+        allBreeds={allBreeds}
+        allLocations={allLocations}
         onApply={(filters) => {
           setActiveFilters(filters);
           setIsFilterModalVisible(false);
+          // Re-fetch from page 1 with new filters (pass directly — setActiveFilters is async)
+          fetchAnimals(1, filters);
         }}
       />
 

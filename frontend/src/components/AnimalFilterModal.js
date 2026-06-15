@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFilters }) => {
+const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFilters, allBreeds = [], allLocations = [] }) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -32,21 +32,15 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
 
   // Extract unique options from the current animals list
   const uniqueOptions = useMemo(() => {
-    const sheds = new Set();
-    const breeds = new Set();
     const types = new Set();
     const origins = new Set();
 
     animals.forEach(a => {
-      if (a.Location?.name) sheds.add(a.Location.name);
-      if (a.Breed?.name) breeds.add(a.Breed.name);
       if (a.animalType) types.add(a.animalType);
       if (a.acquisitionMethod) origins.add(a.acquisitionMethod);
     });
 
     return {
-      sheds: Array.from(sheds).sort(),
-      breeds: Array.from(breeds).sort(),
       types: Array.from(types).sort(),
       origins: Array.from(origins).sort()
     };
@@ -109,8 +103,8 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
   };
 
   const renderTimeChips = () => {
-    const options = ['All', 'Recently (24h)', 'Last 1 Week', 'Last 1 Month', 'Last 3 Months', 'Last 6 Months', 'Last 1 Year'];
-    const optKeys = {'All': 'all', 'Recently (24h)': 'recently', 'Last 1 Week': 'last1Week', 'Last 1 Month': 'last1Month', 'Last 3 Months': 'last3Months', 'Last 6 Months': 'last6Months', 'Last 1 Year': 'last1Year'};
+    const options = ['All', 'Today', 'Recently (24h)', 'Last 1 Week', 'Last 1 Month', 'Last 3 Months', 'Last 6 Months', 'Last 1 Year'];
+    const optKeys = {'All': 'all', 'Today': 'today', 'Recently (24h)': 'recently', 'Last 1 Week': 'last1Week', 'Last 1 Month': 'last1Month', 'Last 3 Months': 'last3Months', 'Last 6 Months': 'last6Months', 'Last 1 Year': 'last1Year'};
     return (
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('filterModal.timeAdded', 'Time Added')}</Text>
@@ -211,11 +205,11 @@ const AnimalFilterModal = ({ visible, onClose, onApply, animals = [], initialFil
           {/* Body */}
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
-            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', uniqueOptions.sheds)}
+            {renderChips(t('filterModal.animalShed', 'Animal Shed (Location)'), 'sheds', Array.from(new Set(allLocations.map(l => l.name).filter(Boolean))).sort())}
             {renderChips(t('filterModal.status', 'Status'), 'status', ['Live', 'Sold', 'Dead'], true)}
             {renderChips(t('filterModal.gender', 'Gender'), 'gender', ['Male', 'Female'], true)}
-            {renderChips(t('filterModal.animalType', 'Animal Type'), 'animalTypes', uniqueOptions.types, true)}
-            {renderChips(t('filterModal.breed', 'Breed'), 'breeds', uniqueOptions.breeds)}
+            {renderChips(t('filterModal.animalType', 'Animal Type'), 'animalTypes', ['Goat', 'Sheep'], true)}
+            {renderChips(t('filterModal.breed', 'Breed'), 'breeds', Array.from(new Set(allBreeds.map(b => b.name).filter(Boolean))).sort())}
             {renderChips(t('filterModal.origin', 'Origin'), 'origins', uniqueOptions.origins, true)}
             
             {renderTimeChips()}
