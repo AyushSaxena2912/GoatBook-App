@@ -250,14 +250,7 @@ const deleteFormulation = async (req, res) => {
       return res.status(404).json({ message: "Formulation not found." });
     }
 
-    // Delete associated ingredients first
-    await prisma.formulationIngredients.deleteMany({
-      where: {
-        formulationId: Number(id)
-      },
-    });
-
-    // Delete the formulation itself
+    // Delete the formulation itself (Neon PostgreSQL cascade delete will clean up ingredients)
     await prisma.feedFormulation.delete({
       where: { id: Number(id) },
     });
