@@ -351,6 +351,22 @@ PENDING PENDING
     DateTime updated_at 
     }
   
+
+  "feedFormulation" {
+    Int id "🗝️"
+    String name 
+    DateTime created_at 
+    DateTime updated_at 
+    }
+  
+
+  "formulationIngredients" {
+    Int id "🗝️"
+    String name 
+    Decimal percentage 
+    Decimal ratePerKg 
+    }
+  
     "animals" |o--|| "enum_animals_gender" : "enum:gender"
     "animals" |o--|| "enum_animals_acquisition_method" : "enum:acquisition_method"
     "animals" |o--|o "enum_animals_female_condition" : "enum:female_condition"
@@ -402,4 +418,6 @@ PENDING PENDING
     "subscriptions" |o--|| "enum_subscription_plan" : "enum:plan_name"
     "subscriptions" |o--|| "enum_subscription_status" : "enum:status"
     "subscriptions" |o--|| "farms" : "farms"
+    "feedFormulation" }o--|| "farms" : "farms"
+    "formulationIngredients" }o--|| "feedFormulation" : "formulation"
 ```

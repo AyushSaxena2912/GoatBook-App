@@ -53,6 +53,7 @@ app.use('/api/breedings', require('./modules/breedings/breeding.routes'));
 app.use('/api/subscriptions', require('./modules/subscriptions/subscription.routes'));
 app.use('/api/analytics', require('./modules/analytics/analytics.routes'));
 app.use('/api/notifications', require('./modules/notifications/notification.routes'));
+app.use('/api/formulations', require('./modules/feedFormulation/feedFormulation.routes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

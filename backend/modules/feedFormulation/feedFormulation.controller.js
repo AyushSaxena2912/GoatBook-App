@@ -188,7 +188,7 @@ const updateFormulation = async(req, res) => {
                 })),
             },
          },
-         ingredients: {ingredients: true},
+         include: {ingredients: true},
        });
 
        res.status(200).json({message: "Formulation is updated", formulation});
@@ -200,10 +200,79 @@ const updateFormulation = async(req, res) => {
 
 }
 
+const patchFormulation = async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  const farmId = req.farmId;
 
+  if (!farmId) {
+    return res.status(400).json({ message: "Farm Id required." });
+  }
 
+  if (!name) {
+    return res.status(400).json({ message: "name is required." });
+  }
 
+  try {
+    const existing = await prisma.feedFormulation.findFirst({
+      where: { id: Number(id), farmId },
+    });
 
+    if (!existing) {
+      return res.status(404).json({ message: "Formulation not found." });
+    }
 
+    const formulation = await prisma.feedFormulation.update({
+      where: { id: Number(id) },
+      data: { name },
+    });
 
-    module.exports = { createFormulation, getAllFormulations, getFormulationById};
+    res.status(200).json({ message: "Formulation updated successfully", formulation });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error.", error: error.message });
+  }
+};
+
+const deleteFormulation = async (req, res) => {
+  const { id } = req.params;
+  const farmId = req.farmId;
+
+  if (!farmId) {
+    return res.status(400).json({ message: "Farm Id required." });
+  }
+
+  try {
+    const existing = await prisma.feedFormulation.findFirst({
+      where: { id: Number(id), farmId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Formulation not found." });
+    }
+
+    // Delete associated ingredients first
+    await prisma.formulationIngredients.deleteMany({
+      where: {
+        formulationId: Number(id)
+      },
+    });
+
+    // Delete the formulation itself
+    await prisma.feedFormulation.delete({
+      where: { id: Number(id) },
+    });
+
+    res.status(200).json({ message: "Formulation deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error.", error: error.message });
+  }
+};
+
+module.exports = { 
+  createFormulation, 
+  getAllFormulations, 
+  getFormulationById, 
+  updateFormulation, 
+  patchFormulation, 
+  deleteFormulation 
+};

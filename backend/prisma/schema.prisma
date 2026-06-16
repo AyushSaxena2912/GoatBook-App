@@ -148,6 +148,7 @@ model farms {
   vaccination_records vaccination_records[]
   vaccines            vaccines[]
   weights             weights[]
+  feedFormulations    feedFormulation[]
 }
 
 model locations {
@@ -450,4 +451,23 @@ enum enum_subscription_status {
   EXPIRED
   CANCELLED
   PENDING
+}
+
+model feedFormulation {
+  id          Int                      @id @default(autoincrement())
+  name        String                   @db.VarChar(255)
+  farmId      String                   @db.Uuid
+  created_at  DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime                 @updatedAt @db.Timestamptz(6)
+  farms       farms                    @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  ingredients formulationIngredients[]
+}
+
+model formulationIngredients {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(255)
+  percentage    Decimal         @db.Decimal(6, 2)
+  ratePerKg     Decimal         @db.Decimal(10, 2)
+  formulationId Int
+  formulation   feedFormulation @relation(fields: [formulationId], references: [id], onDelete: Cascade)
 }
