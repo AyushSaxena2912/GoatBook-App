@@ -14,6 +14,7 @@ const logError = (error, context) => {
 // @route   GET /api/animals
 exports.getAnimals = async (req, res) => {
   try {
+    console.log('GET ANIMALS REQUEST:', { query: req.query, farmId: req.farmId });
     // 1. Ensure a farm context exists (provided by auth middleware)
     if (!req.farmId) {
       return res.status(400).json({ message: 'No farm selected' });
@@ -26,6 +27,25 @@ exports.getAnimals = async (req, res) => {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
     const offset = (page - 1) * limit;
+
+    // Sorting
+    let sortBy = req.query.sortBy || "created_at";
+    const sortOrder = req.query.sortOrder || "desc";
+
+    // Map sorting fields to Prisma model fields
+    const allowedSortFields = {
+      tagNumber: 'tag_number',
+      createdAt: 'created_at',
+      birthDate: 'birth_date',
+      currentWeight: 'current_weight',
+      tag_number: 'tag_number',
+      created_at: 'created_at',
+      birth_date: 'birth_date',
+      current_weight: 'current_weight'
+    };
+    sortBy = allowedSortFields[sortBy] || 'created_at';
+
+
 
     // Filtering
     const where = {
@@ -101,7 +121,7 @@ exports.getAnimals = async (req, res) => {
         breeds: { select: { name: true, animal_type: true } },
         locations: { select: { name: true, code: true } }
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: { [sortBy]: sortOrder },
       skip: offset,
       take: limit
 

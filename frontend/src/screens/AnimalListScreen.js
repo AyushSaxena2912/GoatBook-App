@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, SearchX, X, MapPin, CheckSquare, Square, Trash2, CheckCircle2, Lock, Check, MoreVertical, Tag, Filter } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, SearchX, X, MapPin, CheckSquare, Square, Trash2, CheckCircle2, Lock, Check, MoreVertical, Tag, Filter, ArrowUpDown } from 'lucide-react-native';
 import api from '../api';
 import GAlert from '../components/GAlert';
 import { useFocusEffect } from '@react-navigation/native';
@@ -30,6 +30,9 @@ const AnimalListScreen = ({ navigation, route }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [isSortModalVisible, setIsSortModalVisible] = useState(false);
 
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
@@ -175,18 +178,20 @@ const AnimalListScreen = ({ navigation, route }) => {
     setFilteredAnimals(result);
   }, [searchQuery, animals, route.params, activeFilters]);
 
-  const fetchAnimals = async (pageNumber = 1, filtersOverride = null) => {
+  const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null) => {
     try {
       if (pageNumber === 1) setLoading(true);
       else setIsFetchingMore(true);
 
       // Use passed-in filters if provided (needed because setState is async)
       const filtersToApply = filtersOverride !== null ? filtersOverride : activeFilters;
+      const currentSortBy = sortByOverride !== null ? sortByOverride : sortBy;
+      const currentSortOrder = sortOrderOverride !== null ? sortOrderOverride : sortOrder;
       const genderArr = filtersToApply?.gender || [];
 
       // Build query string — send gender to backend when exactly one is selected.
       // Selecting both Male & Female = no restriction, so we skip the param.
-      let url = `/animals?page=${pageNumber}&limit=30`;
+      let url = `/animals?page=${pageNumber}&limit=30&sortBy=${currentSortBy}&sortOrder=${currentSortOrder}`;
       if (genderArr.length === 1) {
         url += `&gender=${genderArr[0].toUpperCase()}`;
       }
@@ -449,6 +454,61 @@ const AnimalListScreen = ({ navigation, route }) => {
         }}
       />
 
+      <Modal
+        transparent
+        visible={isSortModalVisible}
+        animationType="slide"
+        onRequestClose={() => setIsSortModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.sortModalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setIsSortModalVisible(false)}
+        >
+          <View style={styles.sortModalContent}>
+            <View style={styles.sortModalHeader}>
+              <Text style={styles.sortModalTitle}>{t('animalList.sortBy', 'Sort By')}</Text>
+              <TouchableOpacity onPress={() => setIsSortModalVisible(false)}>
+                <X size={20} color={theme.colors.textLight} />
+              </TouchableOpacity>
+            </View>
+            
+            {[
+              { key: 'newest', label: t('animalList.sortNewest', 'Newest Added'), sortBy: 'created_at', sortOrder: 'desc' },
+              { key: 'oldest', label: t('animalList.sortOldest', 'Oldest Added'), sortBy: 'created_at', sortOrder: 'asc' },
+              { key: 'tag_asc', label: t('animalList.sortTagAsc', 'Tag Number (A-Z)'), sortBy: 'tag_number', sortOrder: 'asc' },
+              { key: 'tag_desc', label: t('animalList.sortTagDesc', 'Tag Number (Z-A)'), sortBy: 'tag_number', sortOrder: 'desc' },
+              { key: 'age_youngest', label: t('animalList.sortAgeYoungest', 'Youngest Age'), sortBy: 'birth_date', sortOrder: 'desc' },
+              { key: 'age_oldest', label: t('animalList.sortAgeOldest', 'Oldest Age'), sortBy: 'birth_date', sortOrder: 'asc' },
+              { key: 'weight_desc', label: t('animalList.sortWeightDesc', 'Weight (Highest)'), sortBy: 'current_weight', sortOrder: 'desc' },
+              { key: 'weight_asc', label: t('animalList.sortWeightAsc', 'Weight (Lowest)'), sortBy: 'current_weight', sortOrder: 'asc' }
+            ].map((option) => {
+              const isSelected = sortBy === option.sortBy && sortOrder === option.sortOrder;
+              return (
+                <TouchableOpacity 
+                  key={option.key} 
+                  style={styles.sortOptionRow}
+                  onPress={() => {
+                    setSortBy(option.sortBy);
+                    setSortOrder(option.sortOrder);
+                    setIsSortModalVisible(false);
+                    fetchAnimals(1, activeFilters, option.sortBy, option.sortOrder);
+                  }}
+                >
+                  <Text style={[
+                    styles.sortOptionText, 
+                    isSelected && { color: theme.colors.primary, fontFamily: 'Inter_700Bold' }
+                  ]}>
+                    {option.label}
+                  </Text>
+                  {isSelected && <Check size={18} color={theme.colors.primary} strokeWidth={3} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {isSelectionMode ? (
         <View style={[styles.selectionHeader, { paddingTop: insets.top + 10, paddingBottom: 10 }]}>
             <TouchableOpacity onPress={exitSelectionMode} style={styles.headerButton}>
@@ -473,6 +533,9 @@ const AnimalListScreen = ({ navigation, route }) => {
           leftAlign={true}
           rightIcon={
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingRight: 4 }}>
+              <TouchableOpacity onPress={() => setIsSortModalVisible(true)}>
+                <ArrowUpDown color={theme.colors.white} size={22} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => setIsFilterModalVisible(true)} style={{ position: 'relative' }}>
                 <Filter color={theme.colors.white} size={22} />
                 {Object.keys(activeFilters).length > 0 && Object.values(activeFilters).some(v => Array.isArray(v) ? v.length > 0 : v && v !== 'All') && (
@@ -933,6 +996,43 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     color: 'white',
+  },
+  sortModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  sortModalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    ...theme.shadow.lg,
+  },
+  sortModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sortModalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+  },
+  sortOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  sortOptionText: {
+    fontSize: 15,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.text,
   },
 });
 
