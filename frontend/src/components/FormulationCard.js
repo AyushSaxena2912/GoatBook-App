@@ -1,79 +1,88 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { ChevronRight, Leaf } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { Leaf, ChevronRight, Scale, Check } from 'lucide-react-native';
 
 const FormulationCard = ({ formulation, onPress }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useTranslation();
 
   const previewIngredients = formulation.ingredients?.slice(0, 3) || [];
   const totalIngredients = formulation.ingredients?.length || 0;
   const extraCount = totalIngredients - 3;
 
-  // Format a clean bullet-separated preview string
+  // Format a clean bullet-separated preview string with percentages
   const ingredientsPreviewText = previewIngredients
-    .map(ing => ing.name)
+    .map(ing => `${ing.name} (${ing.percentage}%)`)
     .join(' • ');
+
+  const fullPreviewText = ingredientsPreviewText + (extraCount > 0 ? ` • +${extraCount} more` : '');
 
   return (
     <TouchableOpacity
       style={[
         styles.card,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: isDarkMode ? '#2D2D2D' : '#E5E7EB',
-          ...theme.shadow.sm,
-        },
+        { 
+          backgroundColor: theme.colors.surface, 
+          borderColor: theme.colors.border + '80' 
+        }
       ]}
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <View style={styles.container}>
-        {/* Main Content Area */}
-        <View style={styles.mainInfo}>
-          {/* Header Area */}
-          <View style={styles.headerArea}>
-            <View style={[styles.iconWrapper, { backgroundColor: isDarkMode ? '#1E2D24' : '#E6F4EA' }]}>
-              <Leaf size={16} color="#10B981" />
+      <View style={styles.cardInner}>
+        <View style={styles.cardContent}>
+          {/* Top row: icon and name */}
+          <View style={styles.cardTop}>
+            <View style={[styles.iconWrap, { backgroundColor: '#10B98115' }]}>
+              <Leaf size={20} color="#10B981" strokeWidth={2.5} />
             </View>
-            <View style={styles.titleWrapper}>
-              <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={1}>
+            <View style={styles.nameBlock}>
+              <Text style={[styles.vaccineName, { color: theme.colors.text }]} numberOfLines={1}>
                 {formulation.name}
               </Text>
-              <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
-                {totalIngredients} Ingredients • 100% Total
+              <Text style={[styles.diseaseName, { color: theme.colors.textLight }]} numberOfLines={1}>
+                {t('feedFormulation.title', 'Feed Formulation')}
               </Text>
             </View>
           </View>
 
-          {/* Description / Ingredients Preview */}
-          <Text 
-            style={[styles.ingredientsPreview, { color: theme.colors.textLight }]} 
-            numberOfLines={1} 
-            ellipsizeMode="tail"
-          >
-            {ingredientsPreviewText}
-            {extraCount > 0 ? ` +${extraCount} more` : ''}
+          {/* Bottom info row (simplified chips) */}
+          <View style={styles.infoRow}>
+            {/* Cost Badge */}
+            <View style={[styles.infoItem, { backgroundColor: '#10B98112' }]}>
+              <Scale size={12} color="#10B981" />
+              <Text style={[styles.infoText, { color: '#10B981' }]}>
+                ₹{Number(formulation.totalRatePerKg).toFixed(2)}/Kg
+              </Text>
+            </View>
+
+            {/* Ingredients Count Badge */}
+            <View style={[styles.infoItem, { backgroundColor: theme.colors.border + '40' }]}>
+              <Text style={[styles.infoText, { color: theme.colors.text }]}>
+                {totalIngredients} Ingredients
+              </Text>
+            </View>
+
+            {/* Balanced 100% Badge */}
+            <View style={[styles.infoItem, { backgroundColor: theme.colors.border + '40' }]}>
+              <Check size={12} color={theme.colors.text} />
+              <Text style={[styles.infoText, { color: theme.colors.text }]}>
+                100% Balanced
+              </Text>
+            </View>
+          </View>
+
+          {/* Ingredients Preview (similar to remark section) */}
+          <Text style={[styles.remark, { color: theme.colors.textLight }]} numberOfLines={2}>
+            {fullPreviewText}
           </Text>
         </View>
 
-        {/* Right Action & Cost Area */}
-        <View style={styles.actionArea}>
-          <View style={[
-            styles.costPill, 
-            { 
-              backgroundColor: isDarkMode ? '#112219' : '#E6F4EA',
-              borderColor: isDarkMode ? '#1D3D2C' : '#CEEAD6'
-            }
-          ]}>
-            <Text style={[styles.costLabel, { color: isDarkMode ? '#81C784' : '#137333' }]}>
-              Cost/Kg
-            </Text>
-            <Text style={[styles.costValue, { color: isDarkMode ? '#A5D6A7' : '#137333' }]}>
-              ₹{Number(formulation.totalRatePerKg).toFixed(2)}
-            </Text>
-          </View>
-          <ChevronRight size={18} color={theme.colors.textMuted} style={styles.chevron} />
+        {/* Centered Right Chevron */}
+        <View style={styles.chevronContainer}>
+          <ChevronRight size={24} color={theme.colors.textMuted || '#9CA3AF'} />
         </View>
       </View>
     </TouchableOpacity>
@@ -82,83 +91,72 @@ const FormulationCard = ({ formulation, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981', // Premium left green border accent
     borderRadius: 16,
-    padding: 16,
+    borderWidth: 1,
     marginBottom: 12,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
-  container: {
+  cardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  mainInfo: {
+  cardContent: {
     flex: 1,
-    marginRight: 12,
+    padding: 16,
   },
-  headerArea: {
+  chevronContainer: {
+    paddingRight: 16,
+    paddingLeft: 4,
+  },
+  cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 14,
+    gap: 14,
   },
-  iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
-    marginRight: 10,
+    alignItems: 'center',
   },
-  titleWrapper: {
+  nameBlock: {
     flex: 1,
+    justifyContent: 'center',
   },
-  name: {
+  vaccineName: {
     fontSize: 16,
-    fontFamily: 'Inter_700Bold',
-    lineHeight: 20,
-    marginBottom: 2,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.2,
   },
-  subtitle: {
-    fontSize: 11,
+  diseaseName: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 2,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  infoText: {
+    fontSize: 12,
     fontFamily: 'Inter_500Medium',
   },
-  ingredientsPreview: {
-    fontSize: 12,
+  remark: {
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
-    marginLeft: 42, // Indents the preview under the title text for clean alignment
-  },
-  actionArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  costPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  costLabel: {
-    fontSize: 9,
-    fontFamily: 'Inter_600SemiBold',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 1,
-  },
-  costValue: {
-    fontSize: 14,
-    fontFamily: 'Inter_700Bold',
-  },
-  chevron: {
-    marginLeft: 2,
+    marginTop: 12,
+    lineHeight: 18,
   },
 });
 
