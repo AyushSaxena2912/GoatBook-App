@@ -55,6 +55,7 @@
     "mating": "Mating",
     "breeding": "Breeding",
     "reports": "Reports",
+    "feedFormulation": "Feed Formulation",
     "logOut": "Log Out"
   },
   "actions": {
@@ -72,7 +73,8 @@
     "financials": "Financials",
     "replaceTag": "Replace Tag",
     "milkRecords": "Milk Records",
-    "farmSetting": "Farm Setting"
+    "farmSetting": "Farm Setting",
+    "feedFormulation": "Feed Formulation"
   },
   "settings": {
     "language": "Language",
@@ -447,5 +449,35 @@
     "kids0_3": "Kids (0 - 3 months)",
     "kids3_6": "Kids (3 - 6 months)",
     "kids6_9": "Kids (6 - 9 months)"
+  },
+  "feedFormulation": {
+    "title": "Feed Formulations",
+    "addFormulation": "Create Formulation",
+    "editFormulation": "Edit Formulation",
+    "formulationDetail": "Formulation Detail",
+    "formulationName": "Formulation Name*",
+    "formulationNamePlaceholder": "e.g., High-Protein Kid Mix",
+    "totalRate": "Total Rate",
+    "ratePerKg": "Rate per KG",
+    "rateTmr": "Rate TMR",
+    "ingredients": "Ingredients",
+    "addIngredient": "Add Ingredient",
+    "ingredientName": "Ingredient Name",
+    "percentage": "Percentage (%)",
+    "rate": "Rate (per KG)",
+    "rateTmrCol": "Contribution (TMR)",
+    "warnPercentage": "Total percentage must be exactly 100%. Currently: {{total}}%.",
+    "successPercentage": "Perfect! Total percentage is exactly 100%.",
+    "submitError": "Validation Error",
+    "emptyIngredients": "Please add at least one ingredient.",
+    "invalidFields": "Please fill all fields with valid numbers.",
+    "noFormulations": "No Formulations Found",
+    "emptyDesc": "Create balanced feed mixes for your goats/sheep to reduce feed cost.",
+    "confirmDeleteTitle": "Delete Formulation?",
+    "confirmDeleteMsg": "Are you sure you want to delete this formulation? This action cannot be undone.",
+    "deleteSuccess": "Formulation deleted successfully.",
+    "createSuccess": "Formulation created successfully.",
+    "updateSuccess": "Formulation updated successfully.",
+    "total": "Total"
   }
 }

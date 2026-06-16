@@ -55,7 +55,8 @@
     "mating": "मेटिंग",
     "breeding": "ब्रीडिंग",
     "reports": "रिपोर्ट्स",
-    "logOut": "लॉग आउट"
+    "feedFormulation": "आहार निर्माण",
+    "logOut": "Log Out"
   },
   "actions": {
     "breed": "नस्ल",
@@ -72,7 +73,8 @@
     "financials": "वित्तीय",
     "replaceTag": "टैग बदलें",
     "milkRecords": "दूध रिकॉर्ड",
-    "farmSetting": "फार्म सेटिंग"
+    "farmSetting": "फार्म सेटिंग",
+    "feedFormulation": "आहार निर्माण"
   },
   "settings": {
     "language": "भाषा",
@@ -447,5 +449,35 @@
     "kids0_3": "बच्चे (0 - 3 महीने)",
     "kids3_6": "बच्चे (3 - 6 महीने)",
     "kids6_9": "बच्चे (6 - 9 महीने)"
+  },
+  "feedFormulation": {
+    "title": "आहार निर्माण",
+    "addFormulation": "आहार निर्माण बनाएं",
+    "editFormulation": "आहार निर्माण संपादित करें",
+    "formulationDetail": "आहार विवरण",
+    "formulationName": "आहार का नाम*",
+    "formulationNamePlaceholder": "उदा. हाई-प्रोटीन किड मिक्स",
+    "totalRate": "कुल दर",
+    "ratePerKg": "दर प्रति किलोग्राम",
+    "rateTmr": "दर TMR",
+    "ingredients": "सामग्री",
+    "addIngredient": "सामग्री जोड़ें",
+    "ingredientName": "सामग्री का नाम",
+    "percentage": "प्रतिशत (%)",
+    "rate": "दर (प्रति किलो)",
+    "rateTmrCol": "योगदान (TMR)",
+    "warnPercentage": "कुल प्रतिशत ठीक 100% होना चाहिए। वर्तमान में: {{total}}% है।",
+    "successPercentage": "बढ़िया! कुल प्रतिशत ठीक 100% है।",
+    "submitError": "सत्यापन त्रुटि",
+    "emptyIngredients": "कृपया कम से कम एक सामग्री जोड़ें।",
+    "invalidFields": "कृपया सभी फ़ील्ड को मान्य संख्याओं के साथ भरें।",
+    "noFormulations": "कोई आहार निर्माण नहीं मिला",
+    "emptyDesc": "आहार लागत को कम करने के लिए अपनी बकरियों/भेड़ों के लिए संतुलित आहार मिश्रण बनाएं।",
+    "confirmDeleteTitle": "आहार निर्माण हटाएं?",
+    "confirmDeleteMsg": "क्या आप वाकई इस आहार निर्माण को हटाना चाहते हैं? यह कार्रवाई वापस नहीं ली जा सकती।",
+    "deleteSuccess": "आहार निर्माण सफलतापूर्वक हटा दिया गया।",
+    "createSuccess": "आहार निर्माण सफलतापूर्वक बना दिया गया।",
+    "updateSuccess": "आहार निर्माण सफलतापूर्वक अपडेट कर दिया गया।",
+    "total": "कुल"
   }
 }

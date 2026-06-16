@@ -8,7 +8,7 @@ import {
   Menu, GitBranch, PawPrint, User, Home, Syringe, Scale, 
   Heart, Activity, ClipboardList, Globe, Settings, Briefcase,
   Moon, Sun, RefreshCcw, Milk, Sliders, Bell, AlertTriangle, CheckCircle2,
-  TrendingDown, TrendingUp
+  TrendingDown, TrendingUp, Leaf
 } from 'lucide-react-native';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -96,6 +96,7 @@ const DashboardScreen = ({ navigation }) => {
       { id: '13', title: t('actions.replaceTag', 'Replace Tag'), icon: <RefreshCcw color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReplaceTag' },
       { id: '14', title: t('actions.milkRecords', 'Milk Records'), icon: <Milk color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
       { id: '15', title: t('actions.farmSetting', 'Farm Setting'), icon: <Sliders color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
+      { id: '16', title: t('actions.feedFormulation', 'Feed Formulation'), icon: <Leaf color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'FormulationList' },
     ];
 
     // Filter out 'Employee' tile for non-OWNER roles

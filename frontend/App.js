@@ -35,6 +35,9 @@ import LocationListScreen from './src/screens/LocationListScreen';
 import AddLocationScreen from './src/screens/AddLocationScreen';
 import LocationDetailsScreen from './src/screens/LocationDetailsScreen';
 import CreateLocationScreen from './src/screens/CreateLocationScreen';
+import FormulationListScreen from './src/screens/FormulationListScreen';
+import AddFormulationScreen from './src/screens/AddFormulationScreen';
+import FormulationDetailScreen from './src/screens/FormulationDetailScreen';
 
 import AddWeightScreen from './src/screens/AddWeightScreen';
 import WeightListScreen from './src/screens/WeightListScreen';
@@ -82,6 +85,7 @@ function MainDrawer() {
       <Drawer.Screen name="VaccinesMenu" component={VaccinesMenuScreen} />
       <Drawer.Screen name="ReportsMenu" component={ReportsMenuScreen} />
       <Drawer.Screen name="LocationList" component={LocationListScreen} />
+      <Drawer.Screen name="FormulationList" component={FormulationListScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
     </Drawer.Navigator>
   );
@@ -258,6 +262,9 @@ function AppContent() {
           <Stack.Screen name="MassVaccination" component={MassVaccinationScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
+          <Stack.Screen name="FormulationList" component={FormulationListScreen} />
+          <Stack.Screen name="AddFormulation" component={AddFormulationScreen} />
+          <Stack.Screen name="FormulationDetail" component={FormulationDetailScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

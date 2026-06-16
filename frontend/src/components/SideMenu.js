@@ -4,7 +4,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { 
   Home, PawPrint, GitBranch, Syringe, ClipboardList, 
   MapPin, Settings, LogOut, ChevronRight, User, ExternalLink,
-  Scale, Heart, Activity, Globe, Briefcase, RefreshCcw, Milk, Sliders, Crown
+  Scale, Heart, Activity, Globe, Briefcase, RefreshCcw, Milk, Sliders, Crown, Leaf
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -72,6 +72,7 @@ const SideMenu = (props) => {
     { title: t('menu.mating', 'Mating'), icon: <Heart size={22} />, screen: 'MatingList' },
     { title: t('menu.breeding', 'Breeding'), icon: <Activity size={22} />, screen: 'BreedingList' },
     { title: t('menu.reports', 'Reports'), icon: <ClipboardList size={22} />, screen: 'ReportsMenu' },
+    { title: t('menu.feedFormulation', 'Feed Formulation'), icon: <Leaf size={22} />, screen: 'FormulationList' },
     { title: t('actions.language', 'Language'), icon: <Globe size={22} />, screen: null },
     { title: t('actions.financials', 'Financials'), icon: <Briefcase size={22} />, screen: null },
     { title: t('actions.replaceTag', 'Replace Tag'), icon: <RefreshCcw size={22} />, screen: 'ReplaceTag' },
