@@ -14,7 +14,7 @@ const FormulationDetail = ({ formulation }) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Formulation Info */}
-      <View style={[styles.headerCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border + '80', ...theme.shadow.sm }]}>
+      <View style={[styles.headerCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border + '80' }]}>
         <View style={styles.cardTop}>
           <View style={[styles.iconWrap, { backgroundColor: '#10B98115' }]}>
             <Leaf size={20} color="#10B981" strokeWidth={2.5} />
@@ -137,10 +137,6 @@ const styles = StyleSheet.create({
     borderLeftColor: '#10B981', // Premium left green border accent matching list card
     padding: 16,
     marginBottom: 20,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   cardTop: {
     flexDirection: 'row',
