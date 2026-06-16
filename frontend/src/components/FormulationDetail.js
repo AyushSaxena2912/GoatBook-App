@@ -2,33 +2,55 @@ import React from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { Leaf, Scale, Check } from 'lucide-react-native';
 
 const FormulationDetail = ({ formulation }) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useTranslation();
 
   const totalPercentage = formulation.ingredients?.reduce((sum, i) => sum + Number(i.percentage), 0) || 0;
+  const totalIngredients = formulation.ingredients?.length || 0;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Formulation Info */}
-      <View style={[styles.headerCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, ...theme.shadow.sm }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{formulation.name}</Text>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: theme.colors.textMuted }]}>
-              {t('feedFormulation.totalRate', 'Total Cost / Kg')}
+      <View style={[styles.headerCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border + '80', ...theme.shadow.sm }]}>
+        <View style={styles.cardTop}>
+          <View style={[styles.iconWrap, { backgroundColor: '#10B98115' }]}>
+            <Leaf size={20} color="#10B981" strokeWidth={2.5} />
+          </View>
+          <View style={styles.nameBlock}>
+            <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>
+              {formulation.name}
             </Text>
-            <Text style={[styles.summaryValue, { color: '#059669' }]}>
-              ₹{Number(formulation.totalRatePerKg).toFixed(2)}
+            <Text style={[styles.subtitle, { color: theme.colors.textLight }]} numberOfLines={1}>
+              {t('feedFormulation.title', 'Feed Formulation')}
             </Text>
           </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: theme.colors.textMuted }]}>
-              {t('feedFormulation.ingredients', 'Ingredients')}
+        </View>
+
+        {/* Bottom info row (simplified chips) */}
+        <View style={styles.infoRow}>
+          {/* Cost Badge */}
+          <View style={[styles.infoItem, { backgroundColor: '#10B98112' }]}>
+            <Scale size={12} color="#10B981" />
+            <Text style={[styles.infoText, { color: '#10B981' }]}>
+              ₹{Number(formulation.totalRatePerKg).toFixed(2)}/Kg
             </Text>
-            <Text style={[styles.summaryValue, { color: theme.colors.text }]}>
-              {formulation.ingredients?.length || 0}
+          </View>
+
+          {/* Ingredients Count Badge */}
+          <View style={[styles.infoItem, { backgroundColor: theme.colors.border + '40' }]}>
+            <Text style={[styles.infoText, { color: theme.colors.text }]}>
+              {totalIngredients} Ingredients
+            </Text>
+          </View>
+
+          {/* Balanced 100% Badge */}
+          <View style={[styles.infoItem, { backgroundColor: theme.colors.border + '40' }]}>
+            <Check size={12} color={theme.colors.text} />
+            <Text style={[styles.infoText, { color: theme.colors.text }]}>
+              {totalPercentage}% Balanced
             </Text>
           </View>
         </View>
@@ -109,32 +131,62 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   headerCard: {
-    borderWidth: 1.5,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981', // Premium left green border accent matching list card
+    padding: 16,
     marginBottom: 20,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  title: {
-    fontSize: 20,
-    fontFamily: 'Inter_700Bold',
-    marginBottom: 16,
-  },
-  summaryRow: {
+  cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 14,
+    gap: 14,
   },
-  summaryItem: {
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nameBlock: {
     flex: 1,
+    justifyContent: 'center',
   },
-  summaryLabel: {
+  title: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.2,
+    lineHeight: 20,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 2,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  infoText: {
     fontSize: 12,
     fontFamily: 'Inter_500Medium',
-    marginBottom: 4,
-  },
-  summaryValue: {
-    fontSize: 22,
-    fontFamily: 'Inter_700Bold',
   },
   tableContainer: {
     borderWidth: 1.5,
