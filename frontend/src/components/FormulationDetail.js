@@ -42,13 +42,13 @@ const FormulationDetail = ({ formulation }) => {
             {t('feedFormulation.ingredientName', 'Ingredient')}
           </Text>
           <Text style={[styles.headerCell, styles.flexCenter, { color: theme.colors.text }]}>
-            {t('feedFormulation.percentage', 'Pct (%)')}
+            {t('feedFormulation.percentage', '%')}
           </Text>
           <Text style={[styles.headerCell, styles.flexRight, { color: theme.colors.text }]}>
-            {t('feedFormulation.rate', 'Rate (₹)')}
+            {t('feedFormulation.rate', 'Rate/Kg')}
           </Text>
           <Text style={[styles.headerCell, styles.flexRight, { color: theme.colors.text }]}>
-            {t('feedFormulation.rateTmrCol', 'TMR (₹)')}
+            {t('feedFormulation.rateTmrCol', 'TMR')}
           </Text>
         </View>
 
