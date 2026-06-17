@@ -5,7 +5,7 @@ const { Resend } = require('resend');
 const { v4: uuidv4 } = require('uuid');
 const { seedBreeds } = require('../../seed_breeds');
 const { seedVaccines } = require('../../seed_vaccines');
-const { seedFormulation } = ('../../seed_formulation');
+const { seedFormulation } = require('../../seed_formulation');
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_123456789');
 
@@ -119,9 +119,10 @@ exports.register = async (req, res) => {
       });
       console.log('Subscription created:', subscription.id);
 
-      // seeding default breeds and vaccines for the farm (Isolated)
+      // seeding default breeds, vaccines, and feed formulation for the farm (Isolated)
       await seedBreeds(farm.id, tx);
       await seedVaccines(farm.id, tx);
+      await seedFormulation(farm.id, tx);
       // 5. Explicitly link the owner (employee) to the newly created farm
       await tx.farm_employees.create({
         data: {
