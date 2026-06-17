@@ -30,7 +30,7 @@ exports.getAnimals = async (req, res) => {
 
     // Sorting
     let sortBy = req.query.sortBy || "created_at";
-    const sortOrder = req.query.sortOrder || "desc";
+    const sortOrder = (req.query.sortOrder === 'asc' || req.query.sortOrder === 'desc') ? req.query.sortOrder : 'desc';
 
     // Map sorting fields to Prisma model fields
     const allowedSortFields = {
