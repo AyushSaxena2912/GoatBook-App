@@ -5,6 +5,7 @@ const { Resend } = require('resend');
 const { v4: uuidv4 } = require('uuid');
 const { seedBreeds } = require('../../seed_breeds');
 const { seedVaccines } = require('../../seed_vaccines');
+const { seedFormulation } = ('../../seed_formulation');
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_123456789');
 
