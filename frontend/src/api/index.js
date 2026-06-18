@@ -29,8 +29,8 @@ const storage = {
   }
 };
 
-// Using Render backend URL
-const RENDER_URL = 'https://goatbookapp.onrender.com';
+// Using AWS EC2 backend URL
+const RENDER_URL = 'http://16.171.4.104';
 const BASE_URL = `${RENDER_URL}/api`;
 
 const api = axios.create({
