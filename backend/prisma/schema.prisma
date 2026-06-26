@@ -396,9 +396,10 @@ enum enum_animals_birth_type {
 }
 
 enum enum_animals_female_condition {
-  MATED
   PREGNANT
   NONE
+  KID
+  EMPTY
 }
 
 enum enum_animals_gender {
