@@ -10,6 +10,32 @@ const logError = (error, context) => {
   fs.appendFileSync('/tmp/animal_errors.log', logMsg);
 };
 
+const parseSafeDate = (dateVal) => {
+  if (!dateVal) return null;
+  if (dateVal instanceof Date) {
+    return isNaN(dateVal.getTime()) ? null : dateVal;
+  }
+  const dateStr = String(dateVal).trim();
+  if (dateStr === 'Invalid Date' || dateStr === 'Invalid date' || dateStr === '') return null;
+  
+  // Try direct parsing first
+  let date = new Date(dateStr);
+  if (!isNaN(date.getTime())) return date;
+
+  // Handle DD/MM/YYYY or DD-MM-YYYY format
+  const dmyRegex = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+  const match = dateStr.match(dmyRegex);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // 0-indexed month
+    const year = parseInt(match[3], 10);
+    date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  return null;
+};
+
 // @desc    Get all animals for the current farm
 // @route   GET /api/animals
 exports.getAnimals = async (req, res) => {
@@ -271,7 +297,7 @@ exports.addAnimal = async (req, res) => {
         breed_id: breedId,
         gender: gender?.toUpperCase(),
         color,
-        birth_date: birthDate ? new Date(birthDate) : null,
+        birth_date: parseSafeDate(birthDate),
         birth_weight: birthWeight || null,
         location_id: locationId || null,
         farm_id: req.farmId,
@@ -280,22 +306,22 @@ exports.addAnimal = async (req, res) => {
         is_qurbani: finalIsQurbani,
         batch_no: batchNo,
         acquisition_method: acquisitionMethod?.toUpperCase() || 'BORN',
-        purchase_date: (acquisitionMethod?.toUpperCase() === 'PURCHASED') && purchaseDate ? new Date(purchaseDate) : null,
+        purchase_date: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? parseSafeDate(purchaseDate) : null,
         purchase_price: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? purchasePrice : null,
         purchase_weight: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? purchaseWeight : null,
         landing_cost: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? landingCost : null,
         age_in_months: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? ageInMonths : null,
         teeth_stage: (acquisitionMethod?.toUpperCase() === 'PURCHASED' || acquisitionMethod?.toUpperCase() === 'BORN') ? teethStage : null,
         female_condition: gender?.toUpperCase() === 'FEMALE' ? femaleCondition : null,
-        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED' && matingDate) ? new Date(matingDate) : null,
-        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT' && expectedDeliveryDate) ? new Date(expectedDeliveryDate) : null,
+        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED') ? parseSafeDate(matingDate) : null,
+        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT') ? parseSafeDate(expectedDeliveryDate) : null,
         birth_type: birthType || null,
         mother_tag_id: (acquisitionMethod?.toUpperCase() === 'BORN') ? motherTagId : null,
         father_tag_id: (acquisitionMethod?.toUpperCase() === 'BORN') ? fatherTagId : null,
         status: status?.toUpperCase() || 'LIVE',
-        death_date: deathDate ? new Date(deathDate) : null,
+        death_date: parseSafeDate(deathDate),
         death_reason: deathReason || null,
-        sold_at: soldAt ? new Date(soldAt) : null,
+        sold_at: parseSafeDate(soldAt),
         sold_remark: soldRemark || null,
         is_ready_for_sale: isReadyForSale || false,
         current_weight: isReadyForSale ? currentWeight : null,
@@ -422,29 +448,29 @@ exports.updateAnimal = async (req, res) => {
         breed_id: breedId,
         gender: gender?.toUpperCase(),
         color,
-        birth_date: birthDate ? new Date(birthDate) : null,
+        birth_date: parseSafeDate(birthDate),
         birth_weight: birthWeight,
         location_id: locationId || null,
         is_breeder: finalIsBreeder,
         is_qurbani: finalIsQurbani,
         batch_no: batchNo,
         acquisition_method: currentAcqMethod,
-        purchase_date: currentAcqMethod === 'PURCHASED' && purchaseDate ? new Date(purchaseDate) : null,
+        purchase_date: currentAcqMethod === 'PURCHASED' ? parseSafeDate(purchaseDate) : null,
         purchase_price: currentAcqMethod === 'PURCHASED' ? purchasePrice : null,
         purchase_weight: currentAcqMethod === 'PURCHASED' ? purchaseWeight : null,
         landing_cost: currentAcqMethod === 'PURCHASED' ? landingCost : null,
         age_in_months: currentAcqMethod === 'PURCHASED' ? ageInMonths : null,
         teeth_stage: (currentAcqMethod === 'PURCHASED' || currentAcqMethod === 'BORN') ? teethStage : null,
         female_condition: gender?.toUpperCase() === 'FEMALE' ? femaleCondition : null,
-        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED' && matingDate) ? new Date(matingDate) : (femaleCondition !== 'MATED' ? null : undefined),
-        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT' && expectedDeliveryDate) ? new Date(expectedDeliveryDate) : (femaleCondition !== 'PREGNANT' ? null : undefined),
+        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED') ? parseSafeDate(matingDate) : (femaleCondition !== 'MATED' ? null : undefined),
+        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT') ? parseSafeDate(expectedDeliveryDate) : (femaleCondition !== 'PREGNANT' ? null : undefined),
         birth_type: birthType || null,
         mother_tag_id: currentAcqMethod === 'BORN' ? motherTagId : null,
         father_tag_id: currentAcqMethod === 'BORN' ? fatherTagId : null,
         status: status?.toUpperCase() || animal.status,
-        death_date: deathDate ? new Date(deathDate) : (status?.toUpperCase() === 'LIVE' ? null : animal.death_date),
+        death_date: deathDate !== undefined ? parseSafeDate(deathDate) : (status?.toUpperCase() === 'LIVE' ? null : animal.death_date),
         death_reason: deathReason !== undefined ? deathReason : (status?.toUpperCase() === 'LIVE' ? null : animal.death_reason),
-        sold_at: soldAt ? new Date(soldAt) : (status?.toUpperCase() === 'LIVE' ? null : animal.sold_at),
+        sold_at: soldAt !== undefined ? parseSafeDate(soldAt) : (status?.toUpperCase() === 'LIVE' ? null : animal.sold_at),
         sold_remark: soldRemark !== undefined ? soldRemark : (status?.toUpperCase() === 'LIVE' ? null : animal.sold_remark),
         is_ready_for_sale: isReadyForSale !== undefined ? isReadyForSale : animal.is_ready_for_sale,
         current_weight: isReadyForSale ? currentWeight : null,
