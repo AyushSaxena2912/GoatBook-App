@@ -164,6 +164,32 @@ const AddBreedingScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      t('common.confirmDelete', 'Confirm Delete?'),
+      'Are you sure you want to delete this breeding/delivery record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: async () => {
+            setIsSaving(true);
+            try {
+              await api.delete(`/breedings/${editItem.id}`);
+              navigation.goBack();
+            } catch (err) {
+              console.error('Delete breeding error:', err);
+              Alert.alert('Error', 'Failed to delete record');
+            } finally {
+              setIsSaving(false);
+            }
+          } 
+        }
+      ]
+    );
+  };
+
   const renderKidFields = (kid, index) => {
     const kidLabels = [t('farmActivities.first', 'First'), t('farmActivities.second', 'Second'), t('farmActivities.third', 'Third'), t('farmActivities.fourth', 'Fourth')];
     const labelPrefix = kidLabels[index] || `${index + 1}th`;
@@ -369,6 +395,16 @@ const AddBreedingScreen = ({ navigation, route }) => {
           >
             {isSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveButtonText}>{t('common.save', 'Save')}</Text>}
           </TouchableOpacity>
+
+          {isEditing && (
+            <TouchableOpacity 
+              style={[styles.deleteButton, { borderColor: '#EF4444', borderWidth: 1.5, marginTop: 12 }]}
+              onPress={handleDelete}
+              disabled={isSaving}
+            >
+              <Text style={[styles.deleteButtonText, { color: '#EF4444' }]}>{t('common.delete', 'Delete')}</Text>
+            </TouchableOpacity>
+          )}
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -453,6 +489,11 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     marginTop: 24 
   },
   saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  deleteButton: { 
+    height: 48, borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'transparent'
+  },
+  deleteButtonText: { fontSize: 16, fontFamily: 'Inter_600SemiBold' },
 });
 
 export default AddBreedingScreen;
