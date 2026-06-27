@@ -74,7 +74,7 @@ const SideMenu = (props) => {
     { title: t('menu.reports', 'Reports'), icon: <ClipboardList size={22} />, screen: 'ReportsMenu' },
     { title: t('menu.feedFormulation', 'Feed Formulation'), icon: <Leaf size={22} />, screen: 'FormulationList' },
     { title: t('actions.language', 'Language'), icon: <Globe size={22} />, screen: null },
-    { title: t('actions.financials', 'Financials'), icon: <Briefcase size={22} />, screen: null },
+    { title: t('actions.financials', 'Financials'), icon: <Briefcase size={22} />, screen: 'FinancialList' },
     { title: t('actions.replaceTag', 'Replace Tag'), icon: <RefreshCcw size={22} />, screen: 'ReplaceTag' },
     { title: t('actions.milkRecords', 'Milk Records'), icon: <Milk size={22} />, screen: null },
     { title: t('actions.farmSetting', 'Farm Setting'), icon: <Sliders size={22} />, screen: null },

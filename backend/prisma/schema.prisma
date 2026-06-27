@@ -149,6 +149,7 @@ model farms {
   vaccines            vaccines[]
   weights             weights[]
   feedFormulations    feedFormulation[]
+  transactions        transactions[]
 }
 
 model locations {
@@ -202,6 +203,8 @@ model users {
   vaccines_vaccines_updated_by_user_idTousers                       vaccines[]            @relation("vaccines_updated_by_user_idTousers")
   weights_weights_created_by_user_idTousers                         weights[]             @relation("weights_created_by_user_idTousers")
   weights_weights_updated_by_user_idTousers                         weights[]             @relation("weights_updated_by_user_idTousers")
+  transactions_transactions_created_by_user_idTousers               transactions[]        @relation("transactions_created_by_user_idTousers")
+  transactions_transactions_updated_by_user_idTousers               transactions[]        @relation("transactions_updated_by_user_idTousers")
 }
 
 model vaccination_records {
@@ -471,4 +474,27 @@ model formulationIngredients {
   ratePerKg     Decimal         @db.Decimal(10, 2)
   formulationId Int
   formulation   feedFormulation @relation(fields: [formulationId], references: [id], onDelete: Cascade)
+}
+
+enum enum_transaction_type {
+  INCOME
+  EXPENSE
+}
+
+model transactions {
+  id                 String                @id @db.Uuid
+  farm_id            String                @db.Uuid
+  date               DateTime              @db.Date
+  category           String                @db.VarChar(255)
+  type               enum_transaction_type
+  amount             Decimal               @db.Decimal(10, 2)
+  description        String?
+  receipt_url        String?
+  created_by_user_id String?               @db.Uuid
+  updated_by_user_id String?               @db.Uuid
+  created_at         DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime              @updatedAt @db.Timestamptz(6)
+  farms              farms                 @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_transactions_created_by_user_idTousers users? @relation("transactions_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  users_transactions_updated_by_user_idTousers users? @relation("transactions_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 }
