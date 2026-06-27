@@ -5,6 +5,10 @@ RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /usr/src/app
 
+# Skip downloading Chrome for Puppeteer to save space/time
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+
 # Copy dependency definition files
 COPY package*.json ./
 
