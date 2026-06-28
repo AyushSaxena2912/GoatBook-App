@@ -116,6 +116,11 @@ async function mergeData() {
         if (cleanData.sale_rate) cleanData.sale_rate = parseFloat(cleanData.sale_rate);
         if (cleanData.sale_weight) cleanData.sale_weight = parseFloat(cleanData.sale_weight);
         
+        // Map MATED to PREGNANT
+        if (cleanData.female_condition === 'MATED') {
+          cleanData.female_condition = 'PREGNANT';
+        }
+        
         // Parse dates
         if (cleanData.birth_date) cleanData.birth_date = new Date(cleanData.birth_date);
         if (cleanData.purchase_date) cleanData.purchase_date = new Date(cleanData.purchase_date);
