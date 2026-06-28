@@ -56,6 +56,15 @@ const AnimalListScreen = ({ navigation, route }) => {
         setSearchQuery(route.params.initialSearch);
         setIsSearching(true);
       }
+      // Reset all filters, sorting and search when user leaves the screen
+      return () => {
+        setActiveFilters({});
+        setSortBy('created_at');
+        setSortOrder('desc');
+        setSearchQuery('');
+        setIsSearching(false);
+        setPage(1);
+      };
     }, [route.params])
   );
 
@@ -191,7 +200,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
       // Build query string — send gender to backend when exactly one is selected.
       // Selecting both Male & Female = no restriction, so we skip the param.
-      let url = `/animals?page=${pageNumber}&limit=30&sortBy=${currentSortBy}&sortOrder=${currentSortOrder}`;
+      let url = `/animals?page=${pageNumber}&limit=100&sortBy=${currentSortBy}&sortOrder=${currentSortOrder}`;
       if (genderArr.length === 1) {
         url += `&gender=${genderArr[0].toUpperCase()}`;
       }
