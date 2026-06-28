@@ -51,7 +51,7 @@ exports.getAnimals = async (req, res) => {
     // const limit = Number(req.query.limit) || 30;
 
     const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 30));
     const offset = (page - 1) * limit;
 
     // Sorting
