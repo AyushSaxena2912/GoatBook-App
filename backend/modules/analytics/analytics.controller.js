@@ -40,9 +40,11 @@ exports.getDashboardAnalytics = async (req, res) => {
         totalDead++;
       }
 
+      // Total Animals (all statuses — complete farm record)
+      totalAnimals++;
+
       // Live animal stats
       if (animal.status === 'LIVE') {
-        totalAnimals++;
 
         // Kids Born (This Year)
         if (animal.acquisition_method === 'BORN' && animal.birth_date && new Date(animal.birth_date) >= startOfYear) {
