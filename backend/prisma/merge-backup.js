@@ -190,20 +190,90 @@ async function mergeData() {
     }
   }
 
-  // Ensure dependencies are created first (breeds, locations)
   console.log('[MERGE] Merging Breeds...');
   let breedInserts = 0;
+  const breedIdMap = {}; // Maps old breed ID -> active breed ID in DB
+  
   for (const breed of breeds) {
-    const res = await safeInsert('breeds', breed);
-    if (res.status === 'inserted') breedInserts++;
+    const cleanBreed = { ...breed };
+    const activeFarms = ['3d08e737-06c0-43f4-a9c5-de9a650d7c1b', 'fa7c62fe-ea16-4361-9e0a-c41ca8cac70c'];
+    if (cleanBreed.farm_id && !activeFarms.includes(cleanBreed.farm_id)) {
+      cleanBreed.farm_id = '3d08e737-06c0-43f4-a9c5-de9a650d7c1b';
+    }
+    if (cleanBreed.is_default === null) cleanBreed.is_default = false;
+    if (cleanBreed.created_at) cleanBreed.created_at = new Date(cleanBreed.created_at);
+    if (cleanBreed.updated_at) cleanBreed.updated_at = new Date(cleanBreed.updated_at);
+
+    try {
+      // 1. Check if ID exists
+      const existingById = await prisma.breeds.findUnique({
+        where: { id: breed.id }
+      });
+      if (existingById) {
+        breedIdMap[breed.id] = breed.id;
+        continue;
+      }
+      
+      // 2. Check if name/type/farm unique constraint matches
+      const existingByUnique = await prisma.breeds.findFirst({
+        where: {
+          farm_id: cleanBreed.farm_id,
+          name: cleanBreed.name,
+          animal_type: cleanBreed.animal_type
+        }
+      });
+      
+      if (existingByUnique) {
+        breedIdMap[breed.id] = existingByUnique.id;
+        console.log(`[MERGE] Breed '${cleanBreed.name}' already exists. Mapping old ID ${breed.id} -> existing ID ${existingByUnique.id}`);
+      } else {
+        await prisma.breeds.create({ data: cleanBreed });
+        breedIdMap[breed.id] = breed.id;
+        breedInserts++;
+      }
+    } catch (err) {
+      console.error(`[MERGE] ❌ Error processing breed ${cleanBreed.name}:`, err.message);
+    }
   }
   console.log(`[MERGE] Merged ${breedInserts} new breeds.`);
 
   console.log('[MERGE] Merging Locations...');
   let locInserts = 0;
+  const locationIdMap = {};
   for (const loc of locations) {
-    const res = await safeInsert('locations', loc);
-    if (res.status === 'inserted') locInserts++;
+    const cleanLoc = { ...loc };
+    const activeFarms = ['3d08e737-06c0-43f4-a9c5-de9a650d7c1b', 'fa7c62fe-ea16-4361-9e0a-c41ca8cac70c'];
+    if (cleanLoc.farm_id && !activeFarms.includes(cleanLoc.farm_id)) {
+      cleanLoc.farm_id = '3d08e737-06c0-43f4-a9c5-de9a650d7c1b';
+    }
+    if (cleanLoc.created_at) cleanLoc.created_at = new Date(cleanLoc.created_at);
+    if (cleanLoc.updated_at) cleanLoc.updated_at = new Date(cleanLoc.updated_at);
+
+    try {
+      const existingById = await prisma.locations.findUnique({
+        where: { id: loc.id }
+      });
+      if (existingById) {
+        locationIdMap[loc.id] = loc.id;
+        continue;
+      }
+      
+      const existingByUnique = await prisma.locations.findFirst({
+        where: {
+          farm_id: cleanLoc.farm_id,
+          code: cleanLoc.code
+        }
+      });
+      if (existingByUnique) {
+        locationIdMap[loc.id] = existingByUnique.id;
+      } else {
+        await prisma.locations.create({ data: cleanLoc });
+        locationIdMap[loc.id] = loc.id;
+        locInserts++;
+      }
+    } catch (err) {
+      console.error(`[MERGE] ❌ Error processing location ${cleanLoc.name}:`, err.message);
+    }
   }
   console.log(`[MERGE] Merged ${locInserts} new locations.`);
 
@@ -211,8 +281,20 @@ async function mergeData() {
   let animalInserts = 0;
   for (const animal of animals) {
     if (animal.farm_id === '3d08e737-06c0-43f4-a9c5-de9a650d7c1b') {
-      const res = await safeInsert('animals', animal);
-      console.log(`[MERGE] Animal ${animal.tag_number} (ID: ${animal.id}):`, res.status, res.error || '');
+      const cleanAnimal = { ...animal };
+      
+      // Map breed_id and location_id
+      if (cleanAnimal.breed_id && breedIdMap[cleanAnimal.breed_id]) {
+        cleanAnimal.breed_id = breedIdMap[cleanAnimal.breed_id];
+      }
+      if (cleanAnimal.location_id && locationIdMap[cleanAnimal.location_id]) {
+        cleanAnimal.location_id = locationIdMap[cleanAnimal.location_id];
+      } else {
+        cleanAnimal.location_id = null; // Set to null if not found
+      }
+      
+      const res = await safeInsert('animals', cleanAnimal);
+      console.log(`[MERGE] Animal ${cleanAnimal.tag_number} (ID: ${cleanAnimal.id}):`, res.status, res.error || '');
       if (res.status === 'inserted') animalInserts++;
     } else {
       console.log(`[MERGE] Animal ${animal.tag_number} skipped: farm_id ${animal.farm_id} does not match`);
