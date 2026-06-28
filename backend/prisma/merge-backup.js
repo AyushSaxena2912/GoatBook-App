@@ -199,11 +199,12 @@ async function mergeData() {
   console.log('[MERGE] Merging Animals...');
   let animalInserts = 0;
   for (const animal of animals) {
-    // Only import animals for Goatwala farm to keep it clean, or all.
-    // The user requested: Goatwala Farm.
     if (animal.farm_id === '3d08e737-06c0-43f4-a9c5-de9a650d7c1b') {
       const res = await safeInsert('animals', animal);
+      console.log(`[MERGE] Animal ${animal.tag_number} (ID: ${animal.id}):`, res.status, res.error || '');
       if (res.status === 'inserted') animalInserts++;
+    } else {
+      console.log(`[MERGE] Animal ${animal.tag_number} skipped: farm_id ${animal.farm_id} does not match`);
     }
   }
   console.log(`[MERGE] Merged ${animalInserts} new animals.`);
