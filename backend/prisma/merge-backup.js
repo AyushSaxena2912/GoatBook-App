@@ -24,7 +24,7 @@ function parseCopyBlock(sqlContent, tableName) {
   const copyHeaderLine = sqlContent.substring(startIndex, dataStart);
   const columnsMatch = copyHeaderLine.match(/\(([^)]+)\)/);
   if (!columnsMatch) return [];
-  const columns = columnsMatch[1].split(',').map(c => c.trim());
+  const columns = columnsMatch[1].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
   
   const lines = blockText.split('\n');
   const records = [];
@@ -95,6 +95,12 @@ async function mergeData() {
       
       // Clean up fields to match Prisma schema types
       const cleanData = { ...data };
+      
+      // Remap deleted farm_ids to Goatwala Farm to satisfy FK constraints
+      const activeFarms = ['3d08e737-06c0-43f4-a9c5-de9a650d7c1b', 'fa7c62fe-ea16-4361-9e0a-c41ca8cac70c'];
+      if (cleanData.farm_id && !activeFarms.includes(cleanData.farm_id)) {
+        cleanData.farm_id = '3d08e737-06c0-43f4-a9c5-de9a650d7c1b';
+      }
       
       // Convert decimal/numeric string fields to parseFloat/Number
       if (table === 'animals') {
