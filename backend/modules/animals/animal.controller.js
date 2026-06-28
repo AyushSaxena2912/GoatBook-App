@@ -238,6 +238,11 @@ exports.addAnimal = async (req, res) => {
     saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
 
+  let cleanFemaleCondition = femaleCondition;
+  if (femaleCondition === 'MATED') {
+    cleanFemaleCondition = 'PREGNANT';
+  }
+
   try {
     if (!req.farmId) {
       return res.status(400).json({ message: 'No farm selected' });
@@ -312,9 +317,9 @@ exports.addAnimal = async (req, res) => {
         landing_cost: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? landingCost : null,
         age_in_months: (acquisitionMethod?.toUpperCase() === 'PURCHASED') ? ageInMonths : null,
         teeth_stage: (acquisitionMethod?.toUpperCase() === 'PURCHASED' || acquisitionMethod?.toUpperCase() === 'BORN') ? teethStage : null,
-        female_condition: gender?.toUpperCase() === 'FEMALE' ? femaleCondition : null,
-        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED') ? parseSafeDate(matingDate) : null,
-        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT') ? parseSafeDate(expectedDeliveryDate) : null,
+        female_condition: gender?.toUpperCase() === 'FEMALE' ? cleanFemaleCondition : null,
+        mating_date: (gender?.toUpperCase() === 'FEMALE' && (femaleCondition === 'MATED' || cleanFemaleCondition === 'MATED')) ? parseSafeDate(matingDate) : null,
+        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && cleanFemaleCondition === 'PREGNANT') ? parseSafeDate(expectedDeliveryDate) : null,
         birth_type: birthType || null,
         mother_tag_id: (acquisitionMethod?.toUpperCase() === 'BORN') ? motherTagId : null,
         father_tag_id: (acquisitionMethod?.toUpperCase() === 'BORN') ? fatherTagId : null,
@@ -421,6 +426,11 @@ exports.updateAnimal = async (req, res) => {
     saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
 
+  let cleanFemaleCondition = femaleCondition;
+  if (femaleCondition === 'MATED') {
+    cleanFemaleCondition = 'PREGNANT';
+  }
+
   try {
     // 1. Verify existence and ownership
     const animal = await prisma.animals.findFirst({
@@ -461,9 +471,9 @@ exports.updateAnimal = async (req, res) => {
         landing_cost: currentAcqMethod === 'PURCHASED' ? landingCost : null,
         age_in_months: currentAcqMethod === 'PURCHASED' ? ageInMonths : null,
         teeth_stage: (currentAcqMethod === 'PURCHASED' || currentAcqMethod === 'BORN') ? teethStage : null,
-        female_condition: gender?.toUpperCase() === 'FEMALE' ? femaleCondition : null,
-        mating_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'MATED') ? parseSafeDate(matingDate) : (femaleCondition !== 'MATED' ? null : undefined),
-        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && femaleCondition === 'PREGNANT') ? parseSafeDate(expectedDeliveryDate) : (femaleCondition !== 'PREGNANT' ? null : undefined),
+        female_condition: gender?.toUpperCase() === 'FEMALE' ? cleanFemaleCondition : null,
+        mating_date: (gender?.toUpperCase() === 'FEMALE' && (femaleCondition === 'MATED' || cleanFemaleCondition === 'MATED')) ? parseSafeDate(matingDate) : (femaleCondition !== 'MATED' && cleanFemaleCondition !== 'MATED' ? null : undefined),
+        expected_delivery_date: (gender?.toUpperCase() === 'FEMALE' && cleanFemaleCondition === 'PREGNANT') ? parseSafeDate(expectedDeliveryDate) : (cleanFemaleCondition !== 'PREGNANT' ? null : undefined),
         birth_type: birthType || null,
         mother_tag_id: currentAcqMethod === 'BORN' ? motherTagId : null,
         father_tag_id: currentAcqMethod === 'BORN' ? fatherTagId : null,
