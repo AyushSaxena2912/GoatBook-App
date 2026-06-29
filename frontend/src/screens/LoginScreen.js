@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Linking } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GInput from '../components/GInput';
@@ -62,7 +62,7 @@ const LoginScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.formWrapper}>
             <View style={styles.logoContainer}>
-                <Image source={require('../../assets/icon.png')} style={styles.logoImage} />
+                <Image source={require('../../assets/login-logo.png')} style={styles.logoImage} />
                 <Text style={styles.logoText}>GoatBook</Text>
             </View>
             <View style={styles.titleContainer}>
@@ -108,6 +108,16 @@ const LoginScreen = ({ navigation }) => {
                         <Text style={styles.link}>Register</Text>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity 
+                  style={styles.spegiFooter} 
+                  onPress={() => Linking.openURL('https://www.spegitech.com')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.spegiText, { color: theme.colors.textMuted || '#9CA3AF' }]}>
+                    Developed by SPEGI Technologies Pvt. Ltd.
+                  </Text>
+                </TouchableOpacity>
             </View>
         </View>
       </ScrollView>
@@ -134,15 +144,16 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     marginTop: 20,
   },
   logoImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    marginBottom: 12,
+    width: 120,
+    height: 120,
+    borderRadius: 24,
+    marginBottom: 0,
   },
   logoText: {
     fontSize: 26,
     fontFamily: theme.typography.bold,
     color: theme.colors.primary,
+    marginTop: -16,
   },
   titleContainer: {
     marginBottom: 40,
@@ -179,7 +190,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 30,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   footerText: {
     fontSize: 15,
@@ -191,7 +202,17 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: theme.colors.primary,
     textDecorationLine: 'underline',
-  }
+  },
+  spegiFooter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 40,
+    marginTop: 10,
+  },
+  spegiText: {
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
+  },
 });
 
 export default LoginScreen;

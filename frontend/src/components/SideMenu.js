@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Platform, Linking } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { 
   Home, PawPrint, GitBranch, Syringe, ClipboardList, 
@@ -151,9 +151,25 @@ const SideMenu = (props) => {
       </ScrollView>
 
       {/* Logout at bottom */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <TouchableOpacity style={[styles.logoutButton, { borderTopColor: theme.colors.border }]} onPress={handleLogout}>
         <LogOut color={theme.colors.error} size={22} />
         <Text style={[styles.logoutText, { color: theme.colors.error }]}>{t('menu.logOut', 'Log Out')}</Text>
+      </TouchableOpacity>
+
+      {/* Developed by SPEGI Technologies Footer */}
+      <TouchableOpacity 
+        style={styles.spegiFooter} 
+        onPress={() => Linking.openURL('https://www.spegitech.com')}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={require('../../assets/spegiLogo.png')} 
+          style={styles.spegiLogo} 
+          resizeMode="contain"
+        />
+        <Text style={[styles.spegiText, { color: theme.colors.textMuted || '#6B7280' }]}>
+          Developed by SPEGI Technologies Pvt. Ltd.
+        </Text>
       </TouchableOpacity>
 
       {/* Coming Soon Modal */}
@@ -261,7 +277,8 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
   },
@@ -269,6 +286,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     marginLeft: 16,
+  },
+  spegiFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: Platform.OS === 'ios' ? 12 : 20,
+    paddingTop: 4,
+  },
+  spegiLogo: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
+  spegiText: {
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
   },
   // Modal Styles
   modalOverlay: {

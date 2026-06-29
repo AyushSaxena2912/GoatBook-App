@@ -8,10 +8,12 @@ import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import api from '../api';
 import GAlert from '../components/GAlert';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AddBreedScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
-  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(() => getStyles(theme, isDarkMode, insets), [theme, isDarkMode, insets]);
   const isEditing = !!route.params?.breed;
   const existingBreed = route.params?.breed;
 
@@ -188,7 +190,7 @@ const AddBreedScreen = ({ navigation, route }) => {
   );
 };
 
-const getStyles = (theme, isDarkMode) => StyleSheet.create({
+const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -228,7 +230,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 32,
   },
   buttonRow: {
     flexDirection: 'row',
