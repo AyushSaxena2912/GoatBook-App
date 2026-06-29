@@ -43,13 +43,18 @@ jobs:
           cd frontend
           npx expo prebuild --platform android --no-install
 
-      - name: Build Android Debug APK
+      - name: Generate keystore
+        run: |
+          mkdir -p frontend/android/app
+          keytool -genkey -v -keystore frontend/android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Build Android Release APK
         run: |
           cd frontend/android
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GoatBook-Debug-APK
-          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          name: GoatBook-Release-APK
+          path: frontend/android/app/build/outputs/apk/release/app-release.apk
