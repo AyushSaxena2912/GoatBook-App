@@ -43,13 +43,13 @@ jobs:
           cd frontend
           npx expo prebuild --platform android --no-install
 
-      - name: Build Android Release APK
+      - name: Build Android Debug APK
         run: |
           cd frontend/android
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GoatBook-Release-APK
-          path: frontend/android/app/build/outputs/apk/release/app-release.apk
+          name: GoatBook-Debug-APK
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
