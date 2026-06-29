@@ -36,6 +36,7 @@ const AddMatingScreen = ({ navigation, route }) => {
   // Search/Animal State
   const [searchTag, setSearchTag] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [animal, setAnimal] = useState(preSelectedAnimal);
   
   // Form State
@@ -88,20 +89,25 @@ const AddMatingScreen = ({ navigation, route }) => {
     const cleaned = text.trim();
     if (cleaned.length >= 3) {
       setIsSearching(true);
+      setIsNotFound(false);
       try {
         const res = await api.get(`/animals/check-tag/${cleaned}`);
         if (res.data && res.data.id) {
           setAnimal(res.data);
+          setIsNotFound(false);
         } else {
           setAnimal(null);
+          setIsNotFound(true);
         }
       } catch (err) {
         setAnimal(null);
+        setIsNotFound(true);
       } finally {
         setIsSearching(false);
       }
     } else {
       setAnimal(null);
+      setIsNotFound(false);
     }
   };
 
@@ -184,7 +190,7 @@ const AddMatingScreen = ({ navigation, route }) => {
                   {isSearching ? (
                     <ActivityIndicator size="small" color={theme.colors.primary} />
                   ) : searchTag ? (
-                    <TouchableOpacity onPress={() => {setSearchTag(''); setAnimal(null);}}>
+                    <TouchableOpacity onPress={() => {setSearchTag(''); setAnimal(null); setIsNotFound(false);}}>
                       <X size={18} color={theme.colors.textMuted} />
                     </TouchableOpacity>
                   ) : (
@@ -192,6 +198,12 @@ const AddMatingScreen = ({ navigation, route }) => {
                   )}
                 </View>
               </View>
+
+              {isNotFound && (
+                <View style={styles.notFoundContainer}>
+                  <Text style={styles.notFoundText}>Animal not found</Text>
+                </View>
+              )}
 
               {animal && (
                 <View style={[styles.animalFound, { backgroundColor: theme.colors.primary + '12', borderColor: theme.colors.primary + '40' }]}>
@@ -464,6 +476,20 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   searchSection: { marginBottom: 24 },
   searchLabel: { fontSize: 12, fontFamily: 'Inter_500Medium', color: theme.colors.textMuted, marginBottom: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  notFoundContainer: {
+    padding: 12,
+    backgroundColor: isDarkMode ? '#3F1A1A' : '#FEE2E2',
+    borderColor: theme.colors.error,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  notFoundText: {
+    color: theme.colors.error,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
   searchInputContainer: { 
     flex: 1, flexDirection: 'row', alignItems: 'center', 
     borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, height: 48,

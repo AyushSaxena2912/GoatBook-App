@@ -34,6 +34,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
   const [vaccines, setVaccines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -79,20 +80,25 @@ const AddVaccinationScreen = ({ navigation, route }) => {
     const cleaned = text.trim();
     if (cleaned.length >= 3) {
       setSearching(true);
+      setIsNotFound(false);
       try {
         const response = await api.get(`/animals/check-tag/${cleaned}`);
         if (response.data && response.data.id) {
           setAnimal(response.data);
+          setIsNotFound(false);
         } else {
           setAnimal(null);
+          setIsNotFound(true);
         }
       } catch (error) {
         setAnimal(null);
+        setIsNotFound(true);
       } finally {
         setSearching(false);
       }
     } else {
       setAnimal(null);
+      setIsNotFound(false);
     }
   };
 
@@ -196,6 +202,12 @@ const AddVaccinationScreen = ({ navigation, route }) => {
                   />
                 </View>
               </View>
+
+              {isNotFound && (
+                <View style={styles.notFoundContainer}>
+                  <Text style={styles.notFoundText}>Animal not found</Text>
+                </View>
+              )}
 
               {animal && (
                 <View style={[styles.animalCard, { backgroundColor: theme.colors.primary + '08', borderColor: theme.colors.primary + '20' }]}>
@@ -381,6 +393,20 @@ const getStyles = (theme, insets) => StyleSheet.create({
     marginBottom: 16,
     paddingLeft: 4,
     color: theme.colors.primary,
+  },
+  notFoundContainer: {
+    padding: 12,
+    backgroundColor: theme.colors.error + '10',
+    borderColor: theme.colors.error,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  notFoundText: {
+    color: theme.colors.error,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
   },
   inputRow: {
     flexDirection: 'row',

@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import { useFocusEffect } from '@react-navigation/native';
-import { Search, Plus, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, Check, Activity } from 'lucide-react-native';
+import { Search, Plus, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, Check, Activity, X } from 'lucide-react-native';
 import { SPACING } from '../theme';
 import api from '../api';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -32,6 +32,7 @@ const MatingListScreen = ({ navigation, route }) => {
   
   const [searchTag, setSearchTag] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [animal, setAnimal] = useState(null);
   const [matings, setMatings] = useState([]);
   const [matingsLoading, setMatingsLoading] = useState(false);
@@ -77,31 +78,71 @@ const MatingListScreen = ({ navigation, route }) => {
   }, [route.params?.timestamp]);
 
   const handleSearch = async (tagToSearch = searchTag, shouldAutoOpen = false) => {
-    if (!tagToSearch.trim()) {
-      Alert.alert('Error', 'Please enter a Tag ID');
+    const cleaned = tagToSearch.trim();
+    if (!cleaned) {
+      setAnimal(null);
+      setMatings([]);
+      setIsNotFound(false);
       return;
     }
     
     setIsSearching(true);
+    setIsNotFound(false);
     setAnimal(null);
     setMatings([]);
     
     try {
-      const res = await api.get(`/animals/check-tag/${tagToSearch.trim()}`);
+      const res = await api.get(`/animals/check-tag/${cleaned}`);
       if (res.data && res.data.id) {
         setAnimal(res.data);
+        setIsNotFound(false);
         fetchAnimalMatings(res.data.id);
         if (shouldAutoOpen) {
           openAddModal();
         }
       } else {
-        Alert.alert('Not Found', 'No animal found with this Tag ID');
+        setAnimal(null);
+        setMatings([]);
+        setIsNotFound(true);
       }
     } catch (err) {
       console.error('Search error:', err);
-      Alert.alert('Error', 'Failed to search animal. Please try again.');
+      setAnimal(null);
+      setMatings([]);
+      setIsNotFound(true);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleTagChange = async (text) => {
+    setSearchTag(text);
+    const cleaned = text.trim();
+    if (cleaned.length >= 3) {
+      setIsSearching(true);
+      setIsNotFound(false);
+      try {
+        const res = await api.get(`/animals/check-tag/${cleaned}`);
+        if (res.data && res.data.id) {
+          setAnimal(res.data);
+          setIsNotFound(false);
+          fetchAnimalMatings(res.data.id);
+        } else {
+          setAnimal(null);
+          setMatings([]);
+          setIsNotFound(true);
+        }
+      } catch (err) {
+        setAnimal(null);
+        setMatings([]);
+        setIsNotFound(true);
+      } finally {
+        setIsSearching(false);
+      }
+    } else {
+      setAnimal(null);
+      setMatings([]);
+      setIsNotFound(false);
     }
   };
 
@@ -242,25 +283,31 @@ const MatingListScreen = ({ navigation, route }) => {
         <View style={styles.searchSection}>
           <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
           <View style={styles.searchRow}>
-            <View style={[styles.searchInputContainer, { borderColor: theme.colors.border }]}>
+            <View style={[styles.searchInputContainer, { borderColor: theme.colors.border, flex: 1 }]}>
               <TextInput
                 style={[styles.searchInput, { color: theme.colors.text }]}
                 value={searchTag}
-                onChangeText={setSearchTag}
+                onChangeText={handleTagChange}
                 placeholder="2012"
                 placeholderTextColor={theme.colors.textMuted}
-                onSubmitEditing={() => handleSearch()}
               />
-              <Search size={20} color={theme.colors.textMuted} />
+              {isSearching ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : searchTag ? (
+                <TouchableOpacity onPress={() => {setSearchTag(''); setAnimal(null); setIsNotFound(false);}}>
+                  <X size={18} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              ) : (
+                <Search size={20} color={theme.colors.textMuted} />
+              )}
             </View>
-            <TouchableOpacity 
-              style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-              onPress={() => handleSearch()}
-              disabled={isSearching}
-            >
-              {isSearching ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.addButtonText}>Add</Text>}
-            </TouchableOpacity>
           </View>
+
+          {isNotFound && (
+            <View style={styles.notFoundContainer}>
+              <Text style={styles.notFoundText}>Animal not found</Text>
+            </View>
+          )}
         </View>
 
         {/* Accordion Section */}
@@ -602,6 +649,20 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   searchSection: { marginBottom: 24 },
   searchLabel: { fontSize: 12, fontFamily: 'Inter_500Medium', color: theme.colors.textMuted, marginBottom: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  notFoundContainer: {
+    padding: 12,
+    backgroundColor: isDarkMode ? '#3F1A1A' : '#FEE2E2',
+    borderColor: theme.colors.error,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  notFoundText: {
+    color: theme.colors.error,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
   searchInputContainer: { 
     flex: 1, flexDirection: 'row', alignItems: 'center', 
     borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, height: 48,
