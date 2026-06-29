@@ -61,6 +61,10 @@ const LoginScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.formWrapper}>
+            <View style={styles.logoContainer}>
+                <Image source={require('../../assets/icon.png')} style={styles.logoImage} />
+                <Text style={styles.logoText}>GoatBook</Text>
+            </View>
             <View style={styles.titleContainer}>
                 <Text style={styles.mainTitle}>Login</Text>
                 <Text style={styles.subTitle}>Login to your account and manage your farm.</Text>
@@ -121,11 +125,27 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   formWrapper: {
-    paddingTop: 80,
+    paddingTop: 40,
     flex: 1,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    marginTop: 20,
+  },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  logoText: {
+    fontSize: 26,
+    fontFamily: theme.typography.bold,
+    color: theme.colors.primary,
+  },
   titleContainer: {
-    marginBottom: 60,
+    marginBottom: 40,
   },
   mainTitle: {
     fontSize: 32,

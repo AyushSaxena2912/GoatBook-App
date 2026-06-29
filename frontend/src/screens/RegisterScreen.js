@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GInput from '../components/GInput';
@@ -89,6 +89,11 @@ const RegisterScreen = ({ navigation }) => {
         >
           <ArrowLeft color={theme.colors.primary} size={30} />
         </TouchableOpacity>
+
+        <View style={styles.logoContainer}>
+            <Image source={require('../../assets/icon.png')} style={styles.logoImage} />
+            <Text style={styles.logoText}>GoatBook</Text>
+        </View>
 
         <View style={styles.titleContainer}>
             <Text style={styles.mainTitle}>Register</Text>
@@ -223,6 +228,22 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     paddingTop: 40,
     marginBottom: 20,
     marginLeft: -8,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    marginTop: 10,
+  },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  logoText: {
+    fontSize: 26,
+    fontFamily: theme.typography.bold,
+    color: theme.colors.primary,
   },
   titleContainer: {
     marginBottom: 40,

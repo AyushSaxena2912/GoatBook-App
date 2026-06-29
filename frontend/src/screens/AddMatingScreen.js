@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
-import { Search, ChevronDown, Calendar, CheckCircle, Tag } from 'lucide-react-native';
+import { Search, ChevronDown, Calendar, CheckCircle, Tag, X } from 'lucide-react-native';
 import { SPACING } from '../theme';
 import api from '../api';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -83,27 +83,25 @@ const AddMatingScreen = ({ navigation, route }) => {
     }
   }, [isEditing, editItem]);
 
-  const handleSearch = async () => {
-    if (!searchTag.trim()) {
-      Alert.alert('Error', 'Please enter a Tag ID');
-      return;
-    }
-    
-    setIsSearching(true);
-    setAnimal(null);
-    
-    try {
-      const res = await api.get(`/animals/check-tag/${searchTag.trim()}`);
-      if (res.data && res.data.id) {
-        setAnimal(res.data);
-      } else {
-        Alert.alert('Not Found', 'No animal found with this Tag ID');
+  const handleTagChange = async (text) => {
+    setSearchTag(text);
+    const cleaned = text.trim();
+    if (cleaned.length >= 3) {
+      setIsSearching(true);
+      try {
+        const res = await api.get(`/animals/check-tag/${cleaned}`);
+        if (res.data && res.data.id) {
+          setAnimal(res.data);
+        } else {
+          setAnimal(null);
+        }
+      } catch (err) {
+        setAnimal(null);
+      } finally {
+        setIsSearching(false);
       }
-    } catch (err) {
-      console.error('Search error:', err);
-      Alert.alert('Error', 'Failed to search animal. Please try again.');
-    } finally {
-      setIsSearching(false);
+    } else {
+      setAnimal(null);
     }
   };
 
@@ -175,24 +173,24 @@ const AddMatingScreen = ({ navigation, route }) => {
             <View style={styles.searchSection}>
               <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
               <View style={styles.searchRow}>
-                <View style={[styles.searchInputContainer, { borderColor: theme.colors.border }]}>
+                <View style={[styles.searchInputContainer, { borderColor: theme.colors.border, flex: 1 }]}>
                   <TextInput
                     style={[styles.searchInput, { color: theme.colors.text }]}
                     value={searchTag}
-                    onChangeText={setSearchTag}
+                    onChangeText={handleTagChange}
                     placeholder="2012"
                     placeholderTextColor={theme.colors.textMuted}
-                    onSubmitEditing={() => handleSearch()}
                   />
-                  <Search size={20} color={theme.colors.textMuted} />
+                  {isSearching ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : searchTag ? (
+                    <TouchableOpacity onPress={() => {setSearchTag(''); setAnimal(null);}}>
+                      <X size={18} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  ) : (
+                    <Search size={20} color={theme.colors.textMuted} />
+                  )}
                 </View>
-                <TouchableOpacity 
-                  style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => handleSearch()}
-                  disabled={isSearching}
-                >
-                  {isSearching ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.addButtonText}>{t('common.search', 'Search')}</Text>}
-                </TouchableOpacity>
               </View>
 
               {animal && (

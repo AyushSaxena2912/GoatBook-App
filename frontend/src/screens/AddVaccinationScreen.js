@@ -74,17 +74,25 @@ const AddVaccinationScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleSearchAnimal = async () => {
-    if (!tagNumber.trim()) return;
-    setSearching(true);
-    try {
-      const response = await api.get(`/animals/check-tag/${tagNumber.trim()}`);
-      setAnimal(response.data);
-    } catch (error) {
-      Alert.alert('Not Found', 'No animal found with this Tag ID');
+  const handleTagChange = async (text) => {
+    setTagNumber(text);
+    const cleaned = text.trim();
+    if (cleaned.length >= 3) {
+      setSearching(true);
+      try {
+        const response = await api.get(`/animals/check-tag/${cleaned}`);
+        if (response.data && response.data.id) {
+          setAnimal(response.data);
+        } else {
+          setAnimal(null);
+        }
+      } catch (error) {
+        setAnimal(null);
+      } finally {
+        setSearching(false);
+      }
+    } else {
       setAnimal(null);
-    } finally {
-      setSearching(false);
     }
   };
 
@@ -173,25 +181,20 @@ const AddVaccinationScreen = ({ navigation, route }) => {
                   <GInput 
                     label={t('farmActivities.scanEnterTagId', 'Scan/Enter Tag ID')} 
                     value={tagNumber} 
-                    onChangeText={setTagNumber}
-                    rightIcon={tagNumber ? (
-                      <TouchableOpacity onPress={() => {setTagNumber(''); setAnimal(null);}}>
-                        <X size={18} color={theme.colors.textMuted} />
-                      </TouchableOpacity>
-                    ) : null}
+                    onChangeText={handleTagChange}
+                    rightIcon={
+                      searching ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                      ) : tagNumber ? (
+                        <TouchableOpacity onPress={() => {setTagNumber(''); setAnimal(null);}}>
+                          <X size={18} color={theme.colors.textMuted} />
+                        </TouchableOpacity>
+                      ) : null
+                    }
                     disabled={isEditing}
                     editable={!isEditing}
                   />
                 </View>
-                {!isEditing && (
-                  <TouchableOpacity 
-                    style={[styles.findBtn, { backgroundColor: theme.colors.primary }]}
-                    onPress={handleSearchAnimal}
-                    disabled={searching}
-                  >
-                    {searching ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.findBtnText}>{t('common.find', 'Find')}</Text>}
-                  </TouchableOpacity>
-                )}
               </View>
 
               {animal && (
