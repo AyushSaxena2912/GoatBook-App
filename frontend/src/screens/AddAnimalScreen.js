@@ -361,16 +361,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const handleSave = async () => {
     // ... existing save logic will be above this ...
 
-    if (!tagNumber || !breedId || !gender || !acquisitionMethod) {
+    // Only Tag ID, Breed and Gender are truly mandatory (matches backend schema constraints).
+    // Everything else (source, purchase details, dates, etc.) is optional so users can add
+    // an animal with minimal info and fill in the rest later.
+    if (!tagNumber || !breedId || !gender) {
       alert('Please fill in all required fields marked with *');
       return;
-    }
-
-    if (acquisitionMethod === 'PURCHASED') {
-      if (!purchaseDate || !purchasePrice || !ageInMonths) {
-        alert('Purchase date, price, and age in months are required for purchased animals.');
-        return;
-      }
     }
 
     const isValidDate = (d) => {
@@ -1044,7 +1040,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         { label: 'Born At Farm', value: 'BORN' },
                         { label: t('enums.purchased', 'Purchased'), value: 'PURCHASED' }
                       ]}
-                      required
                     />
                     <GSelect 
                       containerStyle={styles.halfWidth}
@@ -1110,7 +1105,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           value={birthDate} 
                           onDateChange={setBirthDate}
                           placeholder="Select Date"
-                          required
                         />
                         <GInput 
                           containerStyle={styles.halfWidth}
@@ -1132,7 +1126,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         onChangeText={setAgeInMonths} 
                         keyboardType="number-pad"
                         placeholder="e.g. 12"
-                        required={(acquisitionMethod === 'PURCHASED' || gender === 'FEMALE')}
                       />
                       <GSelect 
                         containerStyle={styles.halfWidth}
@@ -1197,7 +1190,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                           value={purchaseDate} 
                           onDateChange={setPurchaseDate}
                           placeholder="Select Date"
-                          required
                         />
                         <View style={styles.row}>
                           <GInput 
@@ -1207,7 +1199,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                             onChangeText={setPurchasePrice} 
                             keyboardType="number-pad"
                             placeholder="e.g. 5000"
-                            required
                           />
                           <GInput 
                             containerStyle={styles.halfWidth}
