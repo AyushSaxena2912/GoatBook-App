@@ -43,19 +43,98 @@ jobs:
           cd frontend
           npx expo prebuild --platform android --no-install
 
-      - name: Generate keystore
+      - name: Decode release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          mkdir -p frontend/android/app
-          rm -f frontend/android/app/debug.keystore
-          keytool -genkey -v -keystore frontend/android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing. Add it in GitHub → Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > frontend/android/app/release.keystore
+          test -s frontend/android/app/release.keystore
+
+      - name: Configure release signing
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Missing signing secrets (ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS)."
+            exit 1
+          fi
+
+          # Pass credentials into Gradle without printing them
+          {
+            echo "GOATBOOK_UPLOAD_STORE_FILE=release.keystore"
+            echo "GOATBOOK_UPLOAD_KEY_ALIAS=${KEY_ALIAS}"
+            echo "GOATBOOK_UPLOAD_STORE_PASSWORD=${STORE_PASSWORD}"
+            echo "GOATBOOK_UPLOAD_KEY_PASSWORD=${KEY_PASSWORD}"
+          } >> frontend/android/gradle.properties
+
+          # Patch Expo-generated build.gradle: add release signingConfig and use it for release builds
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path("frontend/android/app/build.gradle")
+          text = path.read_text()
+
+          release_signing = """
+        release {
+            if (project.hasProperty('GOATBOOK_UPLOAD_STORE_FILE')) {
+                storeFile file(GOATBOOK_UPLOAD_STORE_FILE)
+                storePassword GOATBOOK_UPLOAD_STORE_PASSWORD
+                keyAlias GOATBOOK_UPLOAD_KEY_ALIAS
+                keyPassword GOATBOOK_UPLOAD_KEY_PASSWORD
+            }
+        }
+"""
+
+          if "GOATBOOK_UPLOAD_STORE_FILE" not in text:
+              needle = "signingConfigs {\n        debug {"
+              if needle not in text:
+                  raise SystemExit("Could not find signingConfigs.debug block to patch")
+              text = text.replace(
+                  needle,
+                  "signingConfigs {\n" + release_signing + "        debug {",
+                  1,
+              )
+
+          # Ensure release buildType uses release signing (not debug)
+          old = "signingConfig signingConfigs.debug\n            def enableShrinkResources"
+          new = "signingConfig signingConfigs.release\n            def enableShrinkResources"
+          if old not in text:
+              # Fallback: only rewrite the release block's signingConfig line
+              import re
+              text2, n = re.subn(
+                  r"(release\s*\{[\s\S]*?)signingConfig signingConfigs\.debug",
+                  r"\1signingConfig signingConfigs.release",
+                  text,
+                  count=1,
+              )
+              if n == 0:
+                  raise SystemExit("Could not switch release signingConfig to release")
+              text = text2
+          else:
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          print("Release signing configured")
+          PY
 
       - name: Build Android Release APK
         run: |
           cd frontend/android
           ./gradlew assembleRelease
 
+      - name: Prepare downloadable APK
+        run: |
+          mkdir -p dist
+          cp frontend/android/app/build/outputs/apk/release/app-release.apk dist/GoatBook.apk
+          ls -lh dist/GoatBook.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GoatBook-Release-APK
-          path: frontend/android/app/build/outputs/apk/release/app-release.apk
+          name: GoatBook-APK
+          path: dist/GoatBook.apk
