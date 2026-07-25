@@ -49,33 +49,25 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing. Add it in GitHub → Settings → Secrets and variables → Actions."
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing."
             exit 1
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > frontend/android/app/release.keystore
           test -s frontend/android/app/release.keystore
+          # Sanity-check password/alias against the decoded keystore (fails fast if secrets mismatch)
+          keytool -list \
+            -keystore frontend/android/app/release.keystore \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /dev/null
 
       - name: Configure release signing
-        env:
-          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        run: |
-          if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
-            echo "::error::Missing signing secrets (ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS)."
-            exit 1
-          fi
-
-          {
-            echo "GOATBOOK_UPLOAD_STORE_FILE=release.keystore"
-            echo "GOATBOOK_UPLOAD_KEY_ALIAS=${KEY_ALIAS}"
-            echo "GOATBOOK_UPLOAD_STORE_PASSWORD=${STORE_PASSWORD}"
-            echo "GOATBOOK_UPLOAD_KEY_PASSWORD=${KEY_PASSWORD}"
-          } >> frontend/android/gradle.properties
-
-          python3 .github/scripts/configure-android-signing.py
+        run: python3 .github/scripts/configure-android-signing.py
 
       - name: Build Android Release APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           cd frontend/android
           ./gradlew assembleRelease

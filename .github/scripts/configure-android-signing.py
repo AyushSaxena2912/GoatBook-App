@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch Expo-generated android/app/build.gradle for release signing."""
+"""Patch Expo-generated android/app/build.gradle for release signing via env vars."""
 
 from pathlib import Path
 import re
@@ -11,18 +11,17 @@ if not path.exists():
 
 text = path.read_text()
 
+# Use System.getenv so passwords with special chars (e.g. @) are not mangled by gradle.properties
 release_signing = """
         release {
-            if (project.hasProperty('GOATBOOK_UPLOAD_STORE_FILE')) {
-                storeFile file(GOATBOOK_UPLOAD_STORE_FILE)
-                storePassword GOATBOOK_UPLOAD_STORE_PASSWORD
-                keyAlias GOATBOOK_UPLOAD_KEY_ALIAS
-                keyPassword GOATBOOK_UPLOAD_KEY_PASSWORD
-            }
+            storeFile file('release.keystore')
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('ANDROID_KEY_ALIAS')
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD')
         }
 """
 
-if "GOATBOOK_UPLOAD_STORE_FILE" not in text:
+if "System.getenv('ANDROID_KEYSTORE_PASSWORD')" not in text:
     needle = "signingConfigs {\n        debug {"
     if needle not in text:
         sys.exit("Could not find signingConfigs.debug block to patch")
@@ -32,7 +31,6 @@ if "GOATBOOK_UPLOAD_STORE_FILE" not in text:
         1,
     )
 
-# Prefer precise replacement inside the release buildType
 old = "signingConfig signingConfigs.debug\n            def enableShrinkResources"
 new = "signingConfig signingConfigs.release\n            def enableShrinkResources"
 if old in text:
@@ -49,4 +47,4 @@ else:
     text = text2
 
 path.write_text(text)
-print("Release signing configured")
+print("Release signing configured (env-based)")
