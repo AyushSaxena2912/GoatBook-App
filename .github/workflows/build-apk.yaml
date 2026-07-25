@@ -47,18 +47,37 @@ jobs:
       - name: Decode release keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing."
             exit 1
           fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > frontend/android/app/release.keystore
+
+          # Trim whitespace/newlines accidentally pasted into GitHub secrets
+          STORE_PASS=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r\n\t' | xargs)
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r\n\t' | xargs)
+
+          echo "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 -d > frontend/android/app/release.keystore
           test -s frontend/android/app/release.keystore
-          # Sanity-check password/alias against the decoded keystore (fails fast if secrets mismatch)
-          keytool -list \
+
+          if [ -z "$STORE_PASS" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::ANDROID_KEYSTORE_PASSWORD or ANDROID_KEY_ALIAS is empty after trim."
+            exit 1
+          fi
+
+          echo "Keystore bytes: $(wc -c < frontend/android/app/release.keystore)"
+          echo "Password length: ${#STORE_PASS}"
+          echo "Alias length: ${#KEY_ALIAS}"
+
+          if ! keytool -list \
             -keystore frontend/android/app/release.keystore \
-            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /dev/null
+            -storepass "$STORE_PASS" \
+            -alias "$KEY_ALIAS" > /dev/null; then
+            echo "::error::Keystore password/alias mismatch. Update secrets to exact values: password GoatBook@Sign2026, alias goatbook (no spaces/newlines)."
+            exit 1
+          fi
 
       - name: Configure release signing
         run: python3 .github/scripts/configure-android-signing.py
@@ -69,6 +88,10 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
+          # Trim again for Gradle env
+          export ANDROID_KEYSTORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r\n\t' | xargs)
+          export ANDROID_KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r\n\t' | xargs)
+          export ANDROID_KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r\n\t' | xargs)
           cd frontend/android
           ./gradlew assembleRelease
 
