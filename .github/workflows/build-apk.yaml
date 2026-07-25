@@ -1,5 +1,4 @@
 name: Build Android APK (Free)
-# Trigger rebuild after signing secrets are configured.
 
 on:
   push:
@@ -8,6 +7,7 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/build-apk.yaml'
+      - '.github/scripts/configure-android-signing.py'
 
 jobs:
   build:
@@ -66,7 +66,6 @@ jobs:
             exit 1
           fi
 
-          # Pass credentials into Gradle without printing them
           {
             echo "GOATBOOK_UPLOAD_STORE_FILE=release.keystore"
             echo "GOATBOOK_UPLOAD_KEY_ALIAS=${KEY_ALIAS}"
@@ -74,54 +73,7 @@ jobs:
             echo "GOATBOOK_UPLOAD_KEY_PASSWORD=${KEY_PASSWORD}"
           } >> frontend/android/gradle.properties
 
-          # Patch Expo-generated build.gradle: add release signingConfig and use it for release builds
-          python3 <<'PY'
-          from pathlib import Path
-          path = Path("frontend/android/app/build.gradle")
-          text = path.read_text()
-
-          release_signing = """
-        release {
-            if (project.hasProperty('GOATBOOK_UPLOAD_STORE_FILE')) {
-                storeFile file(GOATBOOK_UPLOAD_STORE_FILE)
-                storePassword GOATBOOK_UPLOAD_STORE_PASSWORD
-                keyAlias GOATBOOK_UPLOAD_KEY_ALIAS
-                keyPassword GOATBOOK_UPLOAD_KEY_PASSWORD
-            }
-        }
-"""
-
-          if "GOATBOOK_UPLOAD_STORE_FILE" not in text:
-              needle = "signingConfigs {\n        debug {"
-              if needle not in text:
-                  raise SystemExit("Could not find signingConfigs.debug block to patch")
-              text = text.replace(
-                  needle,
-                  "signingConfigs {\n" + release_signing + "        debug {",
-                  1,
-              )
-
-          # Ensure release buildType uses release signing (not debug)
-          old = "signingConfig signingConfigs.debug\n            def enableShrinkResources"
-          new = "signingConfig signingConfigs.release\n            def enableShrinkResources"
-          if old not in text:
-              # Fallback: only rewrite the release block's signingConfig line
-              import re
-              text2, n = re.subn(
-                  r"(release\s*\{[\s\S]*?)signingConfig signingConfigs\.debug",
-                  r"\1signingConfig signingConfigs.release",
-                  text,
-                  count=1,
-              )
-              if n == 0:
-                  raise SystemExit("Could not switch release signingConfig to release")
-              text = text2
-          else:
-              text = text.replace(old, new, 1)
-
-          path.write_text(text)
-          print("Release signing configured")
-          PY
+          python3 .github/scripts/configure-android-signing.py
 
       - name: Build Android Release APK
         run: |
