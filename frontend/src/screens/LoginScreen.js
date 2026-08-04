@@ -15,14 +15,17 @@ const LoginScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    const identifier = String(email || '').trim();
+    const pwd = String(password || '').trim();
+
+    if (!identifier || !pwd) {
       alert('Please enter your Phone/Email and password');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', { identifier: email, password });
+      const response = await api.post('/auth/login', { identifier, password: pwd });
       const { token, farms } = response.data;
       
       await setAuthToken(token);
@@ -49,6 +52,10 @@ const LoginScreen = ({ navigation }) => {
       }
     } catch (error) {
       setLoading(false);
+      if (!error.response) {
+        alert('Cannot reach server. Please check internet, or install the latest GoatBook APK (server IP was updated).');
+        return;
+      }
       const message = error.response?.data?.message || 'Login failed';
       alert(message);
     }

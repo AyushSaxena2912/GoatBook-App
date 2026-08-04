@@ -30,7 +30,7 @@ const storage = {
 };
 
 // Using AWS EC2 backend URL
-const RENDER_URL = 'http://13.63.238.138';
+const RENDER_URL = 'http://13.60.172.93';
 const BASE_URL = `${RENDER_URL}/api`;
 
 const api = axios.create({
