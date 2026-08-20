@@ -13,6 +13,8 @@ jobs:
   build:
     name: Build Android App
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Repository
@@ -106,3 +108,13 @@ jobs:
         with:
           name: GoatBook-APK
           path: dist/GoatBook.apk
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: GoatBook Latest Release
+          body: "Latest Android APK build with Bulk Import & Export feature."
+          files: dist/GoatBook.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
