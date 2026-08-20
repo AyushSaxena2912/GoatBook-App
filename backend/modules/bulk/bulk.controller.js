@@ -62,10 +62,24 @@ const parseBoolean = (val) => {
   return s === 'YES' || s === 'TRUE' || s === '1' || s === 'Y';
 };
 
+// Helper to resolve active farmId dynamically from req or employee profile
+const getFarmId = async (req) => {
+  if (req.farmId) return req.farmId;
+  const headerId = req.header('X-Farm-ID') || req.header('x-farm-id');
+  if (headerId) return headerId;
+  if (req.employee?.id) {
+    const membership = await prisma.farm_employees.findFirst({
+      where: { employee_id: req.employee.id }
+    });
+    if (membership) return membership.farm_id;
+  }
+  return null;
+};
+
 // 1. GENERATE & DOWNLOAD EXCEL TEMPLATE
 exports.downloadAnimalTemplate = async (req, res) => {
   try {
-    const farmId = req.farmId;
+    const farmId = await getFarmId(req);
     if (!farmId) return res.status(400).json({ message: 'No farm selected' });
 
     // Fetch farm's active breeds & default breeds
@@ -226,7 +240,7 @@ exports.downloadAnimalTemplate = async (req, res) => {
 // 2. EXPORT CURRENT ANIMALS TO EXCEL
 exports.exportAnimals = async (req, res) => {
   try {
-    const farmId = req.farmId;
+    const farmId = await getFarmId(req);
     if (!farmId) return res.status(400).json({ message: 'No farm selected' });
 
     const where = { farm_id: farmId };
@@ -640,7 +654,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
 // 4. VALIDATE UPLOADED EXCEL (Dry Run / Preview)
 exports.validateAnimalsImport = async (req, res) => {
   try {
-    const farmId = req.farmId;
+    const farmId = await getFarmId(req);
     if (!farmId) return res.status(400).json({ message: 'No farm selected' });
 
     let buffer = null;
@@ -673,7 +687,7 @@ exports.validateAnimalsImport = async (req, res) => {
 // 5. IMPORT ANIMALS (Commit to Database)
 exports.importAnimals = async (req, res) => {
   try {
-    const farmId = req.farmId;
+    const farmId = await getFarmId(req);
     if (!farmId) return res.status(400).json({ message: 'No farm selected' });
 
     let buffer = null;

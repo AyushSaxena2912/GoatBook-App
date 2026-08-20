@@ -70,7 +70,18 @@ module.exports = async (req, res, next) => {
            }
         }
       }
-
+    } else if (employeeProfile) {
+      // Auto-fallback to primary farm membership if header X-Farm-ID is omitted
+      const primaryMembership = await prisma.farm_employees.findFirst({
+        where: { employee_id: employeeProfile.id }
+      });
+      if (primaryMembership) {
+        req.farmId = primaryMembership.farm_id;
+        const subscription = await prisma.subscriptions.findUnique({ where: { farm_id: req.farmId } });
+        if (subscription) {
+          req.subscription = subscription;
+        }
+      }
     }
 
     next();
