@@ -82,9 +82,8 @@ const BulkDataScreen = ({ navigation }) => {
 
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
-            mimeType,
+            mimeType: mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             dialogTitle: 'Download Excel Template',
-            UTI: 'com.microsoft.excel.xlsx',
           });
         } else {
           Alert.alert('Downloaded', `Template saved to ${fileUri}`);
@@ -92,7 +91,8 @@ const BulkDataScreen = ({ navigation }) => {
       }
     } catch (err) {
       console.error('Download template error:', err);
-      Alert.alert('Error', err.response?.data?.message || 'Failed to download template');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to download template';
+      Alert.alert('Error', errMsg);
     } finally {
       setIsDownloadingTemplate(false);
     }
@@ -276,9 +276,8 @@ const BulkDataScreen = ({ navigation }) => {
 
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
-            mimeType,
+            mimeType: mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             dialogTitle: 'Export Animals Data',
-            UTI: 'com.microsoft.excel.xlsx',
           });
         }
       }
@@ -286,7 +285,8 @@ const BulkDataScreen = ({ navigation }) => {
       setExportSuccessMsg(`Successfully exported ${totalExported} animals to Excel.`);
     } catch (err) {
       console.error('Export animals error:', err);
-      Alert.alert('Error', err.response?.data?.message || 'Failed to export animals');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to export animals';
+      Alert.alert('Error', errMsg);
     } finally {
       setIsExporting(false);
     }
