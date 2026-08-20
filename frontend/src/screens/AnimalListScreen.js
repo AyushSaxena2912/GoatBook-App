@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { Search, Plus, ChevronRight, SearchX, X, MapPin, CheckSquare, Square, Trash2, CheckCircle2, Lock, Check, MoreVertical, Tag, Filter, ArrowUpDown } from 'lucide-react-native';
+import { Search, Plus, ChevronRight, SearchX, X, MapPin, CheckSquare, Square, Trash2, CheckCircle2, Lock, Check, MoreVertical, Tag, Filter, ArrowUpDown, FileSpreadsheet } from 'lucide-react-native';
 import api from '../api';
 import GAlert from '../components/GAlert';
 import { useFocusEffect } from '@react-navigation/native';
@@ -541,7 +541,10 @@ const AnimalListScreen = ({ navigation, route }) => {
           onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} 
           leftAlign={true}
           rightIcon={
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingRight: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingRight: 4 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('BulkData')} title="Bulk Import / Export">
+                <FileSpreadsheet color={theme.colors.white} size={22} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => setIsSortModalVisible(true)}>
                 <ArrowUpDown color={theme.colors.white} size={22} />
               </TouchableOpacity>

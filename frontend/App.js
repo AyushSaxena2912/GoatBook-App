@@ -41,6 +41,7 @@ import AddFormulationScreen from './src/screens/AddFormulationScreen';
 import FormulationDetailScreen from './src/screens/FormulationDetailScreen';
 import FinancialListScreen from './src/screens/FinancialListScreen';
 import AddFinancialRecordScreen from './src/screens/AddFinancialRecordScreen';
+import BulkDataScreen from './src/screens/BulkDataScreen';
 
 import AddWeightScreen from './src/screens/AddWeightScreen';
 import WeightListScreen from './src/screens/WeightListScreen';
@@ -90,6 +91,7 @@ function MainDrawer() {
       <Drawer.Screen name="LocationList" component={LocationListScreen} />
       <Drawer.Screen name="FormulationList" component={FormulationListScreen} />
       <Drawer.Screen name="FinancialList" component={FinancialListScreen} />
+      <Drawer.Screen name="BulkData" component={BulkDataScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
     </Drawer.Navigator>
   );
@@ -271,6 +273,7 @@ function AppContent() {
           <Stack.Screen name="FormulationDetail" component={FormulationDetailScreen} />
           <Stack.Screen name="FinancialList" component={FinancialListScreen} />
           <Stack.Screen name="AddFinancialRecord" component={AddFinancialRecordScreen} />
+          <Stack.Screen name="BulkData" component={BulkDataScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

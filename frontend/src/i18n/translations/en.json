@@ -55,6 +55,7 @@
     "mating": "Mating",
     "breeding": "Breeding",
     "reports": "Reports",
+    "bulkData": "Bulk Import / Export",
     "feedFormulation": "Feed Formulation",
     "logOut": "Log Out"
   },
@@ -434,6 +435,7 @@
   },
   "reports": {
     "reportsCenter": "Reports Center",
+    "bulkData": "Bulk Import & Export",
     "animalOverall": "Animal Overall Report",
     "femaleCondition": "Female Condition Report",
     "vaccinationReport": "Vaccination Report",
@@ -479,5 +481,30 @@
     "createSuccess": "Formulation created successfully.",
     "updateSuccess": "Formulation updated successfully.",
     "total": "Total"
+  },
+  "bulk": {
+    "title": "Bulk Data Import & Export",
+    "importTab": "Bulk Import",
+    "exportTab": "Export Data",
+    "step1Title": "Download Excel Template",
+    "step1Desc": "Download our ready-made Excel sheet pre-configured with your farm breeds, locations, and sample data format.",
+    "downloadTemplateBtn": "Download Template (.xlsx)",
+    "step2Title": "Upload Filled Excel Sheet",
+    "step2Desc": "Fill the animal details into the downloaded Excel file and select it below.",
+    "chooseFile": "Choose Excel File (.xlsx / .csv)",
+    "tapToBrowse": "Tap here to browse your files",
+    "changeFile": "Tap to choose a different file",
+    "verifyBtn": "Verify / Preview",
+    "importBtn": "Import Animals",
+    "validTitle": "File Verification Passed!",
+    "successTitle": "Import Completed Successfully!",
+    "goToAnimals": "View Animals in Inventory",
+    "errorsFoundTitle": "Validation Failed: Issues Found in Excel",
+    "errorsSub": "error(s) need your attention. Please fix and re-upload:",
+    "helpTip": "Tip: Check the 'Reference & Guidelines' tab in the downloaded template for allowed values.",
+    "exportAnimalsTitle": "Export Farm Animals to Excel",
+    "exportDesc": "Download a comprehensive spreadsheet containing all animal details, pedigree tags, weights, and statuses.",
+    "selectFilter": "Select Status Filter:",
+    "startExportBtn": "Download Animals Spreadsheet (.xlsx)"
   }
 }

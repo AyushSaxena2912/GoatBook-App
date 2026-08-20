@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import GHeader from '../components/GHeader';
-import { ClipboardList, Heart, Calculator, Printer } from 'lucide-react-native';
+import { ClipboardList, Heart, Calculator, Printer, FileSpreadsheet } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 const ReportsMenuScreen = ({ navigation }) => {
@@ -13,6 +13,12 @@ const ReportsMenuScreen = ({ navigation }) => {
   
   // Menu items for the reports center
   const options = [
+    { 
+      id: 'bulk', 
+      title: t('reports.bulkData', 'Bulk Import & Export'), 
+      icon: <FileSpreadsheet color={theme.colors.primary} size={32} />, 
+      onPress: () => navigation.navigate('BulkData')
+    },
     { 
       id: 'overall', 
       title: t('reports.animalOverall', 'Animal Overall Report'), 

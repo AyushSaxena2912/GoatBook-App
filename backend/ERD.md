@@ -19,9 +19,10 @@ OTHERS OTHERS
 
 
         enum_animals_female_condition {
-            MATED MATED
-PREGNANT PREGNANT
+            PREGNANT PREGNANT
 NONE NONE
+KID KID
+EMPTY EMPTY
         }
     
 
@@ -90,6 +91,13 @@ ULTIMATE ULTIMATE
 EXPIRED EXPIRED
 CANCELLED CANCELLED
 PENDING PENDING
+        }
+    
+
+
+        enum_transaction_type {
+            INCOME INCOME
+EXPENSE EXPENSE
         }
     
   "animals" {
@@ -367,6 +375,19 @@ PENDING PENDING
     Decimal ratePerKg 
     }
   
+
+  "transactions" {
+    String id "🗝️"
+    DateTime date 
+    String category 
+    enum_transaction_type type 
+    Decimal amount 
+    String description "❓"
+    String receipt_url "❓"
+    DateTime created_at 
+    DateTime updated_at 
+    }
+  
     "animals" |o--|| "enum_animals_gender" : "enum:gender"
     "animals" |o--|| "enum_animals_acquisition_method" : "enum:acquisition_method"
     "animals" |o--|o "enum_animals_female_condition" : "enum:female_condition"
@@ -420,4 +441,8 @@ PENDING PENDING
     "subscriptions" |o--|| "farms" : "farms"
     "feedFormulation" }o--|| "farms" : "farms"
     "formulationIngredients" }o--|| "feedFormulation" : "formulation"
+    "transactions" |o--|| "enum_transaction_type" : "enum:type"
+    "transactions" }o--|| "farms" : "farms"
+    "transactions" }o--|o "users" : "users_transactions_created_by_user_idTousers"
+    "transactions" }o--|o "users" : "users_transactions_updated_by_user_idTousers"
 ```
