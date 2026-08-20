@@ -80,21 +80,20 @@ const getFarmId = async (req) => {
 exports.downloadAnimalTemplate = async (req, res) => {
   try {
     const farmId = await getFarmId(req);
-    if (!farmId) return res.status(400).json({ message: 'No farm selected' });
 
     // Fetch farm's active breeds & default breeds
     const breeds = await prisma.breeds.findMany({
-      where: {
+      where: farmId ? {
         OR: [{ farm_id: farmId }, { is_default: true }]
-      },
+      } : { is_default: true },
       select: { name: true, animal_type: true }
     });
 
     // Fetch farm's locations
-    const locations = await prisma.locations.findMany({
+    const locations = farmId ? await prisma.locations.findMany({
       where: { farm_id: farmId },
       select: { code: true, name: true, type: true }
-    });
+    }) : [];
 
     // Sheet 1: Template Data (Headers + Sample Rows)
     const headers = [
