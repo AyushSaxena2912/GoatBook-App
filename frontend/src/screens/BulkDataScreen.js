@@ -75,7 +75,7 @@ const BulkDataScreen = ({ navigation }) => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        const fileUri = `${FileSystem.documentDirectory}${filename || 'goatbook_animals_template.xlsx'}`;
+        const fileUri = `${FileSystem.cacheDirectory}${filename || 'goatbook_animals_template.xlsx'}`;
         await FileSystem.writeAsStringAsync(fileUri, base64, {
           encoding: FileSystem.EncodingType?.Base64 || 'base64',
         });
@@ -269,7 +269,7 @@ const BulkDataScreen = ({ navigation }) => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(downloadUrl);
       } else {
-        const fileUri = `${FileSystem.documentDirectory}${filename || 'goatbook_animals.xlsx'}`;
+        const fileUri = `${FileSystem.cacheDirectory}${filename || 'goatbook_animals.xlsx'}`;
         await FileSystem.writeAsStringAsync(fileUri, base64, {
           encoding: FileSystem.EncodingType?.Base64 || 'base64',
         });
