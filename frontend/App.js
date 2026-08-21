@@ -16,7 +16,6 @@ import {
   Inter_800ExtraBold 
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
-import * as ScreenCapture from 'expo-screen-capture';
 
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -147,9 +146,6 @@ function AppContent() {
   }, [fontsLoaded, initialRoute]);
 
   useEffect(() => {
-    // Explicitly allow screenshots & screen recording across all screens on Android
-    ScreenCapture.allowScreenCaptureAsync().catch(err => console.log('ScreenCapture allow error:', err));
-
     import('expo-notifications').then((Notifications) => {
       const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
         // You can handle notification taps here, like navigating to the specific screen
