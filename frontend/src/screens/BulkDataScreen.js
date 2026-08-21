@@ -77,7 +77,7 @@ const BulkDataScreen = ({ navigation }) => {
       } else {
         const fileUri = `${FileSystem.documentDirectory}${filename || 'goatbook_animals_template.xlsx'}`;
         await FileSystem.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: FileSystem.EncodingType?.Base64 || 'base64',
         });
 
         if (await Sharing.isAvailableAsync()) {
@@ -146,7 +146,7 @@ const BulkDataScreen = ({ navigation }) => {
           if (!result.canceled && result.assets && result.assets.length > 0) {
             const asset = result.assets[0];
             const base64 = await FileSystem.readAsStringAsync(asset.uri, {
-              encoding: FileSystem.EncodingType.Base64,
+              encoding: FileSystem.EncodingType?.Base64 || 'base64',
             });
 
             setSelectedFile({
@@ -271,7 +271,7 @@ const BulkDataScreen = ({ navigation }) => {
       } else {
         const fileUri = `${FileSystem.documentDirectory}${filename || 'goatbook_animals.xlsx'}`;
         await FileSystem.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: FileSystem.EncodingType?.Base64 || 'base64',
         });
 
         if (await Sharing.isAvailableAsync()) {
