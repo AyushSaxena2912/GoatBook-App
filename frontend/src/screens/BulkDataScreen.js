@@ -550,15 +550,18 @@ const BulkDataScreen = ({ navigation }) => {
                           <View key={idx} style={styles.errorItem}>
                             <View style={styles.errorItemTop}>
                               <View style={styles.rowBadge}>
-                                <Text style={styles.rowBadgeText}>Row {err.row}</Text>
+                                <Text style={styles.rowBadgeText}>Sn {err.sn !== undefined && err.sn !== null ? err.sn : err.row}</Text>
+                              </View>
+                              <View style={[styles.rowBadge, { backgroundColor: theme.colors.primary + '15' }]}>
+                                <Text style={[styles.rowBadgeText, { color: theme.colors.primary }]}>Row {err.row}</Text>
                               </View>
                               {err.tagNumber && err.tagNumber !== '-' && (
                                 <View style={styles.tagBadge}>
                                   <Text style={styles.tagBadgeText}>Tag: {err.tagNumber}</Text>
                                 </View>
                               )}
-                              {err.field && (
-                                <Text style={styles.errorFieldText}>[{err.field}]</Text>
+                              {(err.column || err.field) && (
+                                <Text style={styles.errorFieldText}>Header: [{err.column || err.field}]</Text>
                               )}
                             </View>
                             <Text style={styles.errorMsgText}>{err.error}</Text>
@@ -572,7 +575,7 @@ const BulkDataScreen = ({ navigation }) => {
                       <Text style={styles.helpText}>
                         {t(
                           'bulk.helpTip',
-                          'Tip: Check the "Reference & Guidelines" tab in the downloaded template for allowed values.'
+                          'Action Required: Please correct the indicated errors in your Excel file and re-upload to proceed with import.'
                         )}
                       </Text>
                     </View>
