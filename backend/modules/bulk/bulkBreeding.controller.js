@@ -21,22 +21,26 @@ exports.downloadBreedingTemplate = async (req, res) => {
       'Kid 1 Tag Number',
       'Kid 1 Gender (MALE/FEMALE)',
       'Kid 1 Birth Weight (kg)',
+      'Kid 1 Notes',
       'Kid 2 Tag Number',
       'Kid 2 Gender (MALE/FEMALE)',
       'Kid 2 Birth Weight (kg)',
+      'Kid 2 Notes',
       'Kid 3 Tag Number',
       'Kid 3 Gender (MALE/FEMALE)',
       'Kid 3 Birth Weight (kg)',
+      'Kid 3 Notes',
       'Kid 4 Tag Number',
       'Kid 4 Gender (MALE/FEMALE)',
       'Kid 4 Birth Weight (kg)',
+      'Kid 4 Notes',
       'Remark'
     ];
 
     const sampleTag = animals[0]?.tag_number || 'GB-101';
     const sampleRows = [
-      [sampleTag, '2024-05-10', 'TWIN', 1, 1, 'GB-K101', 'MALE', 3.2, 'GB-K102', 'FEMALE', 2.9, '', '', '', '', '', '', 'Healthy twin delivery'],
-      ['GB-102', '2024-05-15', 'SINGLE', 0, 1, 'GB-K103', 'FEMALE', 3.0, '', '', '', '', '', '', '', '', '', 'Single doe kid']
+      [sampleTag, '2024-05-10', 'TWIN', 1, 1, 'GB-K101', 'MALE', 3.2, 'Healthy male kid', 'GB-K102', 'FEMALE', 2.9, 'Active doe kid', '', '', '', '', '', '', '', '', 'Healthy twin delivery'],
+      ['GB-102', '2024-05-15', 'SINGLE', 0, 1, 'GB-K103', 'FEMALE', 3.0, 'Single doe kid', '', '', '', '', '', '', '', '', '', '', '', '', 'Single delivery']
     ];
 
     const wsData = [headers, ...sampleRows];
@@ -44,10 +48,10 @@ exports.downloadBreedingTemplate = async (req, res) => {
     ws['!cols'] = [
       { wch: 18 }, { wch: 28 }, { wch: 45 },
       { wch: 18 }, { wch: 18 },
-      { wch: 18 }, { wch: 24 }, { wch: 22 },
-      { wch: 18 }, { wch: 24 }, { wch: 22 },
-      { wch: 18 }, { wch: 24 }, { wch: 22 },
-      { wch: 18 }, { wch: 24 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
       { wch: 30 }
     ];
 
@@ -100,15 +104,19 @@ exports.exportBreedings = async (req, res) => {
       'Kid 1 Tag Number',
       'Kid 1 Gender (MALE/FEMALE)',
       'Kid 1 Birth Weight (kg)',
+      'Kid 1 Notes',
       'Kid 2 Tag Number',
       'Kid 2 Gender (MALE/FEMALE)',
       'Kid 2 Birth Weight (kg)',
+      'Kid 2 Notes',
       'Kid 3 Tag Number',
       'Kid 3 Gender (MALE/FEMALE)',
       'Kid 3 Birth Weight (kg)',
+      'Kid 3 Notes',
       'Kid 4 Tag Number',
       'Kid 4 Gender (MALE/FEMALE)',
       'Kid 4 Birth Weight (kg)',
+      'Kid 4 Notes',
       'Remark'
     ];
 
@@ -128,15 +136,19 @@ exports.exportBreedings = async (req, res) => {
         k1.tag_number || '',
         k1.gender || '',
         k1.birth_weight !== undefined && k1.birth_weight !== '' ? parseFloat(k1.birth_weight) : '',
+        k1.remark || '',
         k2.tag_number || '',
         k2.gender || '',
         k2.birth_weight !== undefined && k2.birth_weight !== '' ? parseFloat(k2.birth_weight) : '',
+        k2.remark || '',
         k3.tag_number || '',
         k3.gender || '',
         k3.birth_weight !== undefined && k3.birth_weight !== '' ? parseFloat(k3.birth_weight) : '',
+        k3.remark || '',
         k4.tag_number || '',
         k4.gender || '',
         k4.birth_weight !== undefined && k4.birth_weight !== '' ? parseFloat(k4.birth_weight) : '',
+        k4.remark || '',
         b.remark || ''
       ];
     });
@@ -168,7 +180,7 @@ exports.exportBreedings = async (req, res) => {
   }
 };
 
-// 3. PARSE & VALIDATE BREEDING SHEET (WITH KID TAG CONFLICT CHECK)
+// 3. PARSE & VALIDATE BREEDING SHEET (WITH KID NOTES & CONFLICT CHECK)
 const parseAndValidateBreedingSheet = async (buffer, farmId) => {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const firstSheetName = wb.SheetNames[0];
@@ -284,7 +296,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
       }
     }
 
-    // Child / Kid Details Validation & Tag Conflict Verification
+    // Child / Kid Details Validation & Tag Conflict Verification (including Kid Notes)
     const rowKids = [];
     const rowKidTagsSet = new Set();
 
@@ -307,7 +319,19 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
       let kWeightRaw = row[`kid${k}birthweight`] || row[`kid${k}weight`] || row[`kid${k}weightkg`] || row[`child${k}weight`] || '';
       const kWeight = kWeightRaw !== '' ? parseDecimal(kWeightRaw) : null;
 
-      if (kTag || kGender || kWeight !== null) {
+      let kRemarkRaw = row[`kid${k}notes`] || row[`kid${k}remark`] || row[`kid${k}note`] || row[`child${k}notes`] || row[`child${k}remark`] || '';
+      if (!kRemarkRaw) {
+        for (const [key, val] of Object.entries(raw)) {
+          const kClean = normalizeKey(key);
+          if ((kClean.includes(`kid${k}`) || kClean.includes(`child${k}`)) && (kClean.includes('note') || kClean.includes('remark') || kClean.includes('comment')) && String(val).trim()) {
+            kRemarkRaw = val;
+            break;
+          }
+        }
+      }
+      const kRemark = String(kRemarkRaw).trim() || '';
+
+      if (kTag || kGender || kWeight !== null || kRemark !== '') {
         if (!kTag) {
           rowErrors.push({
             sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: `Kid ${k} Tag Number`,
@@ -378,7 +402,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
             tag_number: kTag,
             gender: validGender,
             birth_weight: kWeight !== null ? kWeight : '',
-            remark: ''
+            remark: kRemark
           });
         }
       }
