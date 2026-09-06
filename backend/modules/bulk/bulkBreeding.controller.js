@@ -18,20 +18,37 @@ exports.downloadBreedingTemplate = async (req, res) => {
       'Birth Type (SINGLE/TWIN/TRIPLET/QUADRUPLET/OTHERS) *',
       'Male Kids Count',
       'Female Kids Count',
+      'Kid 1 Tag Number',
+      'Kid 1 Gender (MALE/FEMALE)',
+      'Kid 1 Birth Weight (kg)',
+      'Kid 2 Tag Number',
+      'Kid 2 Gender (MALE/FEMALE)',
+      'Kid 2 Birth Weight (kg)',
+      'Kid 3 Tag Number',
+      'Kid 3 Gender (MALE/FEMALE)',
+      'Kid 3 Birth Weight (kg)',
+      'Kid 4 Tag Number',
+      'Kid 4 Gender (MALE/FEMALE)',
+      'Kid 4 Birth Weight (kg)',
       'Remark'
     ];
 
     const sampleTag = animals[0]?.tag_number || 'GB-101';
     const sampleRows = [
-      [sampleTag, '2024-05-10', 'TWIN', 1, 1, 'Healthy twin delivery'],
-      ['GB-102', '2024-05-15', 'SINGLE', 0, 1, 'Single doe kid']
+      [sampleTag, '2024-05-10', 'TWIN', 1, 1, 'GB-K101', 'MALE', 3.2, 'GB-K102', 'FEMALE', 2.9, '', '', '', '', '', '', 'Healthy twin delivery'],
+      ['GB-102', '2024-05-15', 'SINGLE', 0, 1, 'GB-K103', 'FEMALE', 3.0, '', '', '', '', '', '', '', '', '', 'Single doe kid']
     ];
 
     const wsData = [headers, ...sampleRows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
       { wch: 18 }, { wch: 28 }, { wch: 45 },
-      { wch: 18 }, { wch: 18 }, { wch: 30 }
+      { wch: 18 }, { wch: 18 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 }, { wch: 22 },
+      { wch: 30 }
     ];
 
     const refHeaders = ['Available Female Animals (Tag Numbers)', 'Gender'];
@@ -80,17 +97,49 @@ exports.exportBreedings = async (req, res) => {
       'Birth Type (SINGLE/TWIN/TRIPLET/QUADRUPLET/OTHERS) *',
       'Male Kids Count',
       'Female Kids Count',
+      'Kid 1 Tag Number',
+      'Kid 1 Gender (MALE/FEMALE)',
+      'Kid 1 Birth Weight (kg)',
+      'Kid 2 Tag Number',
+      'Kid 2 Gender (MALE/FEMALE)',
+      'Kid 2 Birth Weight (kg)',
+      'Kid 3 Tag Number',
+      'Kid 3 Gender (MALE/FEMALE)',
+      'Kid 3 Birth Weight (kg)',
+      'Kid 4 Tag Number',
+      'Kid 4 Gender (MALE/FEMALE)',
+      'Kid 4 Birth Weight (kg)',
       'Remark'
     ];
 
-    const rows = breedings.map(b => [
-      b.animals?.tag_number || '',
-      b.delivery_date ? new Date(b.delivery_date).toISOString().split('T')[0] : '',
-      b.birth_type || 'SINGLE',
-      b.num_male || 0,
-      b.num_female || 0,
-      b.remark || ''
-    ]);
+    const rows = breedings.map(b => {
+      const kids = Array.isArray(b.kids_details) ? b.kids_details : [];
+      const k1 = kids[0] || {};
+      const k2 = kids[1] || {};
+      const k3 = kids[2] || {};
+      const k4 = kids[3] || {};
+
+      return [
+        b.animals?.tag_number || '',
+        b.delivery_date ? new Date(b.delivery_date).toISOString().split('T')[0] : '',
+        b.birth_type || 'SINGLE',
+        b.num_male || 0,
+        b.num_female || 0,
+        k1.tag_number || '',
+        k1.gender || '',
+        k1.birth_weight !== undefined && k1.birth_weight !== '' ? parseFloat(k1.birth_weight) : '',
+        k2.tag_number || '',
+        k2.gender || '',
+        k2.birth_weight !== undefined && k2.birth_weight !== '' ? parseFloat(k2.birth_weight) : '',
+        k3.tag_number || '',
+        k3.gender || '',
+        k3.birth_weight !== undefined && k3.birth_weight !== '' ? parseFloat(k3.birth_weight) : '',
+        k4.tag_number || '',
+        k4.gender || '',
+        k4.birth_weight !== undefined && k4.birth_weight !== '' ? parseFloat(k4.birth_weight) : '',
+        b.remark || ''
+      ];
+    });
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws['!cols'] = headers.map(() => ({ wch: 22 }));
@@ -119,7 +168,7 @@ exports.exportBreedings = async (req, res) => {
   }
 };
 
-// 3. PARSE & VALIDATE BREEDING SHEET
+// 3. PARSE & VALIDATE BREEDING SHEET (WITH KID TAG CONFLICT CHECK)
 const parseAndValidateBreedingSheet = async (buffer, farmId) => {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const firstSheetName = wb.SheetNames[0];
@@ -136,16 +185,22 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
     };
   }
 
-  const animals = await prisma.animals.findMany({
+  // Fetch all existing animals in farm for tag conflict verification
+  const existingAnimals = await prisma.animals.findMany({
     where: { farm_id: farmId },
     select: { id: true, tag_number: true, gender: true }
   });
   const animalMap = new Map();
-  animals.forEach(a => animalMap.set(a.tag_number.trim(), a));
+  const existingTagsSet = new Set();
+  existingAnimals.forEach(a => {
+    animalMap.set(a.tag_number.trim(), a);
+    existingTagsSet.add(a.tag_number.trim());
+  });
 
   const validBirthTypes = ['SINGLE', 'TWIN', 'TRIPLET', 'QUADRUPLET', 'OTHERS'];
   const errors = [];
   const validRecords = [];
+  const sheetTagsSet = new Map(); // Track all mother and kid tags across spreadsheet for duplicate checks
   const now = new Date();
 
   for (let i = 0; i < rawRows.length; i++) {
@@ -163,7 +218,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
     if (!tagNumberRaw) {
       for (const [k, v] of Object.entries(raw)) {
         const kClean = normalizeKey(k);
-        if (kClean.includes('tag') && String(v).trim()) {
+        if (kClean.includes('tag') && !kClean.includes('kid') && !kClean.includes('child') && String(v).trim()) {
           tagNumberRaw = v;
           break;
         }
@@ -179,7 +234,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
 
     const rowErrors = [];
 
-    // Tag Number Validation
+    // Tag Number Validation (Mother Doe)
     let matchedAnimal = null;
     if (!tagNumber) {
       rowErrors.push({ sn: snVal, row: rowNum, tagNumber: '-', column: 'Tag Number *', error: 'Tag Number is required.' });
@@ -190,6 +245,16 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
           sn: snVal, row: rowNum, tagNumber, column: 'Tag Number *',
           error: `Animal Tag Number "${tagNumber}" does not exist in your farm inventory.`
         });
+      }
+
+      if (sheetTagsSet.has(tagNumber)) {
+        const prevLoc = sheetTagsSet.get(tagNumber);
+        rowErrors.push({
+          sn: snVal, row: rowNum, tagNumber, column: 'Tag Number *',
+          error: `Duplicate Tag Number "${tagNumber}" found in this spreadsheet (already used at row ${prevLoc.rowNum} as ${prevLoc.type}).`
+        });
+      } else {
+        sheetTagsSet.set(tagNumber, { sn: snVal, rowNum, type: 'Mother Tag' });
       }
     }
 
@@ -219,8 +284,120 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
       }
     }
 
-    const numMale = parseDecimal(numMaleRaw) !== null ? Math.max(0, parseInt(numMaleRaw, 10)) : 0;
-    const numFemale = parseDecimal(numFemaleRaw) !== null ? Math.max(0, parseInt(numFemaleRaw, 10)) : 0;
+    // Child / Kid Details Validation & Tag Conflict Verification
+    const rowKids = [];
+    const rowKidTagsSet = new Set();
+
+    for (let k = 1; k <= 4; k++) {
+      let kTagRaw = row[`kid${k}tagnumber`] || row[`kid${k}tag`] || row[`kid${k}tagno`] || row[`child${k}tag`] || row[`kid${k}`] || '';
+      if (!kTagRaw) {
+        for (const [key, val] of Object.entries(raw)) {
+          const kClean = normalizeKey(key);
+          if ((kClean.includes(`kid${k}`) || kClean.includes(`child${k}`)) && (kClean.includes('tag') || kClean.includes('id') || kClean.includes('no')) && String(val).trim()) {
+            kTagRaw = val;
+            break;
+          }
+        }
+      }
+      const kTag = String(kTagRaw).trim();
+
+      let kGenderRaw = row[`kid${k}gender`] || row[`kid${k}sex`] || row[`child${k}gender`] || '';
+      const kGender = String(kGenderRaw).trim().toUpperCase();
+
+      let kWeightRaw = row[`kid${k}birthweight`] || row[`kid${k}weight`] || row[`kid${k}weightkg`] || row[`child${k}weight`] || '';
+      const kWeight = kWeightRaw !== '' ? parseDecimal(kWeightRaw) : null;
+
+      if (kTag || kGender || kWeight !== null) {
+        if (!kTag) {
+          rowErrors.push({
+            sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: `Kid ${k} Tag Number`,
+            error: `Kid ${k} Tag Number is required when kid details are provided.`
+          });
+        } else {
+          // Check conflict with existing farm animals
+          if (existingTagsSet.has(kTag)) {
+            rowErrors.push({
+              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+              error: `Child Tag Number "${kTag}" conflicts with an existing animal in your farm inventory.`
+            });
+          }
+
+          // Check conflict with mother tag in same row
+          if (tagNumber && kTag === tagNumber) {
+            rowErrors.push({
+              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+              error: `Child Tag Number "${kTag}" cannot be the same as Mother Tag Number "${tagNumber}".`
+            });
+          }
+
+          // Check duplicate within same row
+          if (rowKidTagsSet.has(kTag)) {
+            rowErrors.push({
+              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+              error: `Child Tag Number "${kTag}" is duplicated in row ${rowNum}.`
+            });
+          } else {
+            rowKidTagsSet.add(kTag);
+          }
+
+          // Check duplicate across entire spreadsheet
+          if (sheetTagsSet.has(kTag)) {
+            const prevLoc = sheetTagsSet.get(kTag);
+            rowErrors.push({
+              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+              error: `Duplicate Child Tag Number "${kTag}" found in spreadsheet (already used at row ${prevLoc.rowNum} as ${prevLoc.type}).`
+            });
+          } else {
+            sheetTagsSet.set(kTag, { sn: snVal, rowNum, type: `Kid ${k} Tag` });
+          }
+        }
+
+        // Gender validation
+        let validGender = 'MALE';
+        if (kGender) {
+          if (kGender !== 'MALE' && kGender !== 'FEMALE') {
+            rowErrors.push({
+              sn: snVal, row: rowNum, tagNumber: kTag || '-', column: `Kid ${k} Gender`,
+              error: `Invalid Gender "${kGenderRaw}" for Kid ${k}. Allowed values: [MALE, FEMALE].`
+            });
+          } else {
+            validGender = kGender;
+          }
+        }
+
+        // Weight validation
+        if (kWeightRaw !== '' && (kWeight === null || kWeight < 0)) {
+          rowErrors.push({
+            sn: snVal, row: rowNum, tagNumber: kTag || '-', column: `Kid ${k} Birth Weight`,
+            error: `Invalid Birth Weight "${kWeightRaw}" for Kid ${k}. Must be a valid positive number.`
+          });
+        }
+
+        if (kTag) {
+          rowKids.push({
+            tag_number: kTag,
+            gender: validGender,
+            birth_weight: kWeight !== null ? kWeight : '',
+            remark: ''
+          });
+        }
+      }
+    }
+
+    // Male / Female Counts Calculation
+    let numMale = parseDecimal(numMaleRaw) !== null ? Math.max(0, parseInt(numMaleRaw, 10)) : null;
+    let numFemale = parseDecimal(numFemaleRaw) !== null ? Math.max(0, parseInt(numFemaleRaw, 10)) : null;
+
+    if (numMale === null || numFemale === null) {
+      let mCount = 0;
+      let fCount = 0;
+      rowKids.forEach(k => {
+        if (k.gender === 'MALE') mCount++;
+        if (k.gender === 'FEMALE') fCount++;
+      });
+      if (numMale === null) numMale = mCount;
+      if (numFemale === null) numFemale = fCount;
+    }
 
     if (rowErrors.length > 0) {
       errors.push(...rowErrors);
@@ -234,6 +411,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
         birthType,
         numMale,
         numFemale,
+        kidsDetails: rowKids.length > 0 ? rowKids : null,
         remark
       });
     }
@@ -298,6 +476,7 @@ exports.importBreedings = async (req, res) => {
       birth_type: rec.birthType,
       num_male: rec.numMale,
       num_female: rec.numFemale,
+      kids_details: rec.kidsDetails ? rec.kidsDetails : null,
       remark: rec.remark,
       created_by_user_id: userId,
       updated_by_user_id: userId,
@@ -305,7 +484,17 @@ exports.importBreedings = async (req, res) => {
       updated_at: now
     }));
 
-    await prisma.breedings.createMany({ data: createdData });
+    await prisma.$transaction(async (tx) => {
+      await tx.breedings.createMany({ data: createdData });
+
+      // Reset female condition on mother animal if applicable
+      for (const rec of validRecords) {
+        await tx.animals.update({
+          where: { id: rec.animalId },
+          data: { female_condition: 'NONE' }
+        });
+      }
+    });
 
     return res.json({
       success: true,
