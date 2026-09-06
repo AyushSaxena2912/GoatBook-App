@@ -5,7 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 // Helper to normalize keys from Excel headers
 const normalizeKey = (key) => {
   if (!key) return '';
-  return String(key)
+  // Clean linebreaks from multiline header cells in Excel
+  const firstLine = String(key).split(/[\r\n]+/)[0];
+  return firstLine
     .toLowerCase()
     .replace(/\*/g, '')
     .replace(/\(.*?\)/g, '')
@@ -65,13 +67,22 @@ const parseBoolean = (val) => {
 // Helper to resolve active farmId dynamically from req or employee profile
 const getFarmId = async (req) => {
   if (req.farmId) return req.farmId;
-  const headerId = req.header('X-Farm-ID') || req.header('x-farm-id');
+  if (req.query?.farmId) return req.query.farmId;
+  if (req.body?.farmId) return req.body.farmId;
+  const headerId = typeof req.header === 'function' ? (req.header('X-Farm-ID') || req.header('x-farm-id')) : null;
   if (headerId) return headerId;
+  if (req.user?.farm_id) return req.user.farm_id;
   if (req.employee?.id) {
     const membership = await prisma.farm_employees.findFirst({
       where: { employee_id: req.employee.id }
     });
     if (membership) return membership.farm_id;
+  }
+  if (req.user?.id) {
+    const primaryFarm = await prisma.farms.findFirst({
+      where: { created_by_user_id: req.user.id }
+    });
+    if (primaryFarm) return primaryFarm.id;
   }
   return null;
 };
@@ -125,8 +136,8 @@ exports.downloadAnimalTemplate = async (req, res) => {
 
     const sampleBreed1 = breeds[0]?.name || 'Sirohi';
     const sampleBreed2 = breeds[1]?.name || 'Barbari';
-    const sampleLoc1 = locations[0]?.name || 'Shed A';
-    const sampleLoc2 = locations[1]?.name || 'Shed B';
+    const sampleLoc1 = locations[0]?.name || locations[0]?.code || 'Shed A';
+    const sampleLoc2 = locations[1]?.name || locations[1]?.code || 'Shed B';
 
     const sampleRows = [
       [
@@ -190,8 +201,8 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { field: 'Current Weight', rule: 'Current weight in kg.' },
       { field: 'Female Condition', rule: 'PREGNANT, NONE, KID, EMPTY (Only valid for FEMALE).' },
       { field: 'shed No.', rule: 'Must match an existing location/shed name or code in your farm.' },
-      { field: 'Is Breeder / Is Qurbani', rule: 'YES or NO (Only valid for MALE).' },
-      { field: 'Mother Tag / Father Tag', rule: 'Pedigree tag numbers.' },
+      { field: 'Is Breeder / Is Qurbani', rule: 'YES or NO.' },
+      { field: 'Mother Tag / Father Tag', rule: 'Pedigree tag numbers (must exist in farm or this file).' },
       { field: 'Batch No', rule: 'Batch identifier (e.g. BATCH-1).' },
       { field: 'Teeth Stage', rule: 'Milk teeth, 2 Teeth, 4 Teeth, 6 Teeth, 8 Teeth.' },
       { field: 'Status', rule: 'LIVE, SOLD, DEAD (Default: LIVE).' },
@@ -378,6 +389,22 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
   });
   const existingTagsSet = new Set(existingAnimals.map(a => a.tag_number.toLowerCase().trim()));
 
+  // Pre-pass: collect all tag numbers present in this uploaded spreadsheet
+  const allSheetTagsSet = new Set();
+  for (const raw of rawRows) {
+    let tRaw = raw['Tag Number *'] || raw['Teg. No.'] || raw.tagnumber || raw.tag || '';
+    if (!tRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('tag') || kClean.includes('teg')) && String(v).trim()) {
+          tRaw = v;
+          break;
+        }
+      }
+    }
+    if (tRaw) allSheetTagsSet.add(String(tRaw).trim().toLowerCase());
+  }
+
   const breeds = await prisma.breeds.findMany({
     where: {
       OR: [{ farm_id: farmId }, { is_default: true }]
@@ -422,11 +449,29 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     const snRaw = row.sn || row.sno || row.srno || row.serial || (i + 1);
     const snVal = parseInt(snRaw, 10) || (i + 1);
 
-    // Field extraction (support exact 22 headers + legacy column names)
-    const tagNumberRaw = row.tagnumber || row.tegno || row.tagno || row.tag || '';
+    // Dynamic field extractions with fallbacks for header variations
+    let tagNumberRaw = row.tagnumber || row.tegno || row.tagno || row.tag || '';
+    if (!tagNumberRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean === 'tagnumber' || kClean === 'tegno' || kClean === 'tagno' || kClean === 'tag' || kClean === 'tagnumber') && String(v).trim()) {
+          tagNumberRaw = v;
+          break;
+        }
+      }
+    }
     const tagNumber = String(tagNumberRaw).trim();
 
-    const breedNameRaw = row.breedname || row.breed || '';
+    let breedNameRaw = row.breedname || row.breed || '';
+    if (!breedNameRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if (kClean.includes('breed') && String(v).trim()) {
+          breedNameRaw = v;
+          break;
+        }
+      }
+    }
     const breedName = String(breedNameRaw).trim();
 
     const genderRaw = row.gender || '';
@@ -450,15 +495,45 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     const currentWeightRaw = row.currentweight || '';
 
     const femaleConditionRaw = row.femalecondition || '';
-    const shedNoRaw = row.shedno || row.shed || row.location || row.locationcode || row.locationname || '';
+
+    // Dynamic extraction for shed No. / location
+    let shedNoRaw = row.shedno || row.shed || row.location || row.locationcode || row.locationname || row.locationshed || '';
+    if (!shedNoRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('shed') || kClean.includes('location')) && String(v).trim()) {
+          shedNoRaw = v;
+          break;
+        }
+      }
+    }
+    const shedNo = String(shedNoRaw).trim();
 
     const isBreederRaw = row.isbreeder || '';
     const isQurbaniRaw = row.isqurbani || '';
 
-    const motherTagRaw = row.mothertag || row.mother || '';
+    let motherTagRaw = row.mothertag || row.mother || '';
+    if (!motherTagRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if (kClean.includes('mother') && String(v).trim()) {
+          motherTagRaw = v;
+          break;
+        }
+      }
+    }
     const motherTag = String(motherTagRaw).trim() || null;
 
-    const fatherTagRaw = row.fathertag || row.father || '';
+    let fatherTagRaw = row.fathertag || row.father || '';
+    if (!fatherTagRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if (kClean.includes('father') && String(v).trim()) {
+          fatherTagRaw = v;
+          break;
+        }
+      }
+    }
     const fatherTag = String(fatherTagRaw).trim() || null;
 
     const batchNo = String(row.batchno || row.batch || '').trim() || null;
@@ -723,9 +798,8 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
       }
     }
 
-    // 13. Shed No. / Location Validation (Column: shed No.)
+    // 13. Shed No. / Location Relational Validation (Column: shed No.)
     let locationId = null;
-    const shedNo = String(shedNoRaw).trim();
     if (shedNo) {
       const matchedLoc = locationMap.get(shedNo.toLowerCase());
       if (matchedLoc) {
@@ -747,24 +821,47 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     // 15. Is Qurbani Validation (Column: Is Qurbani (YES/NO))
     const isQurbani = parseBoolean(isQurbaniRaw);
 
-    // 16. Mother Tag & Father Tag Self-Reference Check
-    if (motherTag && tagNumber && motherTag.toLowerCase() === tagNumber.toLowerCase()) {
-      rowErrors.push({
-        sn: snVal,
-        row: rowNum,
-        tagNumber,
-        column: 'Mother Tag',
-        error: `Mother Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
-      });
+    // 16. Mother Tag & Father Tag Relational & Self-Reference Validation
+    if (motherTag) {
+      const motherLower = motherTag.toLowerCase();
+      if (tagNumber && motherLower === tagNumber.toLowerCase()) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber,
+          column: 'Mother Tag',
+          error: `Mother Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
+        });
+      } else if (!existingTagsSet.has(motherLower) && !allSheetTagsSet.has(motherLower)) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Mother Tag',
+          error: `Mother Tag "${motherTag}" does not exist in your farm inventory or in this import file.`
+        });
+      }
     }
-    if (fatherTag && tagNumber && fatherTag.toLowerCase() === tagNumber.toLowerCase()) {
-      rowErrors.push({
-        sn: snVal,
-        row: rowNum,
-        tagNumber,
-        column: 'Father Tag',
-        error: `Father Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
-      });
+
+    if (fatherTag) {
+      const fatherLower = fatherTag.toLowerCase();
+      if (tagNumber && fatherLower === tagNumber.toLowerCase()) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber,
+          column: 'Father Tag',
+          error: `Father Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
+        });
+      } else if (!existingTagsSet.has(fatherLower) && !allSheetTagsSet.has(fatherLower)) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Father Tag',
+          error: `Father Tag "${fatherTag}" does not exist in your farm inventory or in this import file.`
+        });
+      }
     }
 
     // 17. Status Validation (Column: Status (LIVE/SOLD/DEAD))

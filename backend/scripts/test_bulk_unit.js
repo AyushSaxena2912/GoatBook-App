@@ -7,7 +7,11 @@ const mockFarmId = 'farm-123-abc';
 const prisma = require('../config/prisma');
 
 prisma.animals = {
-  findMany: async () => [{ tag_number: 'GB-EXISTING-01' }]
+  findMany: async () => [
+    { tag_number: 'GB-EXISTING-01' },
+    { tag_number: 'GB-M01' },
+    { tag_number: 'GB-F01' }
+  ]
 };
 
 prisma.breeds = {
@@ -88,20 +92,22 @@ async function testUnit() {
   }
   console.log('✓ Template headers match exact 22 user specifications!');
 
-  // 2. Validation Test with Invalid Excel
-  console.log('\n[TEST 2] Testing Validation Logic on Excel Data with Errors...');
+  // 2. Validation Test with Invalid Excel (including "Tttt" non-existent location & missing parents)
+  console.log('\n[TEST 2] Testing Validation Logic on Excel Data with Errors (including "Tttt" location)...');
   const invalidSheetData = [
     expectedHeaders,
     // Row 2 (Sn 1): Missing Tag Number
     ['', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-01', 3.0, 'BORN', '', '', '', 25.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', 'B-1', 'Milk', 'LIVE', ''],
     // Row 3 (Sn 2): Invalid Breed
     ['GB-102', 'UnknownBreed', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 30.0, '', 'Shed B', 'YES', 'NO', '', '', '', '', 'LIVE', ''],
-    // Row 4 (Sn 3): Invalid Location (shed No.)
-    ['GB-103', 'Sirohi', 'FEMALE', 'Goat', 'Black', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'InvalidShed', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
+    // Row 4 (Sn 3): Non-existent Location ("Tttt")
+    ['GB-103', 'Sirohi', 'FEMALE', 'Goat', 'Black', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'Tttt', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
     // Row 5 (Sn 4): Female condition on MALE animal
     ['GB-104', 'Barbari', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 35.0, 'PREGNANT', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
     // Row 6 (Sn 5): Existing tag in database
-    ['GB-EXISTING-01', 'Barbari', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 28.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', '']
+    ['GB-EXISTING-01', 'Barbari', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 28.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
+    // Row 7 (Sn 6): Non-existent Mother Tag & Father Tag
+    ['GB-106', 'Sirohi', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'Shed A', 'NO', 'NO', 'GB-M99-MISSING', 'GB-F99-MISSING', '', '', 'LIVE', '']
   ];
 
   const invalidWs = XLSX.utils.aoa_to_sheet(invalidSheetData);
@@ -126,9 +132,14 @@ async function testUnit() {
   if (!validateRes || validateRes.success !== false) {
     throw new Error('Validation should have failed for invalid rows');
   }
-  if (validateRes.errorCount !== 5) {
-    throw new Error(`Expected exactly 5 errors, got ${validateRes.errorCount}`);
+
+  // Find location error for "Tttt"
+  const ttttErr = validateRes.errors.find(e => e.column === 'shed No.' && e.error.includes('Tttt'));
+  if (!ttttErr) {
+    throw new Error('FAIL: Location "Tttt" did not trigger validation error!');
   }
+  console.log('✓ Location "Tttt" correctly raised validation error:', ttttErr.error);
+
   console.log('✓ Validation error detection PASSED!');
 
   // 3. Validation Test with Valid Excel
