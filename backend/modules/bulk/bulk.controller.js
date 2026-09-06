@@ -414,9 +414,9 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     where: { farm_id: farmId },
     select: { tag_number: true }
   });
-  const existingTagsSet = new Set(existingAnimals.map(a => a.tag_number.toLowerCase().trim()));
+  const existingTagsSet = new Set(existingAnimals.map(a => a.tag_number.trim()));
 
-  // Pre-pass: collect all tag numbers present in this uploaded spreadsheet
+  // Pre-pass: collect all tag numbers present in this uploaded spreadsheet (Case Sensitive)
   const allSheetTagsSet = new Set();
   for (const raw of rawRows) {
     let tRaw = raw['Tag Number *'] || raw['Teg. No.'] || raw.tagnumber || raw.tag || '';
@@ -429,7 +429,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
         }
       }
     }
-    if (tRaw) allSheetTagsSet.add(String(tRaw).trim().toLowerCase());
+    if (tRaw) allSheetTagsSet.add(String(tRaw).trim());
   }
 
   const breeds = await prisma.breeds.findMany({
@@ -457,7 +457,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
 
   const errors = [];
   const validRecords = [];
-  const sheetTagsSet = new Map(); // tagLower -> snVal
+  const sheetTagsSet = new Map(); // exactTag -> snVal
 
   const now = new Date();
 
@@ -574,18 +574,68 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     const statusRaw = row.status || '';
     const remark = String(row.remark || row.remarks || row.notes || '').trim() || null;
 
-    // Extractions for Insurance & Treatment fields
-    const insuranceCompany = String(row.insurancecompany || row.companyname || row.insurance || '').trim() || null;
-    const insurancePolicyNo = String(row.policynumber || row.insurancepolicyno || row.policyno || row.planname || '').trim() || null;
+    // Dynamic extractions for Insurance & Treatment fields with fallback header scanning
+    let insuranceCompanyRaw = row.insurancecompany || row.insurancecompanyname || row.insuranceprovider || row.companyname || row.insurance || '';
+    if (!insuranceCompanyRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('insurance') && (kClean.includes('company') || kClean.includes('provider') || kClean.includes('name'))) && String(v).trim()) {
+          insuranceCompanyRaw = v;
+          break;
+        }
+      }
+    }
+    const insuranceCompany = String(insuranceCompanyRaw).trim() || null;
 
-    const insuranceStartDateRaw = row.policystartdate || row.insurancestartdate || row.startdate || '';
-    const insuranceExpiryDateRaw = row.policyexpirydate || row.insuranceexpirydate || row.expirydate || '';
+    let insurancePolicyNoRaw = row.policynumber || row.insurancepolicyno || row.policyno || row.insurancepolicy || row.policy || row.planname || '';
+    if (!insurancePolicyNoRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('policy') && (kClean.includes('no') || kClean.includes('num') || kClean.includes('number'))) && String(v).trim()) {
+          insurancePolicyNoRaw = v;
+          break;
+        }
+      }
+    }
+    const insurancePolicyNo = String(insurancePolicyNoRaw).trim() || null;
 
-    const treatmentRecord = String(row.treatmentrecord || row.treatment || row.treatments || '').trim() || null;
+    let insuranceStartDateRaw = row.policystartdate || row.insurancestartdate || row.startdate || row.policystart || row.insurancestart || '';
+    if (!insuranceStartDateRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('start') && (kClean.includes('date') || kClean.includes('policy') || kClean.includes('insurance'))) && String(v).trim()) {
+          insuranceStartDateRaw = v;
+          break;
+        }
+      }
+    }
+
+    let insuranceExpiryDateRaw = row.policyexpirydate || row.insuranceexpirydate || row.expirydate || row.policyexpiry || row.insuranceexpiry || '';
+    if (!insuranceExpiryDateRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('expir') || kClean.includes('end')) && (kClean.includes('date') || kClean.includes('policy') || kClean.includes('insurance')) && String(v).trim()) {
+          insuranceExpiryDateRaw = v;
+          break;
+        }
+      }
+    }
+
+    let treatmentRecordRaw = row.treatmentrecord || row.treatment || row.treatments || row.treatmentnotes || '';
+    if (!treatmentRecordRaw) {
+      for (const [k, v] of Object.entries(raw)) {
+        const kClean = normalizeKey(k);
+        if ((kClean.includes('treatment') || kClean.includes('medical')) && String(v).trim()) {
+          treatmentRecordRaw = v;
+          break;
+        }
+      }
+    }
+    const treatmentRecord = String(treatmentRecordRaw).trim() || null;
 
     const rowErrors = [];
 
-    // 1. Tag Number Validation (Column: Tag Number *)
+    // 1. Tag Number Validation - CASE SENSITIVE (Column: Tag Number *)
     if (!tagNumber) {
       rowErrors.push({
         sn: snVal,
@@ -595,9 +645,8 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
         error: 'Tag Number is required and cannot be empty.'
       });
     } else {
-      const tagLower = tagNumber.toLowerCase();
-      if (sheetTagsSet.has(tagLower)) {
-        const prevSn = sheetTagsSet.get(tagLower);
+      if (sheetTagsSet.has(tagNumber)) {
+        const prevSn = sheetTagsSet.get(tagNumber);
         rowErrors.push({
           sn: snVal,
           row: rowNum,
@@ -606,10 +655,10 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
           error: `Duplicate Tag Number "${tagNumber}" found in this spreadsheet (already used at Sn ${prevSn}).`
         });
       } else {
-        sheetTagsSet.set(tagLower, snVal);
+        sheetTagsSet.set(tagNumber, snVal);
       }
 
-      if (existingTagsSet.has(tagLower)) {
+      if (existingTagsSet.has(tagNumber)) {
         rowErrors.push({
           sn: snVal,
           row: rowNum,
@@ -857,10 +906,9 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     // 15. Is Qurbani Validation (Column: Is Qurbani (YES/NO))
     const isQurbani = parseBoolean(isQurbaniRaw);
 
-    // 16. Mother Tag & Father Tag Relational & Self-Reference Validation
+    // 16. Mother Tag & Father Tag Relational & Self-Reference Validation - CASE SENSITIVE
     if (motherTag) {
-      const motherLower = motherTag.toLowerCase();
-      if (tagNumber && motherLower === tagNumber.toLowerCase()) {
+      if (tagNumber && motherTag === tagNumber) {
         rowErrors.push({
           sn: snVal,
           row: rowNum,
@@ -868,7 +916,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
           column: 'Mother Tag',
           error: `Mother Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
         });
-      } else if (!existingTagsSet.has(motherLower) && !allSheetTagsSet.has(motherLower)) {
+      } else if (!existingTagsSet.has(motherTag) && !allSheetTagsSet.has(motherTag)) {
         rowErrors.push({
           sn: snVal,
           row: rowNum,
@@ -880,8 +928,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     }
 
     if (fatherTag) {
-      const fatherLower = fatherTag.toLowerCase();
-      if (tagNumber && fatherLower === tagNumber.toLowerCase()) {
+      if (tagNumber && fatherTag === tagNumber) {
         rowErrors.push({
           sn: snVal,
           row: rowNum,
@@ -889,7 +936,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
           column: 'Father Tag',
           error: `Father Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
         });
-      } else if (!existingTagsSet.has(fatherLower) && !allSheetTagsSet.has(fatherLower)) {
+      } else if (!existingTagsSet.has(fatherTag) && !allSheetTagsSet.has(fatherTag)) {
         rowErrors.push({
           sn: snVal,
           row: rowNum,

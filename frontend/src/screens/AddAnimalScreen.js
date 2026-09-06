@@ -117,12 +117,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [soldRemark, setSoldRemark] = useState(existingAnimal.soldRemark || '');
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   
-  // Insurance specific (UI only for now)
-  const [insuranceCompany, setInsuranceCompany] = useState('');
-  const [planName, setPlanName] = useState('');
+  // Insurance specific
+  const [insuranceCompany, setInsuranceCompany] = useState(existingAnimal?.insuranceCompany || '');
+  const [insurancePolicyNo, setInsurancePolicyNo] = useState(existingAnimal?.insurancePolicyNo || '');
   
-  const [policyStartDate, setPolicyStartDate] = useState(existingAnimal?.Insurance?.policyStartDate || '');
-  const [policyExpiryDate, setPolicyExpiryDate] = useState(existingAnimal?.Insurance?.policyExpiryDate || '');
+  const [policyStartDate, setPolicyStartDate] = useState(existingAnimal?.insuranceStartDate ? new Date(existingAnimal.insuranceStartDate).toISOString().split('T')[0] : (existingAnimal?.Insurance?.policyStartDate || ''));
+  const [policyExpiryDate, setPolicyExpiryDate] = useState(existingAnimal?.insuranceExpiryDate ? new Date(existingAnimal.insuranceExpiryDate).toISOString().split('T')[0] : (existingAnimal?.Insurance?.policyExpiryDate || ''));
 
   const [treatmentExpanded, setTreatmentExpanded] = useState(false);
   const [treatmentRecord, setTreatmentRecord] = useState(existingAnimal?.treatmentRecord || '');
@@ -422,6 +422,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
         netSalePrice: status === 'Sold' ? ((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) : null,
         saleRate: status === 'Sold' ? (parseFloat(saleWeight) > 0 ? ((parseFloat(sellingPrice) || 0) / parseFloat(saleWeight)) : null) : null,
         treatmentRecord: treatmentRecord || null,
+        insuranceCompany: insuranceCompany || null,
+        insurancePolicyNo: insurancePolicyNo || null,
+        insuranceStartDate: isValidDate(policyStartDate) ? policyStartDate : null,
+        insuranceExpiryDate: isValidDate(policyExpiryDate) ? policyExpiryDate : null,
       };
 
       if (isEditing) {
@@ -1578,10 +1582,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       />
                       <GInput 
                         containerStyle={styles.fullWidthField}
-                        label="Plan Name" 
-                        placeholder="Plan Name" 
-                        value={planName}
-                        onChangeText={setPlanName}
+                        label="Policy Number" 
+                        placeholder="Policy Number (e.g. POL-123456)" 
+                        value={insurancePolicyNo}
+                        onChangeText={setInsurancePolicyNo}
                       />
                       <GDatePicker 
                         containerStyle={styles.fullWidthField}

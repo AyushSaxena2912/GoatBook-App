@@ -192,6 +192,10 @@ exports.getAnimals = async (req, res) => {
       currentWeight: a.current_weight,
       remark: a.remark,
       treatmentRecord: a.treatment_record,
+      insuranceCompany: a.insurance_company,
+      insurancePolicyNo: a.insurance_policy_no,
+      insuranceStartDate: a.insurance_start_date,
+      insuranceExpiryDate: a.insurance_expiry_date,
       imageUrl: a.image_url,
       teethStage: a.teeth_stage,
       purchaseWeight: a.purchase_weight,
@@ -235,6 +239,7 @@ exports.addAnimal = async (req, res) => {
     teethStage, purchaseWeight, landingCost,
     deathDate, deathReason,
     soldAt, soldRemark, treatmentRecord,
+    insuranceCompany, insurancePolicyNo, insuranceStartDate, insuranceExpiryDate,
     saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
 
@@ -337,6 +342,10 @@ exports.addAnimal = async (req, res) => {
         sale_rate: status?.toUpperCase() === 'SOLD' ? saleRate : null,
         remark,
         treatment_record: treatmentRecord || null,
+        insurance_company: insuranceCompany || null,
+        insurance_policy_no: insurancePolicyNo || null,
+        insurance_start_date: parseSafeDate(insuranceStartDate),
+        insurance_expiry_date: parseSafeDate(insuranceExpiryDate),
         image_url: imageUrl || null,
         created_at: now,
         updated_at: now
@@ -399,6 +408,10 @@ exports.getAnimal = async (req, res) => {
       landingCost: animal.landing_cost,
       remark: animal.remark,
       treatmentRecord: animal.treatment_record,
+      insuranceCompany: animal.insurance_company,
+      insurancePolicyNo: animal.insurance_policy_no,
+      insuranceStartDate: animal.insurance_start_date,
+      insuranceExpiryDate: animal.insurance_expiry_date,
       imageUrl: animal.image_url,
       Breed: animal.breeds,
       Location: animal.locations,
@@ -423,6 +436,7 @@ exports.updateAnimal = async (req, res) => {
     teethStage, purchaseWeight, landingCost,
     deathDate, deathReason,
     soldAt, soldRemark, treatmentRecord,
+    insuranceCompany, insurancePolicyNo, insuranceStartDate, insuranceExpiryDate,
     saleWeight, saleDiscount, netSalePrice, saleRate
   } = req.body;
 
@@ -491,6 +505,10 @@ exports.updateAnimal = async (req, res) => {
         sale_rate: status?.toUpperCase() === 'SOLD' ? saleRate : animal.sale_rate,
         remark,
         treatment_record: treatmentRecord !== undefined ? treatmentRecord : animal.treatment_record,
+        insurance_company: insuranceCompany !== undefined ? (insuranceCompany || null) : animal.insurance_company,
+        insurance_policy_no: insurancePolicyNo !== undefined ? (insurancePolicyNo || null) : animal.insurance_policy_no,
+        insurance_start_date: insuranceStartDate !== undefined ? parseSafeDate(insuranceStartDate) : animal.insurance_start_date,
+        insurance_expiry_date: insuranceExpiryDate !== undefined ? parseSafeDate(insuranceExpiryDate) : animal.insurance_expiry_date,
         image_url: imageUrl !== undefined ? imageUrl : animal.image_url,
         updated_by_user_id: req.user.id,
         updated_at: new Date()
