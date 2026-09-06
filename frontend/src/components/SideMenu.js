@@ -64,6 +64,11 @@ const SideMenu = (props) => {
     { title: t('menu.dashboard', 'Dashboard'), icon: <Home size={22} />, screen: 'Dashboard' },
     { title: t('menu.animals', 'Animals'), icon: <PawPrint size={22} />, screen: 'AnimalList' },
     { title: t('menu.bulkData', 'Bulk Import / Export'), icon: <FileSpreadsheet size={22} />, screen: 'BulkData' },
+    { title: t('menu.animalImport', 'Animal Import'), icon: <PawPrint size={22} />, screen: 'BulkData', params: { initialEntity: 'animals' } },
+    { title: t('menu.breedingImport', 'Breeding Import'), icon: <Activity size={22} />, screen: 'BulkData', params: { initialEntity: 'breeding' } },
+    { title: t('menu.matingImport', 'Mating Import'), icon: <Heart size={22} />, screen: 'BulkData', params: { initialEntity: 'mating' } },
+    { title: t('menu.weightImport', 'Weight Import'), icon: <Scale size={22} />, screen: 'BulkData', params: { initialEntity: 'weight' } },
+    { title: t('menu.vaccinationImport', 'Vaccination Import'), icon: <Syringe size={22} />, screen: 'BulkData', params: { initialEntity: 'vaccination' } },
     { title: t('menu.breeds', 'Breeds'), icon: <GitBranch size={22} />, screen: 'BreedList' },
     { title: t('menu.employee', 'Employee'), icon: <User size={22} />, screen: 'EmployeeList', role: 'OWNER' },
     { title: t('menu.mySubscription', 'My Subscription'), icon: <Crown size={22} />, screen: 'SubscriptionScreen', role: 'OWNER' },
@@ -121,7 +126,7 @@ const SideMenu = (props) => {
               ]}
               onPress={() => {
                 if (item.screen) {
-                  navigation.navigate(item.screen);
+                  navigation.navigate(item.screen, item.params);
                 } else {
                   setSoonVisible(true);
                 }

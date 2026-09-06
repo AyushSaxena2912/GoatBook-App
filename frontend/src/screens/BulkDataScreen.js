@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -23,7 +23,12 @@ import {
   ArrowRight,
   Eye,
   Check,
-  ChevronRight
+  ChevronRight,
+  PawPrint,
+  Activity,
+  Heart,
+  Scale,
+  Syringe
 } from 'lucide-react-native';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
@@ -31,10 +36,30 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
 
-const BulkDataScreen = ({ navigation }) => {
+const ENTITIES = [
+  { id: 'animals', label: 'Animals', icon: PawPrint },
+  { id: 'breeding', label: 'Breeding', icon: Activity },
+  { id: 'mating', label: 'Mating', icon: Heart },
+  { id: 'weight', label: 'Weight', icon: Scale },
+  { id: 'vaccination', label: 'Vaccination', icon: Syringe }
+];
+
+const BulkDataScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
+
+  const initialEntity = route?.params?.initialEntity || 'animals';
+  const [selectedEntity, setSelectedEntity] = useState(initialEntity);
+
+  useEffect(() => {
+    if (route?.params?.initialEntity) {
+      setSelectedEntity(route.params.initialEntity);
+      setSelectedFile(null);
+      setImportResult(null);
+      setExportSuccessMsg('');
+    }
+  }, [route?.params?.initialEntity]);
 
   const [activeTab, setActiveTab] = useState('import'); // 'import' | 'export'
 
@@ -55,8 +80,9 @@ const BulkDataScreen = ({ navigation }) => {
     try {
       setIsDownloadingTemplate(true);
 
-      const response = await api.get('/bulk/animals/template?format=base64');
+      const response = await api.get(`/bulk/${selectedEntity}/template?format=base64`);
       const { filename, base64, mimeType } = response.data;
+      const defaultName = `goatbook_${selectedEntity}_template.xlsx`;
 
       if (Platform.OS === 'web') {
         const byteCharacters = atob(base64);
@@ -69,13 +95,13 @@ const BulkDataScreen = ({ navigation }) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename || 'goatbook_animals_template.xlsx';
+        a.download = filename || defaultName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        const fileUri = `${FileSystem.cacheDirectory}${filename || 'goatbook_animals_template.xlsx'}`;
+        const fileUri = `${FileSystem.cacheDirectory}${filename || defaultName}`;
         await FileSystem.writeAsStringAsync(fileUri, base64, {
           encoding: FileSystem.EncodingType?.Base64 || 'base64',
         });
@@ -175,7 +201,7 @@ const BulkDataScreen = ({ navigation }) => {
       setIsValidating(true);
       setImportResult(null);
 
-      const response = await api.post('/bulk/animals/validate', {
+      const response = await api.post(`/bulk/${selectedEntity}/validate`, {
         fileBase64: selectedFile.base64
       });
 
@@ -198,7 +224,7 @@ const BulkDataScreen = ({ navigation }) => {
     }
   };
 
-  // 4. IMPORT ANIMALS TO DATABASE
+  // 4. IMPORT DATA TO DATABASE
   const handleImportAnimals = async () => {
     if (!selectedFile || !selectedFile.base64) {
       Alert.alert('Warning', 'Please select an Excel file first.');
@@ -209,7 +235,7 @@ const BulkDataScreen = ({ navigation }) => {
       setIsImporting(true);
       setImportResult(null);
 
-      const response = await api.post('/bulk/animals/import', {
+      const response = await api.post(`/bulk/${selectedEntity}/import`, {
         fileBase64: selectedFile.base64
       });
 
@@ -225,29 +251,30 @@ const BulkDataScreen = ({ navigation }) => {
           isValidationOnly: false
         });
       } else {
-        Alert.alert('Error', err.message || 'Failed to import animals');
+        Alert.alert('Error', err.message || 'Failed to import data');
       }
     } finally {
       setIsImporting(false);
     }
   };
 
-  // 5. EXPORT ANIMALS
+  // 5. EXPORT DATA
   const handleExportAnimals = async () => {
     try {
       setIsExporting(true);
       setExportSuccessMsg('');
 
-      let url = '/bulk/animals/export?format=base64';
-      if (exportFilter !== 'ALL') {
+      let url = `/bulk/${selectedEntity}/export?format=base64`;
+      if (selectedEntity === 'animals' && exportFilter !== 'ALL') {
         url += `&status=${exportFilter}`;
       }
 
       const response = await api.get(url);
       const { filename, base64, mimeType, totalExported } = response.data;
+      const defaultName = `goatbook_${selectedEntity}.xlsx`;
 
       if (totalExported === 0) {
-        Alert.alert('Notice', 'No animals found matching the selected filter.');
+        Alert.alert('Notice', `No ${selectedEntity} records found matching the criteria.`);
         setIsExporting(false);
         return;
       }
@@ -263,13 +290,13 @@ const BulkDataScreen = ({ navigation }) => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = filename || 'goatbook_animals.xlsx';
+        a.download = filename || defaultName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(downloadUrl);
       } else {
-        const fileUri = `${FileSystem.cacheDirectory}${filename || 'goatbook_animals.xlsx'}`;
+        const fileUri = `${FileSystem.cacheDirectory}${filename || defaultName}`;
         await FileSystem.writeAsStringAsync(fileUri, base64, {
           encoding: FileSystem.EncodingType?.Base64 || 'base64',
         });
@@ -277,15 +304,15 @@ const BulkDataScreen = ({ navigation }) => {
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
             mimeType: mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            dialogTitle: 'Export Animals Data',
+            dialogTitle: `Export ${selectedEntity.toUpperCase()} Data`,
           });
         }
       }
 
-      setExportSuccessMsg(`Successfully exported ${totalExported} animals to Excel.`);
+      setExportSuccessMsg(`Successfully exported ${totalExported} ${selectedEntity} record(s) to Excel.`);
     } catch (err) {
-      console.error('Export animals error:', err);
-      const errMsg = err.response?.data?.message || err.message || 'Failed to export animals';
+      console.error('Export error:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Failed to export data';
       Alert.alert('Error', errMsg);
     } finally {
       setIsExporting(false);
@@ -298,6 +325,46 @@ const BulkDataScreen = ({ navigation }) => {
         title={t('bulk.title', 'Bulk Data Import & Export')}
         onBack={() => navigation.goBack()}
       />
+
+      {/* Entity Selection Bar */}
+      <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 4 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+          {ENTITIES.map((ent) => {
+            const isSel = selectedEntity === ent.id;
+            const IconComp = ent.icon;
+            return (
+              <TouchableOpacity
+                key={ent.id}
+                style={[
+                  {
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 14,
+                    paddingVertical: 9,
+                    borderRadius: 20,
+                    marginRight: 8,
+                    backgroundColor: isSel ? theme.colors.primary : (isDarkMode ? '#1F2937' : '#F3F4F6'),
+                    borderWidth: 1,
+                    borderColor: isSel ? theme.colors.primary : theme.colors.border
+                  }
+                ]}
+                onPress={() => {
+                  setSelectedEntity(ent.id);
+                  setSelectedFile(null);
+                  setImportResult(null);
+                  setExportSuccessMsg('');
+                }}
+                activeOpacity={0.7}
+              >
+                <IconComp size={16} color={isSel ? '#FFFFFF' : theme.colors.textMuted} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontFamily: isSel ? 'Inter_600SemiBold' : 'Inter_500Medium', color: isSel ? '#FFFFFF' : theme.colors.text }}>
+                  {ent.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* Segmented Tab Switcher */}
       <View style={styles.tabContainer}>
