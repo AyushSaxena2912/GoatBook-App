@@ -243,6 +243,10 @@ const BulkDataScreen = ({ navigation, route }) => {
         ...response.data,
         isValidationOnly: false
       });
+
+      if (response.data && response.data.success) {
+        setSelectedFile(null);
+      }
     } catch (err) {
       console.error('Import commit error:', err);
       if (err.response?.data) {
