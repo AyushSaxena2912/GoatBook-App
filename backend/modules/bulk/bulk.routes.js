@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const bulkController = require('./bulk.controller');
 const auth = require('../../middleware/auth');
+
+const bulkAnimalsController = require('./bulkAnimals.controller');
+const bulkBreedingController = require('./bulkBreeding.controller');
+const bulkMatingController = require('./bulkMating.controller');
+const bulkWeightController = require('./bulkWeight.controller');
+const bulkVaccinationController = require('./bulkVaccination.controller');
 
 // Multer in-memory storage for handling uploaded Excel files
 const upload = multer({
@@ -11,33 +16,33 @@ const upload = multer({
 });
 
 // ANIMALS BULK ROUTES
-router.get('/animals/template', auth, bulkController.downloadAnimalTemplate);
-router.get('/animals/export', auth, bulkController.exportAnimals);
-router.post('/animals/validate', auth, upload.single('file'), bulkController.validateAnimalsImport);
-router.post('/animals/import', auth, upload.single('file'), bulkController.importAnimals);
+router.get('/animals/template', auth, bulkAnimalsController.downloadAnimalTemplate);
+router.get('/animals/export', auth, bulkAnimalsController.exportAnimals);
+router.post('/animals/validate', auth, upload.single('file'), bulkAnimalsController.validateAnimalsImport);
+router.post('/animals/import', auth, upload.single('file'), bulkAnimalsController.importAnimals);
 
 // BREEDING BULK ROUTES
-router.get('/breeding/template', auth, bulkController.downloadBreedingTemplate);
-router.get('/breeding/export', auth, bulkController.exportBreedings);
-router.post('/breeding/validate', auth, upload.single('file'), bulkController.validateBreedingsImport);
-router.post('/breeding/import', auth, upload.single('file'), bulkController.importBreedings);
+router.get('/breeding/template', auth, bulkBreedingController.downloadBreedingTemplate);
+router.get('/breeding/export', auth, bulkBreedingController.exportBreedings);
+router.post('/breeding/validate', auth, upload.single('file'), bulkBreedingController.validateBreedingsImport);
+router.post('/breeding/import', auth, upload.single('file'), bulkBreedingController.importBreedings);
 
 // MATING BULK ROUTES
-router.get('/mating/template', auth, bulkController.downloadMatingTemplate);
-router.get('/mating/export', auth, bulkController.exportMatings);
-router.post('/mating/validate', auth, upload.single('file'), bulkController.validateMatingsImport);
-router.post('/mating/import', auth, upload.single('file'), bulkController.importMatings);
+router.get('/mating/template', auth, bulkMatingController.downloadMatingTemplate);
+router.get('/mating/export', auth, bulkMatingController.exportMatings);
+router.post('/mating/validate', auth, upload.single('file'), bulkMatingController.validateMatingsImport);
+router.post('/mating/import', auth, upload.single('file'), bulkMatingController.importMatings);
 
 // WEIGHT BULK ROUTES
-router.get('/weight/template', auth, bulkController.downloadWeightTemplate);
-router.get('/weight/export', auth, bulkController.exportWeights);
-router.post('/weight/validate', auth, upload.single('file'), bulkController.validateWeightsImport);
-router.post('/weight/import', auth, upload.single('file'), bulkController.importWeights);
+router.get('/weight/template', auth, bulkWeightController.downloadWeightTemplate);
+router.get('/weight/export', auth, bulkWeightController.exportWeights);
+router.post('/weight/validate', auth, upload.single('file'), bulkWeightController.validateWeightsImport);
+router.post('/weight/import', auth, upload.single('file'), bulkWeightController.importWeights);
 
 // VACCINATION BULK ROUTES
-router.get('/vaccination/template', auth, bulkController.downloadVaccinationTemplate);
-router.get('/vaccination/export', auth, bulkController.exportVaccinations);
-router.post('/vaccination/validate', auth, upload.single('file'), bulkController.validateVaccinationsImport);
-router.post('/vaccination/import', auth, upload.single('file'), bulkController.importVaccinations);
+router.get('/vaccination/template', auth, bulkVaccinationController.downloadVaccinationTemplate);
+router.get('/vaccination/export', auth, bulkVaccinationController.exportVaccinations);
+router.post('/vaccination/validate', auth, upload.single('file'), bulkVaccinationController.validateVaccinationsImport);
+router.post('/vaccination/import', auth, upload.single('file'), bulkVaccinationController.importVaccinations);
 
 module.exports = router;
