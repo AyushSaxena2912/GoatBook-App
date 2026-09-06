@@ -28,7 +28,7 @@ import {
 import api from '../api';
 import { useTranslation } from 'react-i18next';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
 
 const BulkDataScreen = ({ navigation }) => {
