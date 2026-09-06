@@ -53,7 +53,7 @@ async function testUnit() {
   const sheet = templateWb.Sheets['Animals Template'];
   const headers = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0];
 
-  console.log('Generated Template Headers (Total 22):');
+  console.log('Generated Template Headers (Total 27):');
   console.log(headers);
 
   const expectedHeaders = [
@@ -78,7 +78,12 @@ async function testUnit() {
     'Batch No',
     'Teeth Stage',
     'Status (LIVE/SOLD/DEAD)',
-    'Remark'
+    'Remark',
+    'Insurance Company',
+    'Policy Number',
+    'Policy Start Date (YYYY-MM-DD)',
+    'Policy Expiry Date (YYYY-MM-DD)',
+    'Treatment Record'
   ];
 
   if (headers.length !== expectedHeaders.length) {
@@ -90,24 +95,24 @@ async function testUnit() {
       throw new Error(`Header index ${i} mismatch. Expected "${expectedHeaders[i]}", got "${headers[i]}"`);
     }
   }
-  console.log('✓ Template headers match exact 22 user specifications!');
+  console.log('✓ Template headers match exact 27 specifications!');
 
   // 2. Validation Test with Invalid Excel (including "Tttt" non-existent location & missing parents)
-  console.log('\n[TEST 2] Testing Validation Logic on Excel Data with Errors (including "Tttt" location)...');
+  console.log('\n[TEST 2] Testing Validation Logic on Excel Data with Errors...');
   const invalidSheetData = [
     expectedHeaders,
     // Row 2 (Sn 1): Missing Tag Number
-    ['', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-01', 3.0, 'BORN', '', '', '', 25.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', 'B-1', 'Milk', 'LIVE', ''],
+    ['', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-01', 3.0, 'BORN', '', '', '', 25.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', 'B-1', 'Milk', 'LIVE', '', '', '', '', '', ''],
     // Row 3 (Sn 2): Invalid Breed
-    ['GB-102', 'UnknownBreed', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 30.0, '', 'Shed B', 'YES', 'NO', '', '', '', '', 'LIVE', ''],
+    ['GB-102', 'UnknownBreed', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 30.0, '', 'Shed B', 'YES', 'NO', '', '', '', '', 'LIVE', '', '', '', '', '', ''],
     // Row 4 (Sn 3): Non-existent Location ("Tttt")
-    ['GB-103', 'Sirohi', 'FEMALE', 'Goat', 'Black', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'Tttt', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
+    ['GB-103', 'Sirohi', 'FEMALE', 'Goat', 'Black', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'Tttt', 'NO', 'NO', '', '', '', '', 'LIVE', '', '', '', '', '', ''],
     // Row 5 (Sn 4): Female condition on MALE animal
-    ['GB-104', 'Barbari', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 35.0, 'PREGNANT', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
+    ['GB-104', 'Barbari', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 35.0, 'PREGNANT', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', '', '', '', '', '', ''],
     // Row 6 (Sn 5): Existing tag in database
-    ['GB-EXISTING-01', 'Barbari', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 28.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
-    // Row 7 (Sn 6): Non-existent Mother Tag & Father Tag
-    ['GB-106', 'Sirohi', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'Shed A', 'NO', 'NO', 'GB-M99-MISSING', 'GB-F99-MISSING', '', '', 'LIVE', '']
+    ['GB-EXISTING-01', 'Barbari', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 28.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', '', '', '', '', '', ''],
+    // Row 7 (Sn 6): Non-existent Mother Tag & Father Tag & Invalid Policy Date
+    ['GB-106', 'Sirohi', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'Shed A', 'NO', 'NO', 'GB-M99-MISSING', 'GB-F99-MISSING', '', '', 'LIVE', '', 'National Insurance', 'POL-123', 'INVALID-DATE', '', 'Dewormed']
   ];
 
   const invalidWs = XLSX.utils.aoa_to_sheet(invalidSheetData);
@@ -140,14 +145,20 @@ async function testUnit() {
   }
   console.log('✓ Location "Tttt" correctly raised validation error:', ttttErr.error);
 
+  const policyDateErr = validateRes.errors.find(e => e.column.includes('Policy Start Date'));
+  if (!policyDateErr) {
+    throw new Error('FAIL: Invalid Policy Start Date did not trigger validation error!');
+  }
+  console.log('✓ Invalid Policy Start Date correctly raised validation error:', policyDateErr.error);
+
   console.log('✓ Validation error detection PASSED!');
 
-  // 3. Validation Test with Valid Excel
-  console.log('\n[TEST 3] Testing Validation Logic on Valid Excel Data...');
+  // 3. Validation Test with Valid Excel including Insurance & Treatment Record
+  console.log('\n[TEST 3] Testing Validation Logic on Valid Excel Data (with Insurance & Treatment)...');
   const validSheetData = [
     expectedHeaders,
-    ['GB-201', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-15', 3.2, 'BORN', '', '', '', 28.5, 'NONE', 'Shed A', 'NO', 'NO', 'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe'],
-    ['GB-202', 'Barbari', 'MALE', 'Goat', 'White', '2023-11-20', 2.8, 'PURCHASED', '2024-02-10', 9500, 22.0, 34.0, '', 'Shed B', 'YES', 'NO', '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck']
+    ['GB-201', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-15', 3.2, 'BORN', '', '', '', 28.5, 'NONE', 'Shed A', 'NO', 'NO', 'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe', 'National Insurance', 'POL-100200', '2024-01-20', '2025-01-19', 'Vaccination PPR done'],
+    ['GB-202', 'Barbari', 'MALE', 'Goat', 'White', '2023-11-20', 2.8, 'PURCHASED', '2024-02-10', 9500, 22.0, 34.0, '', 'Shed B', 'YES', 'NO', '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck', 'ICICI Lombard', 'POL-300400', '2024-02-15', '2025-02-14', 'Routine health checkup']
   ];
 
   const validWs = XLSX.utils.aoa_to_sheet(validSheetData);
@@ -172,7 +183,12 @@ async function testUnit() {
   if (!validRes || !validRes.success || validRes.validCount !== 2) {
     throw new Error('Valid sheet failed validation');
   }
-  console.log('✓ Valid sheet validation PASSED!');
+
+  if (validRes.preview[0].insuranceCompany !== 'National Insurance' || validRes.preview[0].treatmentRecord !== 'Vaccination PPR done') {
+    throw new Error('Insurance Company or Treatment Record not parsed correctly into preview record!');
+  }
+
+  console.log('✓ Valid sheet validation with Insurance & Treatment PASSED!');
   console.log('\nALL BULK UNIT TESTS PASSED SUCCESSFULLY!');
 }
 

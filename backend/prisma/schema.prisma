@@ -55,6 +55,10 @@ model animals {
   landing_cost                            Decimal?                        @db.Decimal(10, 2)
   purchase_weight                         Decimal?                        @db.Decimal(6, 2)
   treatment_record                        String?
+  insurance_company                       String?                         @db.VarChar(255)
+  insurance_policy_no                     String?                         @db.VarChar(255)
+  insurance_start_date                    DateTime?                       @db.Date
+  insurance_expiry_date                   DateTime?                       @db.Date
   net_sale_price                          Decimal?                        @db.Decimal(10, 2)
   sale_discount                           Decimal?                        @db.Decimal(10, 2)
   sale_rate                               Decimal?                        @db.Decimal(10, 2)

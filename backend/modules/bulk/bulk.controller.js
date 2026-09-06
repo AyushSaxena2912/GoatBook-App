@@ -107,8 +107,8 @@ exports.downloadAnimalTemplate = async (req, res) => {
     }) : [];
 
     // Sheet 1: Template Data (Headers + Sample Rows)
-    // 22 Exact Headers requested:
-    // Tag Number *, Breed Name *, Gender (MALE/FEMALE) *, Animal Type (Goat/Sheep), Color, Birth Date (YYYY-MM-DD), Birth Weight (kg), Acquisition (BORN/PURCHASED), Purchase Date (YYYY-MM-DD), Purchase Price, Purchase Weight (kg), Current Weight (kg), Female Condition (PREGNANT/NONE/KID/EMPTY), shed No., Is Breeder (YES/NO), Is Qurbani (YES/NO), Mother Tag, Father Tag, Batch No, Teeth Stage, Status (LIVE/SOLD/DEAD), Remark
+    // 27 Headers supported:
+    // Tag Number *, Breed Name *, Gender (MALE/FEMALE) *, Animal Type (Goat/Sheep), Color, Birth Date (YYYY-MM-DD), Birth Weight (kg), Acquisition (BORN/PURCHASED), Purchase Date (YYYY-MM-DD), Purchase Price, Purchase Weight (kg), Current Weight (kg), Female Condition (PREGNANT/NONE/KID/EMPTY), shed No., Is Breeder (YES/NO), Is Qurbani (YES/NO), Mother Tag, Father Tag, Batch No, Teeth Stage, Status (LIVE/SOLD/DEAD), Remark, Insurance Company, Policy Number, Policy Start Date (YYYY-MM-DD), Policy Expiry Date (YYYY-MM-DD), Treatment Record
     const headers = [
       'Tag Number *',
       'Breed Name *',
@@ -131,7 +131,12 @@ exports.downloadAnimalTemplate = async (req, res) => {
       'Batch No',
       'Teeth Stage',
       'Status (LIVE/SOLD/DEAD)',
-      'Remark'
+      'Remark',
+      'Insurance Company',
+      'Policy Number',
+      'Policy Start Date (YYYY-MM-DD)',
+      'Policy Expiry Date (YYYY-MM-DD)',
+      'Treatment Record'
     ];
 
     const sampleBreed1 = breeds[0]?.name || 'Sirohi';
@@ -143,12 +148,14 @@ exports.downloadAnimalTemplate = async (req, res) => {
       [
         'GB-101', sampleBreed1, 'FEMALE', 'Goat', 'Brown', '2024-01-15', 3.2,
         'BORN', '', '', '', 28.5, 'NONE', sampleLoc1, 'NO', 'NO',
-        'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe'
+        'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe',
+        'National Insurance', 'POL-998811', '2024-01-20', '2025-01-19', 'Annual PPR Deworming & Vaccination done'
       ],
       [
         'GB-102', sampleBreed2, 'MALE', 'Goat', 'White', '2023-11-20', 2.8,
         'PURCHASED', '2024-02-10', 9500, 22.0, 34.0, '', sampleLoc2, 'YES', 'NO',
-        '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck'
+        '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck',
+        'ICICI Lombard', 'POL-772244', '2024-02-15', '2025-02-14', 'Routine checkup completed'
       ]
     ];
 
@@ -178,12 +185,17 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { wch: 16 }, // Batch No
       { wch: 16 }, // Teeth Stage
       { wch: 24 }, // Status (LIVE/SOLD/DEAD)
-      { wch: 28 }  // Remark
+      { wch: 28 }, // Remark
+      { wch: 22 }, // Insurance Company
+      { wch: 20 }, // Policy Number
+      { wch: 28 }, // Policy Start Date (YYYY-MM-DD)
+      { wch: 28 }, // Policy Expiry Date (YYYY-MM-DD)
+      { wch: 40 }  // Treatment Record
     ];
 
     // Sheet 2: Reference & Guidelines
     const refHeaders = ['Available Breeds', 'Breed Type', '', 'Available Locations (shed No.)', 'Location Code', '', 'Header Field', 'Allowed Values & Rules'];
-    const maxLen = Math.max(breeds.length, locations.length, 14);
+    const maxLen = Math.max(breeds.length, locations.length, 18);
     const refRows = [];
 
     const fieldRules = [
@@ -206,7 +218,12 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { field: 'Batch No', rule: 'Batch identifier (e.g. BATCH-1).' },
       { field: 'Teeth Stage', rule: 'Milk teeth, 2 Teeth, 4 Teeth, 6 Teeth, 8 Teeth.' },
       { field: 'Status', rule: 'LIVE, SOLD, DEAD (Default: LIVE).' },
-      { field: 'Remark', rule: 'Additional notes or remarks.' }
+      { field: 'Remark', rule: 'Additional notes or remarks.' },
+      { field: 'Insurance Company', rule: 'Insurance provider name (e.g. National Insurance).' },
+      { field: 'Policy Number', rule: 'Insurance policy number or plan name.' },
+      { field: 'Policy Start Date', rule: 'YYYY-MM-DD format (e.g. 2024-01-20).' },
+      { field: 'Policy Expiry Date', rule: 'YYYY-MM-DD format (e.g. 2025-01-19).' },
+      { field: 'Treatment Record', rule: 'Medical and treatment notes or history.' }
     ];
 
     for (let i = 0; i < maxLen; i++) {
@@ -234,7 +251,7 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { wch: 30 },
       { wch: 16 },
       { wch: 4 },
-      { wch: 24 },
+      { wch: 28 },
       { wch: 55 }
     ];
 
@@ -306,7 +323,12 @@ exports.exportAnimals = async (req, res) => {
       'Batch No',
       'Teeth Stage',
       'Status (LIVE/SOLD/DEAD)',
-      'Remark'
+      'Remark',
+      'Insurance Company',
+      'Policy Number',
+      'Policy Start Date (YYYY-MM-DD)',
+      'Policy Expiry Date (YYYY-MM-DD)',
+      'Treatment Record'
     ];
 
     const rows = animals.map((a) => [
@@ -331,7 +353,12 @@ exports.exportAnimals = async (req, res) => {
       a.batch_no || '',
       a.teeth_stage || '',
       a.status || 'LIVE',
-      a.remark || ''
+      a.remark || '',
+      a.insurance_company || '',
+      a.insurance_policy_no || '',
+      a.insurance_start_date ? new Date(a.insurance_start_date).toISOString().split('T')[0] : '',
+      a.insurance_expiry_date ? new Date(a.insurance_expiry_date).toISOString().split('T')[0] : '',
+      a.treatment_record || ''
     ]);
 
     const wsData = [headers, ...rows];
@@ -396,7 +423,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     if (!tRaw) {
       for (const [k, v] of Object.entries(raw)) {
         const kClean = normalizeKey(k);
-        if ((kClean.includes('tag') || kClean.includes('teg')) && String(v).trim()) {
+        if ((kClean === 'tagnumber' || kClean === 'tegno' || kClean === 'tagno' || kClean === 'tag') && String(v).trim()) {
           tRaw = v;
           break;
         }
@@ -454,7 +481,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     if (!tagNumberRaw) {
       for (const [k, v] of Object.entries(raw)) {
         const kClean = normalizeKey(k);
-        if ((kClean === 'tagnumber' || kClean === 'tegno' || kClean === 'tagno' || kClean === 'tag' || kClean === 'tagnumber') && String(v).trim()) {
+        if ((kClean === 'tagnumber' || kClean === 'tegno' || kClean === 'tagno' || kClean === 'tag') && String(v).trim()) {
           tagNumberRaw = v;
           break;
         }
@@ -546,6 +573,15 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
 
     const statusRaw = row.status || '';
     const remark = String(row.remark || row.remarks || row.notes || '').trim() || null;
+
+    // Extractions for Insurance & Treatment fields
+    const insuranceCompany = String(row.insurancecompany || row.companyname || row.insurance || '').trim() || null;
+    const insurancePolicyNo = String(row.policynumber || row.insurancepolicyno || row.policyno || row.planname || '').trim() || null;
+
+    const insuranceStartDateRaw = row.policystartdate || row.insurancestartdate || row.startdate || '';
+    const insuranceExpiryDateRaw = row.policyexpirydate || row.insuranceexpirydate || row.expirydate || '';
+
+    const treatmentRecord = String(row.treatmentrecord || row.treatment || row.treatments || '').trim() || null;
 
     const rowErrors = [];
 
@@ -882,7 +918,37 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
       }
     }
 
-    // 18. Age calculation or override
+    // 18. Policy Start Date Validation (Column: Policy Start Date (YYYY-MM-DD))
+    let insuranceStartDate = null;
+    if (insuranceStartDateRaw !== '') {
+      insuranceStartDate = parseExcelDate(insuranceStartDateRaw);
+      if (!insuranceStartDate) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Policy Start Date (YYYY-MM-DD)',
+          error: `Invalid Policy Start Date "${insuranceStartDateRaw}". Format must be YYYY-MM-DD or DD/MM/YYYY.`
+        });
+      }
+    }
+
+    // 19. Policy Expiry Date Validation (Column: Policy Expiry Date (YYYY-MM-DD))
+    let insuranceExpiryDate = null;
+    if (insuranceExpiryDateRaw !== '') {
+      insuranceExpiryDate = parseExcelDate(insuranceExpiryDateRaw);
+      if (!insuranceExpiryDate) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Policy Expiry Date (YYYY-MM-DD)',
+          error: `Invalid Policy Expiry Date "${insuranceExpiryDateRaw}". Format must be YYYY-MM-DD or DD/MM/YYYY.`
+        });
+      }
+    }
+
+    // 20. Age calculation or override
     let ageInMonths = null;
     if (ageRaw !== '') {
       const numAge = parseDecimal(ageRaw);
@@ -893,7 +959,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
       ageInMonths = Math.max(0, Math.floor((now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4375)));
     }
 
-    // 19. Birth Type validation (legacy)
+    // 21. Birth Type validation (legacy)
     let birthType = null;
     if (birthTypeRaw !== '') {
       const btUpper = String(birthTypeRaw).trim().toUpperCase();
@@ -934,6 +1000,11 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
         teethStage,
         status,
         remark,
+        insuranceCompany,
+        insurancePolicyNo,
+        insuranceStartDate,
+        insuranceExpiryDate,
+        treatmentRecord,
         rowNum
       });
     }
@@ -1068,6 +1139,11 @@ exports.importAnimals = async (req, res) => {
         teeth_stage: rec.teethStage,
         status: rec.status || 'LIVE',
         remark: rec.remark,
+        insurance_company: rec.insuranceCompany,
+        insurance_policy_no: rec.insurancePolicyNo,
+        insurance_start_date: rec.insuranceStartDate,
+        insurance_expiry_date: rec.insuranceExpiryDate,
+        treatment_record: rec.treatmentRecord,
         farm_id: farmId,
         created_by_user_id: userId,
         updated_by_user_id: userId,
