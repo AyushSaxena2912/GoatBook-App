@@ -1,0 +1,171 @@
+const XLSX = require('xlsx');
+
+// Mock Prisma for unit testing validation logic
+const mockFarmId = 'farm-123-abc';
+
+// Override prisma module methods for test
+const prisma = require('../config/prisma');
+
+prisma.animals = {
+  findMany: async () => [{ tag_number: 'GB-EXISTING-01' }]
+};
+
+prisma.breeds = {
+  findMany: async () => [
+    { id: 'breed-1', name: 'Sirohi', animal_type: 'Goat' },
+    { id: 'breed-2', name: 'Barbari', animal_type: 'Goat' }
+  ]
+};
+
+prisma.locations = {
+  findMany: async () => [
+    { id: 'loc-1', name: 'Shed A', code: 'SHED-A' },
+    { id: 'loc-2', name: 'Shed B', code: 'SHED-B' }
+  ]
+};
+
+const bulkController = require('../modules/bulk/bulk.controller');
+
+async function testUnit() {
+  console.log('--- STARTING BULK UNIT TESTS ---');
+
+  // 1. Download Template Test
+  console.log('\n[TEST 1] Testing Template Header Generation...');
+  let templateData = null;
+  const mockReqTemplate = {
+    farmId: mockFarmId,
+    query: { format: 'base64' }
+  };
+  const mockResTemplate = {
+    json: (d) => { templateData = d; }
+  };
+
+  await bulkController.downloadAnimalTemplate(mockReqTemplate, mockResTemplate);
+  if (!templateData || !templateData.base64) {
+    throw new Error('Template download returned empty base64 data');
+  }
+
+  const templateWb = XLSX.read(Buffer.from(templateData.base64, 'base64'), { type: 'buffer' });
+  const sheet = templateWb.Sheets['Animals Template'];
+  const headers = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0];
+
+  console.log('Generated Template Headers (Total 22):');
+  console.log(headers);
+
+  const expectedHeaders = [
+    'Tag Number *',
+    'Breed Name *',
+    'Gender (MALE/FEMALE) *',
+    'Animal Type (Goat/Sheep)',
+    'Color',
+    'Birth Date (YYYY-MM-DD)',
+    'Birth Weight (kg)',
+    'Acquisition (BORN/PURCHASED)',
+    'Purchase Date (YYYY-MM-DD)',
+    'Purchase Price',
+    'Purchase Weight (kg)',
+    'Current Weight (kg)',
+    'Female Condition (PREGNANT/NONE/KID/EMPTY)',
+    'shed No.',
+    'Is Breeder (YES/NO)',
+    'Is Qurbani (YES/NO)',
+    'Mother Tag',
+    'Father Tag',
+    'Batch No',
+    'Teeth Stage',
+    'Status (LIVE/SOLD/DEAD)',
+    'Remark'
+  ];
+
+  if (headers.length !== expectedHeaders.length) {
+    throw new Error(`Header count mismatch. Expected ${expectedHeaders.length}, got ${headers.length}`);
+  }
+
+  for (let i = 0; i < expectedHeaders.length; i++) {
+    if (headers[i] !== expectedHeaders[i]) {
+      throw new Error(`Header index ${i} mismatch. Expected "${expectedHeaders[i]}", got "${headers[i]}"`);
+    }
+  }
+  console.log('✓ Template headers match exact 22 user specifications!');
+
+  // 2. Validation Test with Invalid Excel
+  console.log('\n[TEST 2] Testing Validation Logic on Excel Data with Errors...');
+  const invalidSheetData = [
+    expectedHeaders,
+    // Row 2 (Sn 1): Missing Tag Number
+    ['', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-01', 3.0, 'BORN', '', '', '', 25.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', 'B-1', 'Milk', 'LIVE', ''],
+    // Row 3 (Sn 2): Invalid Breed
+    ['GB-102', 'UnknownBreed', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 30.0, '', 'Shed B', 'YES', 'NO', '', '', '', '', 'LIVE', ''],
+    // Row 4 (Sn 3): Invalid Location (shed No.)
+    ['GB-103', 'Sirohi', 'FEMALE', 'Goat', 'Black', '', '', 'BORN', '', '', '', 20.0, 'NONE', 'InvalidShed', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
+    // Row 5 (Sn 4): Female condition on MALE animal
+    ['GB-104', 'Barbari', 'MALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 35.0, 'PREGNANT', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', ''],
+    // Row 6 (Sn 5): Existing tag in database
+    ['GB-EXISTING-01', 'Barbari', 'FEMALE', 'Goat', 'White', '', '', 'BORN', '', '', '', 28.0, 'NONE', 'Shed A', 'NO', 'NO', '', '', '', '', 'LIVE', '']
+  ];
+
+  const invalidWs = XLSX.utils.aoa_to_sheet(invalidSheetData);
+  const invalidWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(invalidWb, invalidWs, 'Animals Template');
+  const invalidBuf = XLSX.write(invalidWb, { type: 'buffer', bookType: 'xlsx' });
+
+  let validateRes = null;
+  const mockReqValidate = {
+    farmId: mockFarmId,
+    body: { fileBase64: invalidBuf.toString('base64') }
+  };
+  const mockResValidate = {
+    json: (d) => { validateRes = d; },
+    status: (code) => ({ json: (d) => { validateRes = { ...d, statusCode: code }; } })
+  };
+
+  await bulkController.validateAnimalsImport(mockReqValidate, mockResValidate);
+  console.log('Validation Output:');
+  console.log(JSON.stringify(validateRes, null, 2));
+
+  if (!validateRes || validateRes.success !== false) {
+    throw new Error('Validation should have failed for invalid rows');
+  }
+  if (validateRes.errorCount !== 5) {
+    throw new Error(`Expected exactly 5 errors, got ${validateRes.errorCount}`);
+  }
+  console.log('✓ Validation error detection PASSED!');
+
+  // 3. Validation Test with Valid Excel
+  console.log('\n[TEST 3] Testing Validation Logic on Valid Excel Data...');
+  const validSheetData = [
+    expectedHeaders,
+    ['GB-201', 'Sirohi', 'FEMALE', 'Goat', 'Brown', '2024-01-15', 3.2, 'BORN', '', '', '', 28.5, 'NONE', 'Shed A', 'NO', 'NO', 'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe'],
+    ['GB-202', 'Barbari', 'MALE', 'Goat', 'White', '2023-11-20', 2.8, 'PURCHASED', '2024-02-10', 9500, 22.0, 34.0, '', 'Shed B', 'YES', 'NO', '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck']
+  ];
+
+  const validWs = XLSX.utils.aoa_to_sheet(validSheetData);
+  const validWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(validWb, validWs, 'Animals Template');
+  const validBuf = XLSX.write(validWb, { type: 'buffer', bookType: 'xlsx' });
+
+  let validRes = null;
+  const mockReqValid = {
+    farmId: mockFarmId,
+    body: { fileBase64: validBuf.toString('base64') }
+  };
+  const mockResValid = {
+    json: (d) => { validRes = d; },
+    status: (code) => ({ json: (d) => { validRes = { ...d, statusCode: code }; } })
+  };
+
+  await bulkController.validateAnimalsImport(mockReqValid, mockResValid);
+  console.log('Valid Sheet Validation Output:');
+  console.log(JSON.stringify(validRes, null, 2));
+
+  if (!validRes || !validRes.success || validRes.validCount !== 2) {
+    throw new Error('Valid sheet failed validation');
+  }
+  console.log('✓ Valid sheet validation PASSED!');
+  console.log('\nALL BULK UNIT TESTS PASSED SUCCESSFULLY!');
+}
+
+testUnit().catch((err) => {
+  console.error('TEST FAILED:', err);
+  process.exit(1);
+});

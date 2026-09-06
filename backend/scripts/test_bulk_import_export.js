@@ -1,3 +1,4 @@
+require('dotenv').config();
 const XLSX = require('xlsx');
 const prisma = require('../config/prisma');
 const bulkController = require('../modules/bulk/bulk.controller');

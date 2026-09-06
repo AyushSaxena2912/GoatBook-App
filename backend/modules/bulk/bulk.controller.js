@@ -96,24 +96,30 @@ exports.downloadAnimalTemplate = async (req, res) => {
     }) : [];
 
     // Sheet 1: Template Data (Headers + Sample Rows)
-    // Headers specified: Sn, Teg. No., Breed, Gender, color, Batch, Born at farm, purchased, shed No., Age, Birth type, Teeth Stage, Purchase Date, Rate, Landing Cost, Purchase Wight, Remark
+    // 22 Exact Headers requested:
+    // Tag Number *, Breed Name *, Gender (MALE/FEMALE) *, Animal Type (Goat/Sheep), Color, Birth Date (YYYY-MM-DD), Birth Weight (kg), Acquisition (BORN/PURCHASED), Purchase Date (YYYY-MM-DD), Purchase Price, Purchase Weight (kg), Current Weight (kg), Female Condition (PREGNANT/NONE/KID/EMPTY), shed No., Is Breeder (YES/NO), Is Qurbani (YES/NO), Mother Tag, Father Tag, Batch No, Teeth Stage, Status (LIVE/SOLD/DEAD), Remark
     const headers = [
-      'Sn',
-      'Teg. No.',
-      'Breed',
-      'Gender',
-      'color',
-      'Batch',
-      'Born at farm',
-      'purchased',
+      'Tag Number *',
+      'Breed Name *',
+      'Gender (MALE/FEMALE) *',
+      'Animal Type (Goat/Sheep)',
+      'Color',
+      'Birth Date (YYYY-MM-DD)',
+      'Birth Weight (kg)',
+      'Acquisition (BORN/PURCHASED)',
+      'Purchase Date (YYYY-MM-DD)',
+      'Purchase Price',
+      'Purchase Weight (kg)',
+      'Current Weight (kg)',
+      'Female Condition (PREGNANT/NONE/KID/EMPTY)',
       'shed No.',
-      'Age',
-      'Birth type',
+      'Is Breeder (YES/NO)',
+      'Is Qurbani (YES/NO)',
+      'Mother Tag',
+      'Father Tag',
+      'Batch No',
       'Teeth Stage',
-      'Purchase Date',
-      'Rate',
-      'Landing Cost',
-      'Purchase Wight',
+      'Status (LIVE/SOLD/DEAD)',
       'Remark'
     ];
 
@@ -124,10 +130,14 @@ exports.downloadAnimalTemplate = async (req, res) => {
 
     const sampleRows = [
       [
-        1, 'GB-101', sampleBreed1, 'FEMALE', 'Brown', 'BATCH-1', 'YES', 'NO', sampleLoc1, 12, 'SINGLE', '2 Teeth', '', '', '', '', 'Healthy doe'
+        'GB-101', sampleBreed1, 'FEMALE', 'Goat', 'Brown', '2024-01-15', 3.2,
+        'BORN', '', '', '', 28.5, 'NONE', sampleLoc1, 'NO', 'NO',
+        'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe'
       ],
       [
-        2, 'GB-102', sampleBreed2, 'MALE', 'White', 'BATCH-1', 'NO', 'YES', sampleLoc2, 18, 'TWIN', '4 Teeth', '2024-02-10', 9500, 500, 22.5, 'Purchased breeder buck'
+        'GB-102', sampleBreed2, 'MALE', 'Goat', 'White', '2023-11-20', 2.8,
+        'PURCHASED', '2024-02-10', 9500, 22.0, 34.0, '', sampleLoc2, 'YES', 'NO',
+        '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck'
       ]
     ];
 
@@ -136,47 +146,55 @@ exports.downloadAnimalTemplate = async (req, res) => {
 
     // Set column widths for layout
     animalWs['!cols'] = [
-      { wch: 6 },  // Sn
-      { wch: 16 }, // Teg. No.
-      { wch: 18 }, // Breed
-      { wch: 14 }, // Gender
-      { wch: 14 }, // color
-      { wch: 14 }, // Batch
-      { wch: 16 }, // Born at farm
-      { wch: 14 }, // purchased
-      { wch: 16 }, // shed No.
-      { wch: 10 }, // Age
-      { wch: 16 }, // Birth type
+      { wch: 18 }, // Tag Number *
+      { wch: 18 }, // Breed Name *
+      { wch: 24 }, // Gender (MALE/FEMALE) *
+      { wch: 24 }, // Animal Type (Goat/Sheep)
+      { wch: 14 }, // Color
+      { wch: 24 }, // Birth Date (YYYY-MM-DD)
+      { wch: 18 }, // Birth Weight (kg)
+      { wch: 28 }, // Acquisition (BORN/PURCHASED)
+      { wch: 26 }, // Purchase Date (YYYY-MM-DD)
+      { wch: 18 }, // Purchase Price
+      { wch: 20 }, // Purchase Weight (kg)
+      { wch: 20 }, // Current Weight (kg)
+      { wch: 42 }, // Female Condition (PREGNANT/NONE/KID/EMPTY)
+      { wch: 18 }, // shed No.
+      { wch: 20 }, // Is Breeder (YES/NO)
+      { wch: 20 }, // Is Qurbani (YES/NO)
+      { wch: 16 }, // Mother Tag
+      { wch: 16 }, // Father Tag
+      { wch: 16 }, // Batch No
       { wch: 16 }, // Teeth Stage
-      { wch: 18 }, // Purchase Date
-      { wch: 14 }, // Rate
-      { wch: 16 }, // Landing Cost
-      { wch: 18 }, // Purchase Wight
-      { wch: 26 }  // Remark
+      { wch: 24 }, // Status (LIVE/SOLD/DEAD)
+      { wch: 28 }  // Remark
     ];
 
     // Sheet 2: Reference & Guidelines
     const refHeaders = ['Available Breeds', 'Breed Type', '', 'Available Locations (shed No.)', 'Location Code', '', 'Header Field', 'Allowed Values & Rules'];
-    const maxLen = Math.max(breeds.length, locations.length, 12);
+    const maxLen = Math.max(breeds.length, locations.length, 14);
     const refRows = [];
 
     const fieldRules = [
-      { field: 'Sn', rule: 'Serial Number (1, 2, 3...). Used for row reference in error reports.' },
-      { field: 'Teg. No.', rule: 'Tag Number. Must be unique across farm and spreadsheet. Required.' },
-      { field: 'Breed', rule: 'Must match an existing breed name in your farm (e.g. Sirohi, Barbari). Required.' },
-      { field: 'Gender', rule: 'MALE or FEMALE. Required.' },
-      { field: 'color', rule: 'Color description (e.g. Brown, White).' },
-      { field: 'Batch', rule: 'Batch identifier (e.g. BATCH-1).' },
-      { field: 'Born at farm', rule: 'YES or NO. (YES sets acquisition method to BORN).' },
-      { field: 'purchased', rule: 'YES or NO. (YES sets acquisition method to PURCHASED).' },
-      { field: 'shed No.', rule: 'Must match an existing location/shed name or code in your farm.' },
-      { field: 'Age', rule: 'Age in months (numeric value, e.g. 12).' },
-      { field: 'Birth type', rule: 'SINGLE, TWIN, TRIPLET, QUADRUPLET, OTHERS.' },
-      { field: 'Teeth Stage', rule: 'Milk teeth, 2 Teeth, 4 Teeth, 6 Teeth, 8 Teeth.' },
+      { field: 'Tag Number *', rule: 'Unique identifier for animal (e.g. GB-101). Required.' },
+      { field: 'Breed Name *', rule: 'Must match an existing breed name in your farm (e.g. Sirohi, Barbari). Required.' },
+      { field: 'Gender (MALE/FEMALE) *', rule: 'MALE or FEMALE. Required.' },
+      { field: 'Animal Type', rule: 'Goat or Sheep (Default: Goat).' },
+      { field: 'Color', rule: 'Color description (e.g. Brown, White, Black).' },
+      { field: 'Birth Date', rule: 'YYYY-MM-DD format (e.g. 2024-05-15).' },
+      { field: 'Birth Weight', rule: 'Birth weight in kg (numeric).' },
+      { field: 'Acquisition', rule: 'BORN or PURCHASED (Default: BORN).' },
       { field: 'Purchase Date', rule: 'YYYY-MM-DD or DD/MM/YYYY format.' },
-      { field: 'Rate', rule: 'Purchase price/rate per animal.' },
-      { field: 'Landing Cost', rule: 'Landing/transport cost.' },
-      { field: 'Purchase Wight', rule: 'Purchase weight in kg.' },
+      { field: 'Purchase Price', rule: 'Purchase price / rate.' },
+      { field: 'Purchase Weight', rule: 'Purchase weight in kg.' },
+      { field: 'Current Weight', rule: 'Current weight in kg.' },
+      { field: 'Female Condition', rule: 'PREGNANT, NONE, KID, EMPTY (Only valid for FEMALE).' },
+      { field: 'shed No.', rule: 'Must match an existing location/shed name or code in your farm.' },
+      { field: 'Is Breeder / Is Qurbani', rule: 'YES or NO (Only valid for MALE).' },
+      { field: 'Mother Tag / Father Tag', rule: 'Pedigree tag numbers.' },
+      { field: 'Batch No', rule: 'Batch identifier (e.g. BATCH-1).' },
+      { field: 'Teeth Stage', rule: 'Milk teeth, 2 Teeth, 4 Teeth, 6 Teeth, 8 Teeth.' },
+      { field: 'Status', rule: 'LIVE, SOLD, DEAD (Default: LIVE).' },
       { field: 'Remark', rule: 'Additional notes or remarks.' }
     ];
 
@@ -205,7 +223,7 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { wch: 30 },
       { wch: 16 },
       { wch: 4 },
-      { wch: 20 },
+      { wch: 24 },
       { wch: 55 }
     ];
 
@@ -256,42 +274,52 @@ exports.exportAnimals = async (req, res) => {
     });
 
     const headers = [
-      'Sn',
-      'Teg. No.',
-      'Breed',
-      'Gender',
-      'color',
-      'Batch',
-      'Born at farm',
-      'purchased',
+      'Tag Number *',
+      'Breed Name *',
+      'Gender (MALE/FEMALE) *',
+      'Animal Type (Goat/Sheep)',
+      'Color',
+      'Birth Date (YYYY-MM-DD)',
+      'Birth Weight (kg)',
+      'Acquisition (BORN/PURCHASED)',
+      'Purchase Date (YYYY-MM-DD)',
+      'Purchase Price',
+      'Purchase Weight (kg)',
+      'Current Weight (kg)',
+      'Female Condition (PREGNANT/NONE/KID/EMPTY)',
       'shed No.',
-      'Age',
-      'Birth type',
+      'Is Breeder (YES/NO)',
+      'Is Qurbani (YES/NO)',
+      'Mother Tag',
+      'Father Tag',
+      'Batch No',
       'Teeth Stage',
-      'Purchase Date',
-      'Rate',
-      'Landing Cost',
-      'Purchase Wight',
+      'Status (LIVE/SOLD/DEAD)',
       'Remark'
     ];
 
-    const rows = animals.map((a, idx) => [
-      idx + 1,
+    const rows = animals.map((a) => [
       a.tag_number || '',
       a.breeds?.name || '',
       a.gender || '',
+      a.animal_type || 'Goat',
       a.color || '',
-      a.batch_no || '',
-      a.acquisition_method === 'BORN' ? 'YES' : 'NO',
-      a.acquisition_method === 'PURCHASED' ? 'YES' : 'NO',
-      a.locations?.name || a.locations?.code || '',
-      a.age_in_months !== null && a.age_in_months !== undefined ? a.age_in_months : '',
-      a.birth_type || '',
-      a.teeth_stage || '',
+      a.birth_date ? new Date(a.birth_date).toISOString().split('T')[0] : '',
+      a.birth_weight ? parseFloat(a.birth_weight) : '',
+      a.acquisition_method || 'BORN',
       a.purchase_date ? new Date(a.purchase_date).toISOString().split('T')[0] : '',
       a.purchase_price ? parseFloat(a.purchase_price) : '',
-      a.landing_cost ? parseFloat(a.landing_cost) : '',
       a.purchase_weight ? parseFloat(a.purchase_weight) : '',
+      a.current_weight ? parseFloat(a.current_weight) : '',
+      a.female_condition || '',
+      a.locations?.name || a.locations?.code || '',
+      a.is_breeder ? 'YES' : 'NO',
+      a.is_qurbani ? 'YES' : 'NO',
+      a.mother_tag_id || '',
+      a.father_tag_id || '',
+      a.batch_no || '',
+      a.teeth_stage || '',
+      a.status || 'LIVE',
       a.remark || ''
     ]);
 
@@ -377,6 +405,8 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
   const validRecords = [];
   const sheetTagsSet = new Map(); // tagLower -> snVal
 
+  const now = new Date();
+
   for (let i = 0; i < rawRows.length; i++) {
     const raw = rawRows[i];
     const rowNum = i + 2; // Excel row number (Row 1 is header)
@@ -392,46 +422,66 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
     const snRaw = row.sn || row.sno || row.srno || row.serial || (i + 1);
     const snVal = parseInt(snRaw, 10) || (i + 1);
 
-    // Header extraction
-    const tagNumberRaw = row.tegno || row.tagnumber || row.tagno || row.tag || '';
+    // Field extraction (support exact 22 headers + legacy column names)
+    const tagNumberRaw = row.tagnumber || row.tegno || row.tagno || row.tag || '';
     const tagNumber = String(tagNumberRaw).trim();
 
-    const breedNameRaw = row.breed || row.breedname || '';
+    const breedNameRaw = row.breedname || row.breed || '';
     const breedName = String(breedNameRaw).trim();
 
     const genderRaw = row.gender || '';
     const gender = String(genderRaw).trim().toUpperCase();
 
-    const color = String(row.color || row.colour || '').trim() || null;
-    const batchNo = String(row.batch || row.batchno || '').trim() || null;
+    const animalTypeRaw = row.animaltype || row.animal_type || '';
+    let animalType = String(animalTypeRaw).trim();
 
+    const color = String(row.color || row.colour || '').trim() || null;
+
+    const birthDateRaw = row.birthdate || row.dob || '';
+    const birthWeightRaw = row.birthweight || '';
+
+    const acquisitionRaw = row.acquisition || '';
     const bornAtFarmRaw = row.bornatfarm || row.bornonfarm || row.born || '';
     const purchasedRaw = row.purchased || row.purchase || '';
 
+    const purchaseDateRaw = row.purchasedate || row.purchase_date || '';
+    const purchasePriceRaw = row.purchaseprice || row.rate || row.price || '';
+    const purchaseWeightRaw = row.purchaseweight || row.purchasewight || '';
+    const currentWeightRaw = row.currentweight || '';
+
+    const femaleConditionRaw = row.femalecondition || '';
     const shedNoRaw = row.shedno || row.shed || row.location || row.locationcode || row.locationname || '';
-    const shedNo = String(shedNoRaw).trim();
+
+    const isBreederRaw = row.isbreeder || '';
+    const isQurbaniRaw = row.isqurbani || '';
+
+    const motherTagRaw = row.mothertag || row.mother || '';
+    const motherTag = String(motherTagRaw).trim() || null;
+
+    const fatherTagRaw = row.fathertag || row.father || '';
+    const fatherTag = String(fatherTagRaw).trim() || null;
+
+    const batchNo = String(row.batchno || row.batch || '').trim() || null;
 
     const ageRaw = row.age || row.ageinmonths || '';
     const birthTypeRaw = row.birthtype || row.birth_type || '';
+
     const teethStageRaw = row.teethstage || row.teeth || '';
     const teethStage = String(teethStageRaw).trim() || null;
 
-    const purchaseDateRaw = row.purchasedate || row.purchase_date || '';
-    const rateRaw = row.rate || row.purchaseprice || row.price || '';
-    const landingCostRaw = row.landingcost || row.landing_cost || '';
-    const purchaseWeightRaw = row.purchasewight || row.purchaseweight || row.purchase_weight || '';
+    const statusRaw = row.status || '';
     const remark = String(row.remark || row.remarks || row.notes || '').trim() || null;
 
     const rowErrors = [];
 
-    // 1. Tag Number Validation (Column: Teg. No.)
+    // 1. Tag Number Validation (Column: Tag Number *)
     if (!tagNumber) {
       rowErrors.push({
         sn: snVal,
         row: rowNum,
         tagNumber: '-',
-        column: 'Teg. No.',
-        error: 'Tag Number (Teg. No.) is required and cannot be empty.'
+        column: 'Tag Number *',
+        error: 'Tag Number is required and cannot be empty.'
       });
     } else {
       const tagLower = tagNumber.toLowerCase();
@@ -441,7 +491,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
           sn: snVal,
           row: rowNum,
           tagNumber,
-          column: 'Teg. No.',
+          column: 'Tag Number *',
           error: `Duplicate Tag Number "${tagNumber}" found in this spreadsheet (already used at Sn ${prevSn}).`
         });
       } else {
@@ -453,21 +503,21 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
           sn: snVal,
           row: rowNum,
           tagNumber,
-          column: 'Teg. No.',
+          column: 'Tag Number *',
           error: `Tag Number "${tagNumber}" already exists in your farm inventory.`
         });
       }
     }
 
-    // 2. Breed Validation (Column: Breed)
+    // 2. Breed Validation (Column: Breed Name *)
     let matchedBreed = null;
     if (!breedName) {
       rowErrors.push({
         sn: snVal,
         row: rowNum,
         tagNumber: tagNumber || '-',
-        column: 'Breed',
-        error: 'Breed is required and cannot be empty.'
+        column: 'Breed Name *',
+        error: 'Breed Name is required and cannot be empty.'
       });
     } else {
       matchedBreed = breedMap.get(breedName.toLowerCase());
@@ -476,44 +526,206 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
           sn: snVal,
           row: rowNum,
           tagNumber: tagNumber || '-',
-          column: 'Breed',
+          column: 'Breed Name *',
           error: `Breed "${breedName}" does not exist in farm breeds. Available options: [${validBreedsList}].`
         });
       }
     }
 
-    // 3. Gender Validation (Column: Gender)
+    // 3. Gender Validation (Column: Gender (MALE/FEMALE) *)
     if (!gender || (gender !== 'MALE' && gender !== 'FEMALE')) {
       rowErrors.push({
         sn: snVal,
         row: rowNum,
         tagNumber: tagNumber || '-',
-        column: 'Gender',
+        column: 'Gender (MALE/FEMALE) *',
         error: `Invalid Gender "${genderRaw}". Must be either "MALE" or "FEMALE".`
       });
     }
 
-    // 4. Acquisition Method Validation (Columns: Born at farm & purchased)
-    const isBornAtFarm = parseBoolean(bornAtFarmRaw);
-    const isPurchased = parseBoolean(purchasedRaw);
-    let acquisitionMethod = 'BORN';
-
-    if (bornAtFarmRaw && purchasedRaw && isBornAtFarm && isPurchased) {
-      rowErrors.push({
-        sn: snVal,
-        row: rowNum,
-        tagNumber: tagNumber || '-',
-        column: 'Born at farm / purchased',
-        error: 'Animal cannot be marked as both "Born at farm" = YES and "purchased" = YES. Select YES for one and NO for the other.'
-      });
-    } else if (isPurchased || (bornAtFarmRaw && !isBornAtFarm)) {
-      acquisitionMethod = 'PURCHASED';
+    // 4. Animal Type Validation (Column: Animal Type (Goat/Sheep))
+    if (animalType) {
+      const atUpper = animalType.toUpperCase();
+      if (atUpper === 'GOAT') animalType = 'Goat';
+      else if (atUpper === 'SHEEP') animalType = 'Sheep';
+      else {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Animal Type (Goat/Sheep)',
+          error: `Invalid Animal Type "${animalTypeRaw}". Must be "Goat" or "Sheep".`
+        });
+      }
+    } else if (matchedBreed) {
+      animalType = matchedBreed.animal_type || 'Goat';
     } else {
-      acquisitionMethod = 'BORN';
+      animalType = 'Goat';
     }
 
-    // 5. Shed No. / Location Validation (Column: shed No.)
+    // 5. Birth Date Validation (Column: Birth Date (YYYY-MM-DD))
+    let birthDate = null;
+    if (birthDateRaw !== '') {
+      birthDate = parseExcelDate(birthDateRaw);
+      if (!birthDate) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Birth Date (YYYY-MM-DD)',
+          error: `Invalid Birth Date "${birthDateRaw}". Format must be YYYY-MM-DD or DD/MM/YYYY.`
+        });
+      } else if (birthDate > now) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Birth Date (YYYY-MM-DD)',
+          error: 'Birth Date cannot be in the future.'
+        });
+      }
+    }
+
+    // 6. Birth Weight Validation (Column: Birth Weight (kg))
+    let birthWeight = null;
+    if (birthWeightRaw !== '') {
+      birthWeight = parseDecimal(birthWeightRaw);
+      if (birthWeight === null || birthWeight < 0) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Birth Weight (kg)',
+          error: `Invalid Birth Weight "${birthWeightRaw}". Must be a valid non-negative number.`
+        });
+      }
+    }
+
+    // 7. Acquisition Validation (Column: Acquisition (BORN/PURCHASED))
+    let acquisitionMethod = 'BORN';
+    if (acquisitionRaw !== '') {
+      const acqUpper = String(acquisitionRaw).trim().toUpperCase();
+      if (acqUpper === 'BORN' || acqUpper === 'PURCHASED') {
+        acquisitionMethod = acqUpper;
+      } else {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Acquisition (BORN/PURCHASED)',
+          error: `Invalid Acquisition "${acquisitionRaw}". Allowed values: "BORN" or "PURCHASED".`
+        });
+      }
+    } else {
+      // Legacy fallback
+      const isBornAtFarm = parseBoolean(bornAtFarmRaw);
+      const isPurchased = parseBoolean(purchasedRaw);
+      if (bornAtFarmRaw && purchasedRaw && isBornAtFarm && isPurchased) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Acquisition (BORN/PURCHASED)',
+          error: 'Animal cannot be marked as both Born at farm and Purchased. Select BORN or PURCHASED.'
+        });
+      } else if (isPurchased || (bornAtFarmRaw && !isBornAtFarm)) {
+        acquisitionMethod = 'PURCHASED';
+      } else {
+        acquisitionMethod = 'BORN';
+      }
+    }
+
+    // 8. Purchase Date Validation (Column: Purchase Date (YYYY-MM-DD))
+    let purchaseDate = null;
+    if (purchaseDateRaw !== '') {
+      purchaseDate = parseExcelDate(purchaseDateRaw);
+      if (!purchaseDate) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Purchase Date (YYYY-MM-DD)',
+          error: `Invalid Purchase Date "${purchaseDateRaw}". Format must be YYYY-MM-DD or DD/MM/YYYY.`
+        });
+      }
+    }
+
+    // 9. Purchase Price Validation (Column: Purchase Price)
+    let purchasePrice = null;
+    if (purchasePriceRaw !== '') {
+      purchasePrice = parseDecimal(purchasePriceRaw);
+      if (purchasePrice === null || purchasePrice < 0) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Purchase Price',
+          error: `Invalid Purchase Price "${purchasePriceRaw}". Must be a valid numeric amount.`
+        });
+      }
+    }
+
+    // 10. Purchase Weight Validation (Column: Purchase Weight (kg))
+    let purchaseWeight = null;
+    if (purchaseWeightRaw !== '') {
+      purchaseWeight = parseDecimal(purchaseWeightRaw);
+      if (purchaseWeight === null || purchaseWeight < 0) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Purchase Weight (kg)',
+          error: `Invalid Purchase Weight "${purchaseWeightRaw}". Must be a valid non-negative weight in kg.`
+        });
+      }
+    }
+
+    // 11. Current Weight Validation (Column: Current Weight (kg))
+    let currentWeight = null;
+    if (currentWeightRaw !== '') {
+      currentWeight = parseDecimal(currentWeightRaw);
+      if (currentWeight === null || currentWeight < 0) {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Current Weight (kg)',
+          error: `Invalid Current Weight "${currentWeightRaw}". Must be a valid non-negative weight in kg.`
+        });
+      }
+    }
+
+    // 12. Female Condition Validation (Column: Female Condition (PREGNANT/NONE/KID/EMPTY))
+    let femaleCondition = null;
+    if (femaleConditionRaw !== '') {
+      const fcUpper = String(femaleConditionRaw).trim().toUpperCase();
+      if (gender === 'MALE' && fcUpper !== 'NONE' && fcUpper !== '') {
+        rowErrors.push({
+          sn: snVal,
+          row: rowNum,
+          tagNumber: tagNumber || '-',
+          column: 'Female Condition (PREGNANT/NONE/KID/EMPTY)',
+          error: `Female Condition can only be set for FEMALE animals.`
+        });
+      } else if (fcUpper !== '' && fcUpper !== 'NONE') {
+        const validFC = ['PREGNANT', 'NONE', 'KID', 'EMPTY'];
+        if (!validFC.includes(fcUpper)) {
+          rowErrors.push({
+            sn: snVal,
+            row: rowNum,
+            tagNumber: tagNumber || '-',
+            column: 'Female Condition (PREGNANT/NONE/KID/EMPTY)',
+            error: `Invalid Female Condition "${femaleConditionRaw}". Allowed values: PREGNANT, NONE, KID, EMPTY.`
+          });
+        } else {
+          femaleCondition = fcUpper;
+        }
+      }
+    }
+
+    // 13. Shed No. / Location Validation (Column: shed No.)
     let locationId = null;
+    const shedNo = String(shedNoRaw).trim();
     if (shedNo) {
       const matchedLoc = locationMap.get(shedNo.toLowerCase());
       if (matchedLoc) {
@@ -529,102 +741,72 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
       }
     }
 
-    // 6. Age Validation (Column: Age)
-    let ageInMonths = null;
-    if (ageRaw !== '') {
-      const numAge = parseDecimal(ageRaw);
-      if (numAge === null || numAge < 0) {
+    // 14. Is Breeder Validation (Column: Is Breeder (YES/NO))
+    const isBreeder = parseBoolean(isBreederRaw);
+
+    // 15. Is Qurbani Validation (Column: Is Qurbani (YES/NO))
+    const isQurbani = parseBoolean(isQurbaniRaw);
+
+    // 16. Mother Tag & Father Tag Self-Reference Check
+    if (motherTag && tagNumber && motherTag.toLowerCase() === tagNumber.toLowerCase()) {
+      rowErrors.push({
+        sn: snVal,
+        row: rowNum,
+        tagNumber,
+        column: 'Mother Tag',
+        error: `Mother Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
+      });
+    }
+    if (fatherTag && tagNumber && fatherTag.toLowerCase() === tagNumber.toLowerCase()) {
+      rowErrors.push({
+        sn: snVal,
+        row: rowNum,
+        tagNumber,
+        column: 'Father Tag',
+        error: `Father Tag cannot be the same as animal's own Tag Number ("${tagNumber}").`
+      });
+    }
+
+    // 17. Status Validation (Column: Status (LIVE/SOLD/DEAD))
+    let status = 'LIVE';
+    if (statusRaw !== '') {
+      const stUpper = String(statusRaw).trim().toUpperCase();
+      const validStatus = ['LIVE', 'SOLD', 'DEAD'];
+      if (!validStatus.includes(stUpper)) {
         rowErrors.push({
           sn: snVal,
           row: rowNum,
           tagNumber: tagNumber || '-',
-          column: 'Age',
-          error: `Invalid Age "${ageRaw}". Must be a valid non-negative number of months (e.g. 12).`
+          column: 'Status (LIVE/SOLD/DEAD)',
+          error: `Invalid Status "${statusRaw}". Allowed values: LIVE, SOLD, DEAD.`
         });
       } else {
-        ageInMonths = Math.round(numAge);
+        status = stUpper;
       }
     }
 
-    // 7. Birth Type Validation (Column: Birth type)
+    // 18. Age calculation or override
+    let ageInMonths = null;
+    if (ageRaw !== '') {
+      const numAge = parseDecimal(ageRaw);
+      if (numAge !== null && numAge >= 0) {
+        ageInMonths = Math.round(numAge);
+      }
+    } else if (birthDate) {
+      ageInMonths = Math.max(0, Math.floor((now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4375)));
+    }
+
+    // 19. Birth Type validation (legacy)
     let birthType = null;
     if (birthTypeRaw !== '') {
       const btUpper = String(birthTypeRaw).trim().toUpperCase();
       const validBirthTypes = ['SINGLE', 'TWIN', 'TRIPLET', 'QUADRUPLET', 'OTHERS'];
-      if (!validBirthTypes.includes(btUpper)) {
-        rowErrors.push({
-          sn: snVal,
-          row: rowNum,
-          tagNumber: tagNumber || '-',
-          column: 'Birth type',
-          error: `Invalid Birth type "${birthTypeRaw}". Allowed values: ${validBirthTypes.join(', ')}.`
-        });
-      } else {
+      if (validBirthTypes.includes(btUpper)) {
         birthType = btUpper;
       }
     }
 
-    // 8. Purchase Date Validation (Column: Purchase Date)
-    let purchaseDate = null;
-    if (purchaseDateRaw !== '') {
-      purchaseDate = parseExcelDate(purchaseDateRaw);
-      if (!purchaseDate) {
-        rowErrors.push({
-          sn: snVal,
-          row: rowNum,
-          tagNumber: tagNumber || '-',
-          column: 'Purchase Date',
-          error: `Invalid Purchase Date "${purchaseDateRaw}". Format must be YYYY-MM-DD or DD/MM/YYYY.`
-        });
-      }
-    }
-
-    // 9. Rate / Purchase Price Validation (Column: Rate)
-    let purchasePrice = null;
-    if (rateRaw !== '') {
-      purchasePrice = parseDecimal(rateRaw);
-      if (purchasePrice === null || purchasePrice < 0) {
-        rowErrors.push({
-          sn: snVal,
-          row: rowNum,
-          tagNumber: tagNumber || '-',
-          column: 'Rate',
-          error: `Invalid Rate "${rateRaw}". Must be a valid numeric amount.`
-        });
-      }
-    }
-
-    // 10. Landing Cost Validation (Column: Landing Cost)
-    let landingCost = null;
-    if (landingCostRaw !== '') {
-      landingCost = parseDecimal(landingCostRaw);
-      if (landingCost === null || landingCost < 0) {
-        rowErrors.push({
-          sn: snVal,
-          row: rowNum,
-          tagNumber: tagNumber || '-',
-          column: 'Landing Cost',
-          error: `Invalid Landing Cost "${landingCostRaw}". Must be a valid numeric amount.`
-        });
-      }
-    }
-
-    // 11. Purchase Weight Validation (Column: Purchase Wight)
-    let purchaseWeight = null;
-    if (purchaseWeightRaw !== '') {
-      purchaseWeight = parseDecimal(purchaseWeightRaw);
-      if (purchaseWeight === null || purchaseWeight < 0) {
-        rowErrors.push({
-          sn: snVal,
-          row: rowNum,
-          tagNumber: tagNumber || '-',
-          column: 'Purchase Wight',
-          error: `Invalid Purchase Weight "${purchaseWeightRaw}". Must be a valid numeric weight in kg.`
-        });
-      }
-    }
-
-    // If row has any errors, collect them all and skip building valid record
+    // Collect errors or store valid record
     if (rowErrors.length > 0) {
       errors.push(...rowErrors);
     } else if (matchedBreed) {
@@ -634,18 +816,26 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
         breedId: matchedBreed.id,
         breedName: matchedBreed.name,
         gender,
-        animalType: matchedBreed.animal_type || 'Goat',
+        animalType,
         color,
-        batchNo,
+        birthDate,
+        birthWeight,
         acquisitionMethod,
+        purchaseDate,
+        purchasePrice,
+        purchaseWeight,
+        currentWeight,
+        femaleCondition,
         locationId,
+        isBreeder,
+        isQurbani,
+        motherTag,
+        fatherTag,
+        batchNo,
         ageInMonths,
         birthType,
         teethStage,
-        purchaseDate,
-        purchasePrice,
-        landingCost,
-        purchaseWeight,
+        status,
         remark,
         rowNum
       });
@@ -753,6 +943,7 @@ exports.importAnimals = async (req, res) => {
 
     for (const rec of validRecords) {
       const animalId = uuidv4();
+      const finalWeight = rec.currentWeight || rec.purchaseWeight || rec.birthWeight || null;
 
       createdAnimals.push({
         id: animalId,
@@ -761,18 +952,24 @@ exports.importAnimals = async (req, res) => {
         gender: rec.gender,
         animal_type: rec.animalType || 'Goat',
         color: rec.color,
-        batch_no: rec.batchNo,
-        acquisition_method: rec.acquisitionMethod,
+        birth_date: rec.birthDate,
+        birth_weight: rec.birthWeight,
+        acquisition_method: rec.acquisitionMethod || 'BORN',
+        purchase_date: rec.purchaseDate,
+        purchase_price: rec.purchasePrice,
+        purchase_weight: rec.purchaseWeight,
+        current_weight: finalWeight,
+        female_condition: rec.femaleCondition || null,
         location_id: rec.locationId,
+        is_breeder: rec.isBreeder || false,
+        is_qurbani: rec.isQurbani || false,
+        mother_tag_id: rec.motherTag || null,
+        father_tag_id: rec.fatherTag || null,
+        batch_no: rec.batchNo,
         age_in_months: rec.ageInMonths,
         birth_type: rec.birthType,
         teeth_stage: rec.teethStage,
-        purchase_date: rec.purchaseDate,
-        purchase_price: rec.purchasePrice,
-        landing_cost: rec.landingCost,
-        purchase_weight: rec.purchaseWeight,
-        current_weight: rec.purchaseWeight || null,
-        status: 'LIVE',
+        status: rec.status || 'LIVE',
         remark: rec.remark,
         farm_id: farmId,
         created_by_user_id: userId,
@@ -781,16 +978,16 @@ exports.importAnimals = async (req, res) => {
         updated_at: now
       });
 
-      // If initial purchase weight is recorded, log it in weights table as well
-      if (rec.purchaseWeight) {
+      // If initial weight recorded, log it in weights table as well
+      if (finalWeight) {
         weightEntries.push({
           id: uuidv4(),
           animal_id: animalId,
           farm_id: farmId,
-          weight: rec.purchaseWeight,
+          weight: finalWeight,
           tag_number: rec.tagNumber,
-          date: rec.purchaseDate || now,
-          remark: 'Initial bulk import purchase weight',
+          date: rec.purchaseDate || rec.birthDate || now,
+          remark: 'Initial bulk import weight',
           created_by_user_id: userId,
           updated_by_user_id: userId,
           created_at: now,
@@ -823,3 +1020,4 @@ exports.importAnimals = async (req, res) => {
     res.status(500).json({ message: 'Failed to import animals', error: err.message });
   }
 };
+
