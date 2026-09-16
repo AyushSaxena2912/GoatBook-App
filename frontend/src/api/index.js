@@ -29,8 +29,7 @@ const storage = {
   }
 };
 
-// Using AWS EC2 backend URL
-const RENDER_URL = 'http://13.60.172.93';
+const RENDER_URL = process.env.EXPO_PUBLIC_API_URL || 'http://13.60.172.93';
 const BASE_URL = `${RENDER_URL}/api`;
 
 const api = axios.create({
@@ -65,8 +64,20 @@ export const setSelectedFarm = async (farmId) => {
 api.interceptors.request.use(async (config) => {
   const token = await storage.getItem('token');
   const farmId = await storage.getItem('selectedFarmId');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (farmId) config.headers['X-Farm-ID'] = farmId;
+  if (token) {
+    if (typeof config.headers?.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  if (farmId) {
+    if (typeof config.headers?.set === 'function') {
+      config.headers.set('X-Farm-ID', farmId);
+    } else {
+      config.headers['X-Farm-ID'] = farmId;
+    }
+  }
   return config;
 });
 

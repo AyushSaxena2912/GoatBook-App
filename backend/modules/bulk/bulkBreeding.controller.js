@@ -15,7 +15,8 @@ exports.downloadBreedingTemplate = async (req, res) => {
     const headers = [
       'Tag Number *',
       'Delivery Date (YYYY-MM-DD) *',
-      'Birth Type (SINGLE/TWIN/TRIPLET/QUADRUPLET/OTHERS) *',
+      'Birth Type (SINGLE/TWIN/TRIPLET/QUADRUPLET/OTHERS/ABORTION) *',
+      'Abortion Date (YYYY-MM-DD)',
       'Male Kids Count',
       'Female Kids Count',
       'Kid 1 Tag Number',
@@ -34,19 +35,20 @@ exports.downloadBreedingTemplate = async (req, res) => {
       'Kid 4 Gender (MALE/FEMALE)',
       'Kid 4 Birth Weight (kg)',
       'Kid 4 Notes',
-      'Remark'
+      'Breeding Remark'
     ];
 
     const sampleTag = animals[0]?.tag_number || 'GB-101';
     const sampleRows = [
-      [sampleTag, '2024-05-10', 'TWIN', 1, 1, 'GB-K101', 'MALE', 3.2, 'Healthy male kid', 'GB-K102', 'FEMALE', 2.9, 'Active doe kid', '', '', '', '', '', '', '', '', 'Healthy twin delivery'],
-      ['GB-102', '2024-05-15', 'SINGLE', 0, 1, 'GB-K103', 'FEMALE', 3.0, 'Single doe kid', '', '', '', '', '', '', '', '', '', '', '', '', 'Single delivery']
+      [sampleTag, '2024-05-10', 'TWIN', '', 1, 1, 'GB-K101', 'MALE', 3.2, 'Healthy male kid', 'GB-K102', 'FEMALE', 2.9, 'Active doe kid', '', '', '', '', '', '', '', '', 'Healthy twin delivery'],
+      ['GB-102', '2024-05-15', 'SINGLE', '', 0, 1, 'GB-K103', 'FEMALE', 3.0, 'Single doe kid', '', '', '', '', '', '', '', '', '', '', '', '', 'Single delivery'],
+      ['GB-103', '2024-05-20', 'ABORTION', '2024-05-20', 0, 0, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Miscarriage during early term']
     ];
 
     const wsData = [headers, ...sampleRows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
-      { wch: 18 }, { wch: 28 }, { wch: 45 },
+      { wch: 18 }, { wch: 28 }, { wch: 50 }, { wch: 28 },
       { wch: 18 }, { wch: 18 },
       { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
       { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
@@ -98,7 +100,8 @@ exports.exportBreedings = async (req, res) => {
     const headers = [
       'Tag Number *',
       'Delivery Date (YYYY-MM-DD) *',
-      'Birth Type (SINGLE/TWIN/TRIPLET/QUADRUPLET/OTHERS) *',
+      'Birth Type (SINGLE/TWIN/TRIPLET/QUADRUPLET/OTHERS/ABORTION) *',
+      'Abortion Date (YYYY-MM-DD)',
       'Male Kids Count',
       'Female Kids Count',
       'Kid 1 Tag Number',
@@ -117,7 +120,7 @@ exports.exportBreedings = async (req, res) => {
       'Kid 4 Gender (MALE/FEMALE)',
       'Kid 4 Birth Weight (kg)',
       'Kid 4 Notes',
-      'Remark'
+      'Breeding Remark'
     ];
 
     const rows = breedings.map(b => {
@@ -131,6 +134,7 @@ exports.exportBreedings = async (req, res) => {
         b.animals?.tag_number || '',
         b.delivery_date ? new Date(b.delivery_date).toISOString().split('T')[0] : '',
         b.birth_type || 'SINGLE',
+        b.abortion_date ? new Date(b.abortion_date).toISOString().split('T')[0] : '',
         b.num_male || 0,
         b.num_female || 0,
         k1.tag_number || '',
@@ -180,7 +184,7 @@ exports.exportBreedings = async (req, res) => {
   }
 };
 
-// 3. PARSE & VALIDATE BREEDING SHEET (WITH KID NOTES & CONFLICT CHECK)
+// 3. PARSE & VALIDATE BREEDING SHEET (WITH ABORTION & KID CONFLICT CHECK)
 const parseAndValidateBreedingSheet = async (buffer, farmId) => {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const firstSheetName = wb.SheetNames[0];
@@ -209,7 +213,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
     existingTagsSet.add(a.tag_number.trim());
   });
 
-  const validBirthTypes = ['SINGLE', 'TWIN', 'TRIPLET', 'QUADRUPLET', 'OTHERS'];
+  const validBirthTypes = ['SINGLE', 'TWIN', 'TRIPLET', 'QUADRUPLET', 'OTHERS', 'ABORTION'];
   const errors = [];
   const validRecords = [];
   const sheetTagsSet = new Map(); // Track all mother and kid tags across spreadsheet for duplicate checks
@@ -239,10 +243,11 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
     const tagNumber = String(tagNumberRaw).trim();
 
     const deliveryDateRaw = row.deliverydate || row.date || '';
+    const abortionDateRaw = row.abortiondate || row.abortion_date || '';
     const birthTypeRaw = row.birthtype || '';
     const numMaleRaw = row.malekidscount || row.nummale || row.malecount || row.male || '';
     const numFemaleRaw = row.femalekidscount || row.numfemale || row.femalecount || row.female || '';
-    const remark = String(row.remark || row.notes || '').trim() || null;
+    const remark = String(row.breedingremark || row.remark || row.notes || '').trim() || null;
 
     const rowErrors = [];
 
@@ -272,14 +277,14 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
 
     // Delivery Date Validation
     let deliveryDate = null;
-    if (!deliveryDateRaw) {
-      rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Delivery Date *', error: 'Delivery Date is required.' });
+    if (!deliveryDateRaw && !abortionDateRaw) {
+      rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Delivery Date *', error: 'Delivery Date (or Abortion Date) is required.' });
     } else {
-      deliveryDate = parseExcelDate(deliveryDateRaw);
+      deliveryDate = parseExcelDate(deliveryDateRaw || abortionDateRaw);
       if (!deliveryDate) {
-        rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Delivery Date *', error: `Invalid Delivery Date "${deliveryDateRaw}". Must be YYYY-MM-DD or DD/MM/YYYY.` });
+        rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Delivery Date *', error: `Invalid Date format. Must be YYYY-MM-DD or DD/MM/YYYY.` });
       } else if (deliveryDate > now) {
-        rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Delivery Date *', error: 'Delivery Date cannot be in the future.' });
+        rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Delivery Date *', error: 'Date cannot be in the future.' });
       }
     }
 
@@ -290,129 +295,137 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
     } else {
       const btUpper = String(birthTypeRaw).trim().toUpperCase();
       if (!validBirthTypes.includes(btUpper)) {
-        rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Birth Type *', error: `Invalid Birth Type "${birthTypeRaw}". Allowed values: [SINGLE, TWIN, TRIPLET, QUADRUPLET, OTHERS].` });
+        rowErrors.push({ sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: 'Birth Type *', error: `Invalid Birth Type "${birthTypeRaw}". Allowed values: [SINGLE, TWIN, TRIPLET, QUADRUPLET, OTHERS, ABORTION].` });
       } else {
         birthType = btUpper;
       }
     }
 
-    // Child / Kid Details Validation & Tag Conflict Verification (including Kid Notes)
+    let abortionDate = null;
+    if (birthType === 'ABORTION') {
+      abortionDate = abortionDateRaw ? parseExcelDate(abortionDateRaw) : deliveryDate;
+      if (!abortionDate) abortionDate = deliveryDate;
+    }
+
+    // Child / Kid Details Validation & Tag Conflict Verification
     const rowKids = [];
     const rowKidTagsSet = new Set();
 
-    for (let k = 1; k <= 4; k++) {
-      let kTagRaw = row[`kid${k}tagnumber`] || row[`kid${k}tag`] || row[`kid${k}tagno`] || row[`child${k}tag`] || row[`kid${k}`] || '';
-      if (!kTagRaw) {
-        for (const [key, val] of Object.entries(raw)) {
-          const kClean = normalizeKey(key);
-          if ((kClean.includes(`kid${k}`) || kClean.includes(`child${k}`)) && (kClean.includes('tag') || kClean.includes('id') || kClean.includes('no')) && String(val).trim()) {
-            kTagRaw = val;
-            break;
+    if (birthType !== 'ABORTION') {
+      for (let k = 1; k <= 4; k++) {
+        let kTagRaw = row[`kid${k}tagnumber`] || row[`kid${k}tag`] || row[`kid${k}tagno`] || row[`child${k}tag`] || row[`kid${k}`] || '';
+        if (!kTagRaw) {
+          for (const [key, val] of Object.entries(raw)) {
+            const kClean = normalizeKey(key);
+            if ((kClean.includes(`kid${k}`) || kClean.includes(`child${k}`)) && (kClean.includes('tag') || kClean.includes('id') || kClean.includes('no')) && String(val).trim()) {
+              kTagRaw = val;
+              break;
+            }
           }
         }
-      }
-      const kTag = String(kTagRaw).trim();
+        const kTag = String(kTagRaw).trim();
 
-      let kGenderRaw = row[`kid${k}gender`] || row[`kid${k}sex`] || row[`child${k}gender`] || '';
-      const kGender = String(kGenderRaw).trim().toUpperCase();
+        let kGenderRaw = row[`kid${k}gender`] || row[`kid${k}sex`] || row[`child${k}gender`] || '';
+        const kGender = String(kGenderRaw).trim().toUpperCase();
 
-      let kWeightRaw = row[`kid${k}birthweight`] || row[`kid${k}weight`] || row[`kid${k}weightkg`] || row[`child${k}weight`] || '';
-      const kWeight = kWeightRaw !== '' ? parseDecimal(kWeightRaw) : null;
+        let kWeightRaw = row[`kid${k}birthweight`] || row[`kid${k}weight`] || row[`kid${k}weightkg`] || row[`child${k}weight`] || '';
+        const kWeight = kWeightRaw !== '' ? parseDecimal(kWeightRaw) : null;
 
-      let kRemarkRaw = row[`kid${k}notes`] || row[`kid${k}remark`] || row[`kid${k}note`] || row[`child${k}notes`] || row[`child${k}remark`] || '';
-      if (!kRemarkRaw) {
-        for (const [key, val] of Object.entries(raw)) {
-          const kClean = normalizeKey(key);
-          if ((kClean.includes(`kid${k}`) || kClean.includes(`child${k}`)) && (kClean.includes('note') || kClean.includes('remark') || kClean.includes('comment')) && String(val).trim()) {
-            kRemarkRaw = val;
-            break;
+        let kRemarkRaw = row[`kid${k}notes`] || row[`kid${k}remark`] || row[`kid${k}note`] || row[`child${k}notes`] || row[`child${k}remark`] || '';
+        if (!kRemarkRaw) {
+          for (const [key, val] of Object.entries(raw)) {
+            const kClean = normalizeKey(key);
+            if ((kClean.includes(`kid${k}`) || kClean.includes(`child${k}`)) && (kClean.includes('note') || kClean.includes('remark') || kClean.includes('comment')) && String(val).trim()) {
+              kRemarkRaw = val;
+              break;
+            }
           }
         }
-      }
-      const kRemark = String(kRemarkRaw).trim() || '';
+        const kRemark = String(kRemarkRaw).trim() || '';
 
-      if (kTag || kGender || kWeight !== null || kRemark !== '') {
-        if (!kTag) {
-          rowErrors.push({
-            sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: `Kid ${k} Tag Number`,
-            error: `Kid ${k} Tag Number is required when kid details are provided.`
-          });
-        } else {
-          // Check conflict with existing farm animals
-          if (existingTagsSet.has(kTag)) {
+        if (kTag || kGender || kWeight !== null || kRemark !== '') {
+          if (!kTag) {
             rowErrors.push({
-              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
-              error: `Child Tag Number "${kTag}" conflicts with an existing animal in your farm inventory.`
-            });
-          }
-
-          // Check conflict with mother tag in same row
-          if (tagNumber && kTag === tagNumber) {
-            rowErrors.push({
-              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
-              error: `Child Tag Number "${kTag}" cannot be the same as Mother Tag Number "${tagNumber}".`
-            });
-          }
-
-          // Check duplicate within same row
-          if (rowKidTagsSet.has(kTag)) {
-            rowErrors.push({
-              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
-              error: `Child Tag Number "${kTag}" is duplicated in row ${rowNum}.`
+              sn: snVal, row: rowNum, tagNumber: tagNumber || '-', column: `Kid ${k} Tag Number`,
+              error: `Kid ${k} Tag Number is required when kid details are provided.`
             });
           } else {
-            rowKidTagsSet.add(kTag);
+            // Check conflict with existing farm animals
+            if (existingTagsSet.has(kTag)) {
+              rowErrors.push({
+                sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+                error: `Child Tag Number "${kTag}" conflicts with an existing animal in your farm inventory.`
+              });
+            }
+
+            // Check conflict with mother tag in same row
+            if (tagNumber && kTag === tagNumber) {
+              rowErrors.push({
+                sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+                error: `Child Tag Number "${kTag}" cannot be the same as Mother Tag Number "${tagNumber}".`
+              });
+            }
+
+            // Check duplicate within same row
+            if (rowKidTagsSet.has(kTag)) {
+              rowErrors.push({
+                sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+                error: `Child Tag Number "${kTag}" is duplicated in row ${rowNum}.`
+              });
+            } else {
+              rowKidTagsSet.add(kTag);
+            }
+
+            // Check duplicate across entire spreadsheet
+            if (sheetTagsSet.has(kTag)) {
+              const prevLoc = sheetTagsSet.get(kTag);
+              rowErrors.push({
+                sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
+                error: `Duplicate Child Tag Number "${kTag}" found in spreadsheet (already used at row ${prevLoc.rowNum} as ${prevLoc.type}).`
+              });
+            } else {
+              sheetTagsSet.set(kTag, { sn: snVal, rowNum, type: `Kid ${k} Tag` });
+            }
           }
 
-          // Check duplicate across entire spreadsheet
-          if (sheetTagsSet.has(kTag)) {
-            const prevLoc = sheetTagsSet.get(kTag);
+          // Gender validation
+          let validGender = 'MALE';
+          if (kGender) {
+            if (kGender !== 'MALE' && kGender !== 'FEMALE') {
+              rowErrors.push({
+                sn: snVal, row: rowNum, tagNumber: kTag || '-', column: `Kid ${k} Gender`,
+                error: `Invalid Gender "${kGenderRaw}" for Kid ${k}. Allowed values: [MALE, FEMALE].`
+              });
+            } else {
+              validGender = kGender;
+            }
+          }
+
+          // Weight validation
+          if (kWeightRaw !== '' && (kWeight === null || kWeight < 0)) {
             rowErrors.push({
-              sn: snVal, row: rowNum, tagNumber: kTag, column: `Kid ${k} Tag Number`,
-              error: `Duplicate Child Tag Number "${kTag}" found in spreadsheet (already used at row ${prevLoc.rowNum} as ${prevLoc.type}).`
+              sn: snVal, row: rowNum, tagNumber: kTag || '-', column: `Kid ${k} Birth Weight`,
+              error: `Invalid Birth Weight "${kWeightRaw}" for Kid ${k}. Must be a valid positive number.`
             });
-          } else {
-            sheetTagsSet.set(kTag, { sn: snVal, rowNum, type: `Kid ${k} Tag` });
           }
-        }
 
-        // Gender validation
-        let validGender = 'MALE';
-        if (kGender) {
-          if (kGender !== 'MALE' && kGender !== 'FEMALE') {
-            rowErrors.push({
-              sn: snVal, row: rowNum, tagNumber: kTag || '-', column: `Kid ${k} Gender`,
-              error: `Invalid Gender "${kGenderRaw}" for Kid ${k}. Allowed values: [MALE, FEMALE].`
+          if (kTag) {
+            rowKids.push({
+              tag_number: kTag,
+              gender: validGender,
+              birth_weight: kWeight !== null ? kWeight : '',
+              remark: kRemark
             });
-          } else {
-            validGender = kGender;
           }
-        }
-
-        // Weight validation
-        if (kWeightRaw !== '' && (kWeight === null || kWeight < 0)) {
-          rowErrors.push({
-            sn: snVal, row: rowNum, tagNumber: kTag || '-', column: `Kid ${k} Birth Weight`,
-            error: `Invalid Birth Weight "${kWeightRaw}" for Kid ${k}. Must be a valid positive number.`
-          });
-        }
-
-        if (kTag) {
-          rowKids.push({
-            tag_number: kTag,
-            gender: validGender,
-            birth_weight: kWeight !== null ? kWeight : '',
-            remark: kRemark
-          });
         }
       }
     }
 
     // Male / Female Counts Calculation
-    let numMale = parseDecimal(numMaleRaw) !== null ? Math.max(0, parseInt(numMaleRaw, 10)) : null;
-    let numFemale = parseDecimal(numFemaleRaw) !== null ? Math.max(0, parseInt(numFemaleRaw, 10)) : null;
+    let numMale = birthType === 'ABORTION' ? 0 : (parseDecimal(numMaleRaw) !== null ? Math.max(0, parseInt(numMaleRaw, 10)) : null);
+    let numFemale = birthType === 'ABORTION' ? 0 : (parseDecimal(numFemaleRaw) !== null ? Math.max(0, parseInt(numFemaleRaw, 10)) : null);
 
-    if (numMale === null || numFemale === null) {
+    if (birthType !== 'ABORTION' && (numMale === null || numFemale === null)) {
       let mCount = 0;
       let fCount = 0;
       rowKids.forEach(k => {
@@ -432,6 +445,7 @@ const parseAndValidateBreedingSheet = async (buffer, farmId) => {
         animalId: matchedAnimal.id,
         tagNumber: matchedAnimal.tag_number,
         deliveryDate,
+        abortionDate,
         birthType,
         numMale,
         numFemale,
@@ -497,6 +511,7 @@ exports.importBreedings = async (req, res) => {
       animal_id: rec.animalId,
       farm_id: farmId,
       delivery_date: rec.deliveryDate,
+      abortion_date: rec.abortionDate,
       birth_type: rec.birthType,
       num_male: rec.numMale,
       num_female: rec.numFemale,

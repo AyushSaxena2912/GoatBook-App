@@ -43,11 +43,13 @@ exports.getBreedingsByAnimal = async (req, res) => {
 };
 
 exports.addBreeding = async (req, res) => {
-  const { animal_id, delivery_date, birth_type, num_male, num_female, remark, kids } = req.body;
+  const { animal_id, delivery_date, abortion_date, birth_type, num_male, num_female, remark, kids } = req.body;
   try {
     if (!req.farmId) return res.status(400).json({ message: 'No farm selected' });
 
-    const dateToCheck = new Date(delivery_date);
+    const isAbortion = birth_type === 'ABORTION';
+    const effectiveDate = isAbortion ? (abortion_date || delivery_date || new Date()) : delivery_date;
+    const dateToCheck = new Date(effectiveDate);
     dateToCheck.setHours(0, 0, 0, 0);
 
     // 1. Same date check
@@ -61,7 +63,7 @@ exports.addBreeding = async (req, res) => {
       }
     });
     if (sameDateRecord) {
-      return res.status(400).json({ message: 'A delivery record already exists for this date.' });
+      return res.status(400).json({ message: 'A delivery/abortion record already exists for this date.' });
     }
 
     // 2. 150-day gap constraint
@@ -76,7 +78,7 @@ exports.addBreeding = async (req, res) => {
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       if (diffDays < 150) {
         return res.status(400).json({
-          message: `Gap constraint violated: Another delivery was recorded on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum 150 days required).`
+          message: `Gap constraint violated: Another delivery/abortion was recorded on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum 150 days required).`
         });
       }
     }
@@ -88,11 +90,12 @@ exports.addBreeding = async (req, res) => {
           id: uuidv4(),
           animal_id,
           farm_id: req.farmId,
-          delivery_date: new Date(delivery_date),
-          birth_type,
-          num_male: num_male || 0,
-          num_female: num_female || 0,
-          kids_details: kids ? kids : null,
+          delivery_date: new Date(effectiveDate),
+          abortion_date: isAbortion ? new Date(effectiveDate) : null,
+          birth_type: birth_type || 'SINGLE',
+          num_male: isAbortion ? 0 : (num_male || 0),
+          num_female: isAbortion ? 0 : (num_female || 0),
+          kids_details: isAbortion ? null : (kids ? kids : null),
           remark,
           created_by_user_id: req.user.id
         }
@@ -117,7 +120,7 @@ exports.addBreeding = async (req, res) => {
 // @desc    Update a breeding record
 // @route   PUT /api/breedings/:id
 exports.updateBreeding = async (req, res) => {
-  const { delivery_date, birth_type, num_male, num_female, remark, kids } = req.body;
+  const { delivery_date, abortion_date, birth_type, num_male, num_female, remark, kids } = req.body;
   try {
     const existing = await prisma.breedings.findFirst({
       where: { id: req.params.id, farm_id: req.farmId }
@@ -125,8 +128,11 @@ exports.updateBreeding = async (req, res) => {
 
     if (!existing) return res.status(404).json({ message: 'Breeding record not found' });
     
-    if (delivery_date) {
-      const dateToCheck = new Date(delivery_date);
+    const isAbortion = (birth_type || existing.birth_type) === 'ABORTION';
+    const effectiveDate = delivery_date || abortion_date;
+
+    if (effectiveDate) {
+      const dateToCheck = new Date(effectiveDate);
       dateToCheck.setHours(0, 0, 0, 0);
 
       // Same date check
@@ -141,7 +147,7 @@ exports.updateBreeding = async (req, res) => {
         }
       });
       if (sameDateRecord) {
-        return res.status(400).json({ message: 'A delivery record already exists for this date.' });
+        return res.status(400).json({ message: 'A delivery/abortion record already exists for this date.' });
       }
 
       // 150-day gap constraint
@@ -159,7 +165,7 @@ exports.updateBreeding = async (req, res) => {
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays < 150) {
           return res.status(400).json({
-            message: `Gap constraint violated: Another delivery exists on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum 150 days required).`
+            message: `Gap constraint violated: Another delivery/abortion exists on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum 150 days required).`
           });
         }
       }
@@ -168,11 +174,12 @@ exports.updateBreeding = async (req, res) => {
     const updated = await prisma.breedings.update({
       where: { id: req.params.id },
       data: {
-        delivery_date: delivery_date ? new Date(delivery_date) : existing.delivery_date,
+        delivery_date: effectiveDate ? new Date(effectiveDate) : existing.delivery_date,
+        abortion_date: isAbortion ? new Date(abortion_date || effectiveDate || existing.delivery_date) : null,
         birth_type: birth_type || existing.birth_type,
-        num_male: num_male !== undefined ? num_male : existing.num_male,
-        num_female: num_female !== undefined ? num_female : existing.num_female,
-        kids_details: kids !== undefined ? kids : existing.kids_details,
+        num_male: isAbortion ? 0 : (num_male !== undefined ? num_male : existing.num_male),
+        num_female: isAbortion ? 0 : (num_female !== undefined ? num_female : existing.num_female),
+        kids_details: isAbortion ? null : (kids !== undefined ? kids : existing.kids_details),
         remark: remark !== undefined ? remark : existing.remark,
         updated_by_user_id: req.user.id
       }

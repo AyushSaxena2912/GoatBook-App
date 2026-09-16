@@ -125,7 +125,8 @@ const AddAnimalScreen = ({ navigation, route }) => {
   const [policyExpiryDate, setPolicyExpiryDate] = useState(existingAnimal?.insuranceExpiryDate ? new Date(existingAnimal.insuranceExpiryDate).toISOString().split('T')[0] : (existingAnimal?.Insurance?.policyExpiryDate || ''));
 
   const [treatmentExpanded, setTreatmentExpanded] = useState(false);
-  const [treatmentRecord, setTreatmentRecord] = useState(existingAnimal?.treatmentRecord || '');
+  const [treatments, setTreatments] = useState([]);
+  const [treatmentsLoading, setTreatmentsLoading] = useState(false);
 
   // UI state
   const [allBreeds, setAllBreeds] = useState([]);
@@ -160,9 +161,22 @@ const AddAnimalScreen = ({ navigation, route }) => {
           fetchVaccinations();
           fetchMatings();
           fetchBreedings();
+          fetchTreatments();
         }
     }, [])
   );
+
+  const fetchTreatments = async () => {
+    try {
+      setTreatmentsLoading(true);
+      const response = await api.get(`/treatments/animal/${existingAnimal.id}`);
+      setTreatments(response.data);
+    } catch (error) {
+      console.error('Fetch treatments error:', error);
+    } finally {
+      setTreatmentsLoading(false);
+    }
+  };
 
   const fetchVaccinations = async () => {
     try {
@@ -421,7 +435,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
         saleDiscount: status === 'Sold' ? (parseFloat(saleDiscount) || null) : null,
         netSalePrice: status === 'Sold' ? ((parseFloat(sellingPrice) || 0) - (parseFloat(saleDiscount) || 0)) : null,
         saleRate: status === 'Sold' ? (parseFloat(saleWeight) > 0 ? ((parseFloat(sellingPrice) || 0) / parseFloat(saleWeight)) : null) : null,
-        treatmentRecord: treatmentRecord || null,
         insuranceCompany: insuranceCompany || null,
         insurancePolicyNo: insurancePolicyNo || null,
         insuranceStartDate: isValidDate(policyStartDate) ? policyStartDate : null,
@@ -1522,6 +1535,69 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 )}
               </View>
 
+              {/* TREATMENT RECORD */}
+              <View style={styles.sectionCard}>
+                <TouchableOpacity 
+                  style={[styles.sectionHeader, treatmentExpanded && styles.sectionHeaderBorder]}
+                  activeOpacity={0.7}
+                  onPress={() => setTreatmentExpanded(!treatmentExpanded)}
+                >
+                  <View style={styles.sectionHeaderLeft}>
+                    <View style={styles.sectionIconBox}>
+                      <Stethoscope size={18} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>Treatment Record</Text>
+                    <TouchableOpacity onPress={() => showHelp('What is Treatment Record?', 'This section allows you to maintain medical treatment records, doctor visits, medicines given, and costs incurred for this animal.')} style={{ marginLeft: 8 }}>
+                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
+                  {treatmentExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
+                </TouchableOpacity>
+                {treatmentExpanded && (
+                  <View style={styles.weightContent}>
+                    <TouchableOpacity 
+                      style={styles.addNewBtn}
+                      onPress={() => navigation.navigate('AddTreatment', { preSelectedAnimal: existingAnimal })}
+                    >
+                      <Plus size={14} color="#FFF" />
+                      <Text style={styles.addNewText}>Add New Record</Text>
+                    </TouchableOpacity>
+                    
+                    {treatmentsLoading ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : treatments.length > 0 ? (
+                      <View style={styles.weightList}>
+                        {treatments.map((t, idx) => (
+                          <View 
+                            key={t.id} 
+                            style={[styles.weightItem, { borderBottomColor: theme.colors.border }, idx === treatments.length - 1 && { borderBottomWidth: 0 }]}
+                          >
+                            <View style={styles.weightIconBox}>
+                              <Stethoscope size={16} color={theme.colors.primary} />
+                            </View>
+                            <View style={styles.weightInfoBlock}>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{t.treatment_type || t.disease_name || t.medicine_name || 'Treatment'}</Text>
+                              <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{t.date ? new Date(t.date).toLocaleDateString() : ''}</Text>
+                            </View>
+                            {t.medicine_name ? (
+                              <View style={[styles.heightInfoBlock, { minWidth: 80 }]}>
+                                <Text style={[styles.weightLabel, { color: theme.colors.primary, fontFamily: theme.typography.medium }]}>Medicine</Text>
+                                <Text style={[styles.weightValue, { color: theme.colors.text, fontFamily: theme.typography.semiBold }]}>{t.medicine_name}</Text>
+                              </View>
+                            ) : null}
+                            <TouchableOpacity onPress={() => navigation.navigate('AddTreatment', { preSelectedAnimal: existingAnimal, record: t })} style={{ padding: 8 }}>
+                              <Edit2 size={16} color={theme.colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={styles.noRecordsText}>No records found</Text>
+                    )}
+                  </View>
+                )}
+              </View>
+
               {/* MILK HISTORY */}
               <View style={styles.sectionCard}>
                 <TouchableOpacity 
@@ -1600,42 +1676,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         placeholder="Expiry Date" 
                         value={policyExpiryDate}
                         onDateChange={setPolicyExpiryDate}
-                      />
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              {/* TREATMENT RECORDS */}
-              <View style={styles.sectionCard}>
-                <TouchableOpacity 
-                  style={[styles.sectionHeader, treatmentExpanded && styles.sectionHeaderBorder]}
-                  activeOpacity={0.7}
-                  onPress={() => setTreatmentExpanded(!treatmentExpanded)}
-                >
-                  <View style={styles.sectionHeaderLeft}>
-                    <View style={styles.sectionIconBox}>
-                      <Stethoscope size={18} color={theme.colors.primary} />
-                    </View>
-                    <Text style={styles.sectionTitle}>Treatment Records</Text>
-                    <TouchableOpacity onPress={() => showHelp('What is Treatment Records?', 'Maintain a log of any medical treatments, illnesses, or procedures for this animal. You can type notes freely here.')} style={{ marginLeft: 8 }}>
-                      <HelpCircle size={14} color={theme.colors.textMuted} strokeWidth={2} />
-                    </TouchableOpacity>
-                  </View>
-                  {treatmentExpanded ? <ChevronUp size={20} color={theme.colors.textMuted} /> : <ChevronDown size={20} color={theme.colors.textMuted} />}
-                </TouchableOpacity>
-
-                {treatmentExpanded && (
-                  <View style={styles.sectionContent}>
-                    <View style={styles.formContainer}>
-                      <GInput 
-                        containerStyle={styles.fullWidthField}
-                        label="Treatment Notes" 
-                        value={treatmentRecord} 
-                        onChangeText={setTreatmentRecord} 
-                        placeholder="e.g. Treated for fever on 10 May..."
-                        multiline
-                        style={{ minHeight: 80, paddingTop: 12, color: theme.colors.text }}
                       />
                     </View>
                   </View>

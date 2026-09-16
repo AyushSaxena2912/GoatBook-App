@@ -14,6 +14,7 @@ TWIN TWIN
 TRIPLET TRIPLET
 QUADRUPLET QUADRUPLET
 OTHERS OTHERS
+ABORTION ABORTION
         }
     
 
@@ -137,6 +138,10 @@ EXPENSE EXPENSE
     Decimal landing_cost "❓"
     Decimal purchase_weight "❓"
     String treatment_record "❓"
+    String insurance_company "❓"
+    String insurance_policy_no "❓"
+    DateTime insurance_start_date "❓"
+    DateTime insurance_expiry_date "❓"
     Decimal net_sale_price "❓"
     Decimal sale_discount "❓"
     Decimal sale_rate "❓"
@@ -337,6 +342,7 @@ EXPENSE EXPENSE
   "breedings" {
     String id "🗝️"
     DateTime delivery_date 
+    DateTime abortion_date "❓"
     enum_animals_birth_type birth_type 
     Int num_male 
     Int num_female 
@@ -344,6 +350,20 @@ EXPENSE EXPENSE
     DateTime created_at 
     DateTime updated_at 
     Json kids_details "❓"
+    }
+  
+
+  "treatment_records" {
+    String id "🗝️"
+    DateTime date 
+    String treatment_type "❓"
+    String disease_name "❓"
+    String medicine_name "❓"
+    String dosage "❓"
+    Decimal cost "❓"
+    String remark "❓"
+    DateTime created_at 
+    DateTime updated_at 
     }
   
 
@@ -436,6 +456,10 @@ EXPENSE EXPENSE
     "breedings" }o--|o "users" : "users_breedings_created_by_user_idTousers"
     "breedings" }o--|| "farms" : "farms"
     "breedings" }o--|o "users" : "users_breedings_updated_by_user_idTousers"
+    "treatment_records" }o--|| "animals" : "animals"
+    "treatment_records" }o--|| "farms" : "farms"
+    "treatment_records" }o--|o "users" : "users_treatment_records_created_by_user_idTousers"
+    "treatment_records" }o--|o "users" : "users_treatment_records_updated_by_user_idTousers"
     "subscriptions" |o--|| "enum_subscription_plan" : "enum:plan_name"
     "subscriptions" |o--|| "enum_subscription_status" : "enum:status"
     "subscriptions" |o--|| "farms" : "farms"

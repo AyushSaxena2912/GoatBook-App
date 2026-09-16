@@ -52,6 +52,8 @@ import AddVaccineNameScreen from './src/screens/AddVaccineNameScreen';
 import VaccineDefinitionsScreen from './src/screens/VaccineDefinitionsScreen';
 import AddVaccinationScreen from './src/screens/AddVaccinationScreen';
 import VaccinationListScreen from './src/screens/VaccinationListScreen';
+import AddTreatmentScreen from './src/screens/AddTreatmentScreen';
+import TreatmentListScreen from './src/screens/TreatmentListScreen';
 import ReportsMenuScreen from './src/screens/ReportsMenuScreen';
 import OverallReportScreen from './src/screens/OverallReportScreen';
 import ReplaceTagScreen from './src/screens/ReplaceTagScreen';
@@ -87,6 +89,7 @@ function MainDrawer() {
       <Drawer.Screen name="AnimalList" component={AnimalListScreen} />
       <Drawer.Screen name="BreedList" component={BreedListScreen} />
       <Drawer.Screen name="VaccinesMenu" component={VaccinesMenuScreen} />
+      <Drawer.Screen name="TreatmentList" component={TreatmentListScreen} />
       <Drawer.Screen name="ReportsMenu" component={ReportsMenuScreen} />
       <Drawer.Screen name="LocationList" component={LocationListScreen} />
       <Drawer.Screen name="FormulationList" component={FormulationListScreen} />
@@ -182,7 +185,6 @@ function AppContent() {
 
       const { token, farmId } = await Promise.race([sessionPromise, timeoutPromise]);
 
-      console.log("Token:", token, "FarmId:", farmId);
       if (token && farmId) {
         setInitialRoute('MainDrawer');
         // Fetch user profile to get their preferred language
@@ -255,6 +257,8 @@ function AppContent() {
           <Stack.Screen name="AddVaccineName" component={AddVaccineNameScreen} />
           <Stack.Screen name="AddVaccination" component={AddVaccinationScreen} />
           <Stack.Screen name="VaccinationList" component={VaccinationListScreen} />
+          <Stack.Screen name="AddTreatment" component={AddTreatmentScreen} />
+          <Stack.Screen name="TreatmentList" component={TreatmentListScreen} />
           <Stack.Screen name="ReportsMenu" component={ReportsMenuScreen} />
           <Stack.Screen name="OverallReport" component={OverallReportScreen} />
           <Stack.Screen name="ReplaceTag" component={ReplaceTagScreen} />

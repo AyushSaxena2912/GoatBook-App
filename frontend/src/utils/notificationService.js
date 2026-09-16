@@ -45,7 +45,6 @@ export const registerForPushNotificationsAsync = async () => {
     }
 
     token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-    console.log('Expo Push Token retrieved:', token);
 
     // Save the token to the backend
     if (token) {

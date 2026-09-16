@@ -4,7 +4,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { 
   Home, PawPrint, GitBranch, Syringe, ClipboardList, 
   MapPin, Settings, LogOut, ChevronRight, User, ExternalLink,
-  Scale, Heart, Activity, Globe, Briefcase, RefreshCcw, Milk, Sliders, Crown, Leaf, FileSpreadsheet
+  Scale, Heart, Activity, Globe, Briefcase, RefreshCcw, Milk, Sliders, Crown, Leaf, FileSpreadsheet, Stethoscope
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -69,11 +69,13 @@ const SideMenu = (props) => {
     { title: t('menu.matingImport', 'Mating Import'), icon: <Heart size={22} />, screen: 'BulkData', params: { initialEntity: 'mating' } },
     { title: t('menu.weightImport', 'Weight Import'), icon: <Scale size={22} />, screen: 'BulkData', params: { initialEntity: 'weight' } },
     { title: t('menu.vaccinationImport', 'Vaccination Import'), icon: <Syringe size={22} />, screen: 'BulkData', params: { initialEntity: 'vaccination' } },
+    { title: t('menu.treatmentImport', 'Treatment Import'), icon: <Stethoscope size={22} />, screen: 'BulkData', params: { initialEntity: 'treatment' } },
     { title: t('menu.breeds', 'Breeds'), icon: <GitBranch size={22} />, screen: 'BreedList' },
     { title: t('menu.employee', 'Employee'), icon: <User size={22} />, screen: 'EmployeeList', role: 'OWNER' },
     { title: t('menu.mySubscription', 'My Subscription'), icon: <Crown size={22} />, screen: 'SubscriptionScreen', role: 'OWNER' },
     { title: t('menu.locations', 'Locations'), icon: <MapPin size={22} />, screen: 'LocationMenu' },
     { title: t('menu.vaccines', 'Vaccines'), icon: <Syringe size={22} />, screen: 'VaccinesMenu' },
+    { title: t('menu.treatment', 'Treatment'), icon: <Stethoscope size={22} />, screen: 'TreatmentList' },
     { title: t('menu.weight', 'Weight'), icon: <Scale size={22} />, screen: 'AddWeight' },
     { title: t('menu.mating', 'Mating'), icon: <Heart size={22} />, screen: 'MatingList' },
     { title: t('menu.breeding', 'Breeding'), icon: <Activity size={22} />, screen: 'BreedingList' },

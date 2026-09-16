@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
 
 const app = express();
@@ -14,7 +16,8 @@ const { setupNotificationWorker } = require('./utils/notificationWorker');
 
 // Middleware
 app.use(cors()); // Allow all origins for connectivity diagnostics
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Verbose Request logger for diagnostics
 app.use((req, res, next) => {
@@ -50,6 +53,7 @@ app.use('/api/reports', require('./modules/reports/report.routes'));
 app.use('/api/transactions', require('./modules/animals/transaction.routes'));
 app.use('/api/matings', require('./modules/matings/mating.routes'));
 app.use('/api/breedings', require('./modules/breedings/breeding.routes'));
+app.use('/api/treatments', require('./modules/treatments/treatment.routes'));
 app.use('/api/subscriptions', require('./modules/subscriptions/subscription.routes'));
 app.use('/api/analytics', require('./modules/analytics/analytics.routes'));
 app.use('/api/notifications', require('./modules/notifications/notification.routes'));

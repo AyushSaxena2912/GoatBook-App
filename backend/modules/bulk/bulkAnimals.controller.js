@@ -54,8 +54,7 @@ exports.downloadAnimalTemplate = async (req, res) => {
       'Insurance Company',
       'Policy Number',
       'Policy Start Date (YYYY-MM-DD)',
-      'Policy Expiry Date (YYYY-MM-DD)',
-      'Treatment Record'
+      'Policy Expiry Date (YYYY-MM-DD)'
     ];
 
     const sampleBreed1 = breeds[0]?.name || 'Sirohi';
@@ -68,13 +67,13 @@ exports.downloadAnimalTemplate = async (req, res) => {
         'GB-101', sampleBreed1, 'FEMALE', 'Goat', 'Brown', '2024-01-15', 3.2,
         'BORN', '', '', '', 28.5, 'NONE', sampleLoc1, 'NO', 'NO',
         'GB-M01', 'GB-F01', 'BATCH-1', '2 Teeth', 'LIVE', 'Healthy doe',
-        'National Insurance', 'POL-998811', '2024-01-20', '2025-01-19', 'Annual PPR Deworming & Vaccination done'
+        'National Insurance', 'POL-998811', '2024-01-20', '2025-01-19'
       ],
       [
         'GB-102', sampleBreed2, 'MALE', 'Goat', 'White', '2023-11-20', 2.8,
         'PURCHASED', '2024-02-10', 9500, 22.0, 34.0, '', sampleLoc2, 'YES', 'NO',
         '', '', 'BATCH-1', '4 Teeth', 'LIVE', 'Purchased breeder buck',
-        'ICICI Lombard', 'POL-772244', '2024-02-15', '2025-02-14', 'Routine checkup completed'
+        'ICICI Lombard', 'POL-772244', '2024-02-15', '2025-02-14'
       ]
     ];
 
@@ -87,7 +86,7 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { wch: 20 }, { wch: 20 }, { wch: 42 }, { wch: 18 }, { wch: 20 },
       { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
       { wch: 24 }, { wch: 28 }, { wch: 22 }, { wch: 20 }, { wch: 28 },
-      { wch: 28 }, { wch: 40 }
+      { wch: 28 }
     ];
 
     // Sheet 2: Reference & Guidelines
@@ -119,8 +118,7 @@ exports.downloadAnimalTemplate = async (req, res) => {
       { field: 'Insurance Company', rule: 'Insurance provider name (e.g. National Insurance).' },
       { field: 'Policy Number', rule: 'Insurance policy number or plan name.' },
       { field: 'Policy Start Date', rule: 'YYYY-MM-DD format (e.g. 2024-01-20).' },
-      { field: 'Policy Expiry Date', rule: 'YYYY-MM-DD format (e.g. 2025-01-19).' },
-      { field: 'Treatment Record', rule: 'Medical and treatment notes or history.' }
+      { field: 'Policy Expiry Date', rule: 'YYYY-MM-DD format (e.g. 2025-01-19).' }
     ];
 
     for (let i = 0; i < maxLen; i++) {
@@ -218,8 +216,7 @@ exports.exportAnimals = async (req, res) => {
       'Insurance Company',
       'Policy Number',
       'Policy Start Date (YYYY-MM-DD)',
-      'Policy Expiry Date (YYYY-MM-DD)',
-      'Treatment Record'
+      'Policy Expiry Date (YYYY-MM-DD)'
     ];
 
     const rows = animals.map((a) => [
@@ -248,8 +245,7 @@ exports.exportAnimals = async (req, res) => {
       a.insurance_company || '',
       a.insurance_policy_no || '',
       a.insurance_start_date ? new Date(a.insurance_start_date).toISOString().split('T')[0] : '',
-      a.insurance_expiry_date ? new Date(a.insurance_expiry_date).toISOString().split('T')[0] : '',
-      a.treatment_record || ''
+      a.insurance_expiry_date ? new Date(a.insurance_expiry_date).toISOString().split('T')[0] : ''
     ]);
 
     const wsData = [headers, ...rows];
@@ -499,18 +495,6 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
       }
     }
 
-    let treatmentRecordRaw = row.treatmentrecord || row.treatment || row.treatments || row.treatmentnotes || '';
-    if (!treatmentRecordRaw) {
-      for (const [k, v] of Object.entries(raw)) {
-        const kClean = normalizeKey(k);
-        if ((kClean.includes('treatment') || kClean.includes('medical')) && String(v).trim()) {
-          treatmentRecordRaw = v;
-          break;
-        }
-      }
-    }
-    const treatmentRecord = String(treatmentRecordRaw).trim() || null;
-
     const rowErrors = [];
 
     // Tag Number Validation - CASE SENSITIVE
@@ -750,7 +734,7 @@ const parseAndValidateSheet = async (buffer, farmId, userSubscription) => {
         locationId, isBreeder, isQurbani, motherTag, fatherTag, batchNo,
         ageInMonths, birthType, teethStage, status, remark,
         insuranceCompany, insurancePolicyNo, insuranceStartDate, insuranceExpiryDate,
-        treatmentRecord, rowNum
+        rowNum
       });
     }
   }
@@ -849,7 +833,6 @@ exports.importAnimals = async (req, res) => {
         insurance_policy_no: rec.insurancePolicyNo,
         insurance_start_date: rec.insuranceStartDate,
         insurance_expiry_date: rec.insuranceExpiryDate,
-        treatment_record: rec.treatmentRecord,
         farm_id: farmId,
         created_by_user_id: userId,
         updated_by_user_id: userId,

@@ -8,6 +8,7 @@ const bulkBreedingController = require('./bulkBreeding.controller');
 const bulkMatingController = require('./bulkMating.controller');
 const bulkWeightController = require('./bulkWeight.controller');
 const bulkVaccinationController = require('./bulkVaccination.controller');
+const bulkTreatmentController = require('./bulkTreatment.controller');
 
 // Multer in-memory storage for handling uploaded Excel files
 const upload = multer({
@@ -44,5 +45,11 @@ router.get('/vaccination/template', auth, bulkVaccinationController.downloadVacc
 router.get('/vaccination/export', auth, bulkVaccinationController.exportVaccinations);
 router.post('/vaccination/validate', auth, upload.single('file'), bulkVaccinationController.validateVaccinationsImport);
 router.post('/vaccination/import', auth, upload.single('file'), bulkVaccinationController.importVaccinations);
+
+// TREATMENT BULK ROUTES
+router.get('/treatment/template', auth, bulkTreatmentController.downloadTreatmentTemplate);
+router.get('/treatment/export', auth, bulkTreatmentController.exportTreatments);
+router.post('/treatment/validate', auth, upload.single('file'), bulkTreatmentController.validateTreatmentsImport);
+router.post('/treatment/import', auth, upload.single('file'), bulkTreatmentController.importTreatments);
 
 module.exports = router;

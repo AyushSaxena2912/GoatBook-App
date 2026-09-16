@@ -21,11 +21,12 @@ const AddBreedingScreen = ({ navigation, route }) => {
 
 
   const BIRTH_TYPES = [
-  { label: t('enums.single', 'Single'), value: 'SINGLE', count: 1 },
-  { label: t('enums.twin', 'Twin'), value: 'TWIN', count: 2 },
-  { label: t('enums.triplet', 'Triplet'), value: 'TRIPLET', count: 3 },
-  { label: t('enums.quadruplet', 'Quadruplet'), value: 'QUADRUPLET', count: 4 },
-];
+    { label: t('enums.single', 'Single'), value: 'SINGLE', count: 1 },
+    { label: t('enums.twin', 'Twin'), value: 'TWIN', count: 2 },
+    { label: t('enums.triplet', 'Triplet'), value: 'TRIPLET', count: 3 },
+    { label: t('enums.quadruplet', 'Quadruplet'), value: 'QUADRUPLET', count: 4 },
+    { label: t('enums.abortion', 'Abortion'), value: 'ABORTION', count: 0 },
+  ];
 
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   
@@ -42,6 +43,9 @@ const AddBreedingScreen = ({ navigation, route }) => {
   // Form State
   const [deliveryDate, setDeliveryDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [abortionDate, setAbortionDate] = useState(new Date());
+  const [showAbortionDatePicker, setShowAbortionDatePicker] = useState(false);
+  const [breedingRemark, setBreedingRemark] = useState('');
   const [birthType, setBirthType] = useState('SINGLE');
   const [kids, setKids] = useState([{ tag_number: '', gender: 'MALE', birth_weight: '', remark: '' }]);
   const [isSaving, setIsSaving] = useState(false);
@@ -54,19 +58,29 @@ const AddBreedingScreen = ({ navigation, route }) => {
     if (isEditing && editItem) {
       setDeliveryDate(new Date(editItem.delivery_date));
       setBirthType(editItem.birth_type);
-      
-      // Parse kids details or create empty array based on birth type
-      let parsedKids = [];
-      if (editItem.kids_details && Array.isArray(editItem.kids_details)) {
-        parsedKids = editItem.kids_details;
+      if (editItem.abortion_date) {
+        setAbortionDate(new Date(editItem.abortion_date));
+      }
+      if (editItem.remark || editItem.breeding_remark) {
+        setBreedingRemark(editItem.remark || editItem.breeding_remark);
       }
       
-      const expectedCount = BIRTH_TYPES.find(b => b.value === editItem.birth_type)?.count || 1;
-      while (parsedKids.length < expectedCount) {
-        parsedKids.push({ tag_number: '', gender: 'MALE', birth_weight: '', remark: '' });
+      if (editItem.birth_type === 'ABORTION') {
+        setKids([]);
+      } else {
+        // Parse kids details or create empty array based on birth type
+        let parsedKids = [];
+        if (editItem.kids_details && Array.isArray(editItem.kids_details)) {
+          parsedKids = editItem.kids_details;
+        }
+        
+        const expectedCount = BIRTH_TYPES.find(b => b.value === editItem.birth_type)?.count || 1;
+        while (parsedKids.length < expectedCount) {
+          parsedKids.push({ tag_number: '', gender: 'MALE', birth_weight: '', remark: '' });
+        }
+        
+        setKids(parsedKids.slice(0, expectedCount));
       }
-      
-      setKids(parsedKids.slice(0, expectedCount));
     }
   }, [isEditing, editItem]);
 
@@ -99,18 +113,20 @@ const AddBreedingScreen = ({ navigation, route }) => {
 
   const handleBirthTypeChange = (val) => {
     setBirthType(val);
-    const count = BIRTH_TYPES.find(b => b.value === val)?.count || 1;
-    
-    // Adjust kids array length
-    let newKids = [...kids];
-    if (newKids.length < count) {
-      while (newKids.length < count) {
-        newKids.push({ tag_number: '', gender: 'MALE', birth_weight: '', remark: '' });
+    if (val === 'ABORTION') {
+      setKids([]);
+    } else {
+      const count = BIRTH_TYPES.find(b => b.value === val)?.count || 1;
+      let newKids = [...kids];
+      if (newKids.length < count) {
+        while (newKids.length < count) {
+          newKids.push({ tag_number: '', gender: 'MALE', birth_weight: '', remark: '' });
+        }
+      } else if (newKids.length > count) {
+        newKids = newKids.slice(0, count);
       }
-    } else if (newKids.length > count) {
-      newKids = newKids.slice(0, count);
+      setKids(newKids);
     }
-    setKids(newKids);
     setShowBirthTypeDropdown(false);
   };
 
@@ -126,23 +142,26 @@ const AddBreedingScreen = ({ navigation, route }) => {
       return;
     }
     
-    // Validate kids
-    for (let i = 0; i < kids.length; i++) {
-      if (!kids[i].tag_number.trim()) {
-        Alert.alert('Validation', `Please enter a Tag ID for kid ${i + 1}`);
-        return;
+    if (birthType !== 'ABORTION') {
+      // Validate kids
+      for (let i = 0; i < kids.length; i++) {
+        if (!kids[i].tag_number.trim()) {
+          Alert.alert('Validation', `Please enter a Tag ID for kid ${i + 1}`);
+          return;
+        }
       }
     }
 
     setIsSaving(true);
     
-    // Calculate num_male and num_female
     let num_male = 0;
     let num_female = 0;
-    kids.forEach(k => {
-      if (k.gender === 'MALE') num_male++;
-      if (k.gender === 'FEMALE') num_female++;
-    });
+    if (birthType !== 'ABORTION') {
+      kids.forEach(k => {
+        if (k.gender === 'MALE') num_male++;
+        if (k.gender === 'FEMALE') num_female++;
+      });
+    }
 
     const payload = {
       animal_id: animal.id,
@@ -150,7 +169,9 @@ const AddBreedingScreen = ({ navigation, route }) => {
       birth_type: birthType,
       num_male,
       num_female,
-      kids: kids
+      kids: birthType === 'ABORTION' ? null : kids,
+      abortion_date: birthType === 'ABORTION' ? abortionDate.toISOString() : null,
+      remark: breedingRemark || null,
     };
 
     try {
@@ -393,10 +414,53 @@ const AddBreedingScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* Dynamic Kids Fields */}
-          <View style={{ zIndex: 1, marginTop: 8 }}>
-            {kids.map((kid, index) => renderKidFields(kid, index))}
+          {/* Abortion Date Field (Visible when birthType === 'ABORTION') */}
+          {birthType === 'ABORTION' && (
+            <View style={[styles.row, { zIndex: 9, marginTop: 4 }]}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>{t('farmActivities.abortionDate', 'Abortion Date*')}</Text>
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowAbortionDatePicker(true)}
+                >
+                  <Text style={styles.dateText}>{abortionDate.toLocaleDateString()}</Text>
+                  <Calendar size={16} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+                {showAbortionDatePicker && (
+                  <DateTimePicker
+                    value={abortionDate}
+                    mode="date"
+                    display="default"
+                    onChange={(e, d) => {
+                      setShowAbortionDatePicker(false);
+                      if (d) setAbortionDate(d);
+                    }}
+                  />
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Breeding Remark */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={styles.inputLabel}>{t('farmActivities.breedingRemark', 'Breeding Remark')}</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                value={breedingRemark}
+                onChangeText={setBreedingRemark}
+                placeholder="Enter remarks (optional)"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+            </View>
           </View>
+
+          {/* Dynamic Kids Fields (hidden if ABORTION) */}
+          {birthType !== 'ABORTION' && (
+            <View style={{ zIndex: 1, marginTop: 8 }}>
+              {kids.map((kid, index) => renderKidFields(kid, index))}
+            </View>
+          )}
 
           <TouchableOpacity 
             style={[styles.saveButton, { backgroundColor: theme.colors.primary, opacity: isSaving ? 0.7 : 1 }]}

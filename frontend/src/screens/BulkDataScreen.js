@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
+import AnimalIcon from '../components/AnimalIcon';
+import BreedingIcon from '../components/BreedingIcon';
+import MatingIcon from '../components/MatingIcon';
 import {
   FileSpreadsheet,
   Download,
@@ -28,7 +31,8 @@ import {
   Activity,
   Heart,
   Scale,
-  Syringe
+  Syringe,
+  Stethoscope
 } from 'lucide-react-native';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
@@ -37,11 +41,12 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
 
 const ENTITIES = [
-  { id: 'animals', label: 'Animals', icon: PawPrint },
-  { id: 'breeding', label: 'Breeding', icon: Activity },
-  { id: 'mating', label: 'Mating', icon: Heart },
+  { id: 'animals', label: 'Animals', icon: AnimalIcon },
+  { id: 'breeding', label: 'Breeding', icon: BreedingIcon },
+  { id: 'mating', label: 'Mating', icon: MatingIcon },
   { id: 'weight', label: 'Weight', icon: Scale },
-  { id: 'vaccination', label: 'Vaccination', icon: Syringe }
+  { id: 'vaccination', label: 'Vaccination', icon: Syringe },
+  { id: 'treatment', label: 'Treatment', icon: Stethoscope }
 ];
 
 const BulkDataScreen = ({ navigation, route }) => {
