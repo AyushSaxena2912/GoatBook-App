@@ -54,14 +54,17 @@ const AddTreatmentScreen = ({ navigation, route }) => {
     }
   }, []);
 
+  const searchVersionRef = React.useRef(0);
   const handleTagChange = async (text) => {
     setTagNumber(text);
     const cleaned = text.trim();
     if (cleaned.length >= 3) {
+      const currentVersion = ++searchVersionRef.current;
       setSearching(true);
       setIsNotFound(false);
       try {
         const response = await api.get(`/animals/check-tag/${cleaned}`);
+        if (currentVersion !== searchVersionRef.current) return; // stale response
         if (response.data && response.data.id) {
           setAnimal(response.data);
           setIsNotFound(false);
@@ -70,10 +73,13 @@ const AddTreatmentScreen = ({ navigation, route }) => {
           setIsNotFound(true);
         }
       } catch (error) {
+        if (currentVersion !== searchVersionRef.current) return; // stale response
         setAnimal(null);
         setIsNotFound(true);
       } finally {
-        setSearching(false);
+        if (currentVersion === searchVersionRef.current) {
+          setSearching(false);
+        }
       }
     } else {
       setAnimal(null);

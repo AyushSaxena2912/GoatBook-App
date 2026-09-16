@@ -84,14 +84,17 @@ const AddBreedingScreen = ({ navigation, route }) => {
     }
   }, [isEditing, editItem]);
 
+  const searchVersionRef = React.useRef(0);
   const handleTagChange = async (text) => {
     setSearchTag(text);
     const cleaned = text.trim();
     if (cleaned.length >= 3) {
+      const currentVersion = ++searchVersionRef.current;
       setIsSearching(true);
       setIsNotFound(false);
       try {
         const res = await api.get(`/animals/check-tag/${cleaned}`);
+        if (currentVersion !== searchVersionRef.current) return; // stale response
         if (res.data && res.data.id) {
           setAnimal(res.data);
           setIsNotFound(false);
@@ -100,10 +103,13 @@ const AddBreedingScreen = ({ navigation, route }) => {
           setIsNotFound(true);
         }
       } catch (err) {
+        if (currentVersion !== searchVersionRef.current) return; // stale response
         setAnimal(null);
         setIsNotFound(true);
       } finally {
-        setIsSearching(false);
+        if (currentVersion === searchVersionRef.current) {
+          setIsSearching(false);
+        }
       }
     } else {
       setAnimal(null);
