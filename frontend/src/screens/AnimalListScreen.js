@@ -192,6 +192,7 @@ const AnimalListScreen = ({ navigation, route }) => {
           if (!isNaN(maxVal)) result = result.filter(a => a.netSalePrice >= priceVal && a.netSalePrice <= maxVal);
         }
       }
+    }
     if (activeSearch && activeSearch.trim() !== '') {
       const q = activeSearch.toLowerCase().trim().replace(/^#+/, '');
       result = result.filter(animal => {
