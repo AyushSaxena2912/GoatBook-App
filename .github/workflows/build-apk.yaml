@@ -36,6 +36,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Google removed the deprecated `tools` package (default for this action).
+          packages: 'platform-tools'
 
       - name: Install dependencies
         run: |
