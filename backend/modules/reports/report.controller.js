@@ -10,7 +10,7 @@ exports.getOverallReport = async (req, res) => {
     // 1. Fetch all animals currently alive in the farm
     const animals = await prisma.animals.findMany({
       where: { farm_id: farmId, status: 'LIVE' },
-      select: { gender: true, birth_date: true, is_breeder: true, female_condition: true }
+      select: { gender: true, birth_date: true, age_in_months: true, is_breeder: true, female_condition: true }
     });
 
     const now = new Date();
@@ -40,11 +40,19 @@ exports.getOverallReport = async (req, res) => {
       if (animal.is_breeder) stats.breeder++;
 
       // Categorize by Growth Stage (Age in months)
+      let ageInMonths = null;
       if (animal.birth_date) {
-        const birthDate = new Date(animal.birth_date);
-        // Calculate age difference in months
-        const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
-        
+        const b = new Date(animal.birth_date);
+        let months = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
+        if (now.getDate() < b.getDate()) {
+          months--;
+        }
+        ageInMonths = Math.max(0, months);
+      } else if (animal.age_in_months !== null && animal.age_in_months !== undefined) {
+        ageInMonths = Number(animal.age_in_months);
+      }
+      
+      if (ageInMonths !== null && !isNaN(ageInMonths)) {
         if (ageInMonths >= 0 && ageInMonths < 3) stats.kids0_3++;
         else if (ageInMonths >= 3 && ageInMonths < 6) stats.kids3_6++;
         else if (ageInMonths >= 6 && ageInMonths < 9) stats.kids6_9++;

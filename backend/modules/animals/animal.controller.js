@@ -105,6 +105,61 @@ exports.getAnimals = async (req, res) => {
       where.location_id = req.query.locationId;
     }
 
+    if (req.query.isBreeder !== undefined) {
+      where.is_breeder = req.query.isBreeder === 'true' || req.query.isBreeder === true;
+    }
+
+    if (req.query.femaleCondition) {
+      where.female_condition = req.query.femaleCondition.toUpperCase();
+    }
+
+    if (req.query.ageRange) {
+      const now = new Date();
+      let startMonths = 0;
+      let endMonths = 0;
+
+      if (req.query.ageRange === '0-3') {
+        startMonths = 0;
+        endMonths = 3;
+      } else if (req.query.ageRange === '3-6') {
+        startMonths = 3;
+        endMonths = 6;
+      } else if (req.query.ageRange === '6-9') {
+        startMonths = 6;
+        endMonths = 9;
+      }
+
+      if (endMonths > 0) {
+        const minDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - endMonths, now.getUTCDate(), 0, 0, 0, 0));
+        const maxDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - startMonths, now.getUTCDate(), 23, 59, 59, 999));
+
+        const ageConditions = [
+          {
+            birth_date: {
+              gt: minDate,
+              lte: maxDate
+            }
+          },
+          {
+            AND: [
+              { birth_date: null },
+              { age_in_months: { gte: startMonths, lt: endMonths } }
+            ]
+          }
+        ];
+
+        if (where.OR) {
+          where.AND = [
+            { OR: where.OR },
+            { OR: ageConditions }
+          ];
+          delete where.OR;
+        } else {
+          where.OR = ageConditions;
+        }
+      }
+    }
+
     if (req.query.timeAdded) {
       const date = new Date();
 

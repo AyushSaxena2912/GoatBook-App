@@ -30,6 +30,7 @@ const AnimalListScreen = ({ navigation, route }) => {
   // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -50,7 +51,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchAnimals(1);
+      fetchAnimals(1, null, null, null, null, route.params);
       fetchBreeds();
       fetchLocations();
       if (route.params?.initialSearch) {
@@ -92,21 +93,35 @@ const AnimalListScreen = ({ navigation, route }) => {
   useEffect(() => {
     let result = animals;
     
-    const { breedId, locationId, gender, isBreeder, femaleCondition, ageRange } = route.params || {};
+    const { breedId, locationId, gender, isBreeder, femaleCondition, ageRange, status } = route.params || {};
     const now = new Date();
+
+    function calculateAgeInMonths(birthDate, nowDate = new Date()) {
+      const b = new Date(birthDate);
+      let months = (nowDate.getFullYear() - b.getFullYear()) * 12 + (nowDate.getMonth() - b.getMonth());
+      if (nowDate.getDate() < b.getDate()) {
+        months--;
+      }
+      return Math.max(0, months);
+    }
 
     // Strict filters from navigation
     if (breedId) result = result.filter(a => a.breedId === breedId);
     if (locationId) result = result.filter(a => a.locationId === locationId);
-    if (gender) result = result.filter(a => a.gender === gender);
+    if (gender) result = result.filter(a => (a.gender || '').toUpperCase() === gender.toUpperCase());
+    if (status) result = result.filter(a => (a.status || '').toUpperCase() === status.toUpperCase());
     if (isBreeder !== undefined) result = result.filter(a => a.isBreeder === isBreeder);
-    if (femaleCondition) result = result.filter(a => a.femaleCondition === femaleCondition);
+    if (femaleCondition) result = result.filter(a => (a.femaleCondition || '').toUpperCase() === femaleCondition.toUpperCase());
 
     if (ageRange) {
       result = result.filter(a => {
-        if (!a.birthDate) return false;
-        const bDate = new Date(a.birthDate);
-        const age = (now.getFullYear() - bDate.getFullYear()) * 12 + (now.getMonth() - bDate.getMonth());
+        let age = null;
+        if (a.birthDate) {
+          age = calculateAgeInMonths(a.birthDate, now);
+        } else if (a.ageInMonths !== null && a.ageInMonths !== undefined) {
+          age = Number(a.ageInMonths);
+        }
+        if (age === null || isNaN(age)) return false;
         
         if (ageRange === '0-3') return age >= 0 && age < 3;
         if (ageRange === '3-6') return age >= 3 && age < 6;
@@ -194,54 +209,84 @@ const AnimalListScreen = ({ navigation, route }) => {
     setFilteredAnimals(result);
   }, [animals, route.params, activeFilters, activeSearch]);
 
-  const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null, searchOverride = null) => {
+  const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null, searchOverride = null, navParamsOverride = null) => {
     try {
       if (pageNumber === 1) setLoading(true);
       else setIsFetchingMore(true);
 
       // Use passed-in filters if provided (needed because setState is async)
-      const filtersToApply = filtersOverride !== null ? filtersOverride : activeFilters;
-      const currentSortBy = sortByOverride !== null ? sortByOverride : sortBy;
-      const currentSortOrder = sortOrderOverride !== null ? sortOrderOverride : sortOrder;
-      const currentSearch = searchOverride !== null ? searchOverride : activeSearch;
-      const genderArr = filtersToApply?.gender || [];
+      const filtersToApply = filtersOverride !== null && filtersOverride !== undefined ? filtersOverride : activeFilters;
+      const currentSortBy = sortByOverride !== null && sortByOverride !== undefined ? sortByOverride : sortBy;
+      const currentSortOrder = sortOrderOverride !== null && sortOrderOverride !== undefined ? sortOrderOverride : sortOrder;
+      const currentSearch = searchOverride !== null && searchOverride !== undefined ? searchOverride : activeSearch;
+      const currentNav = navParamsOverride !== null && navParamsOverride !== undefined ? navParamsOverride : (route.params || {});
 
-      // Build query string — send gender to backend when exactly one is selected.
-      // Selecting both Male & Female = no restriction, so we skip the param.
       let url = `/animals?page=${pageNumber}&limit=100&sortBy=${currentSortBy}&sortOrder=${currentSortOrder}`;
+      
       if (currentSearch && currentSearch.trim() !== '') {
         url += `&search=${encodeURIComponent(currentSearch.trim())}`;
       }
-      if (genderArr.length === 1) {
-        url += `&gender=${genderArr[0].toUpperCase()}`;
-      }
 
-      const typeArr = filtersToApply?.animalTypes || [];
-      if (typeArr.length === 1) {
-        url += `&animalType=${typeArr[0].toUpperCase()}`;
-      }
-
+      // 1. Status: nav param takes priority, else activeFilters
       const statusArr = filtersToApply?.status || [];
-      if (statusArr.length === 1) {
-        url += `&status=${statusArr[0].toUpperCase()}`;
+      if (currentNav.status) {
+        url += `&status=${encodeURIComponent(currentNav.status.toUpperCase())}`;
+      } else if (statusArr.length === 1) {
+        url += `&status=${encodeURIComponent(statusArr[0].toUpperCase())}`;
       }
 
+      // 2. Gender: nav param takes priority, else activeFilters
+      const genderArr = filtersToApply?.gender || [];
+      if (currentNav.gender) {
+        url += `&gender=${encodeURIComponent(currentNav.gender.toUpperCase())}`;
+      } else if (genderArr.length === 1) {
+        url += `&gender=${encodeURIComponent(genderArr[0].toUpperCase())}`;
+      }
+
+      // 3. Breeder status from navigation
+      if (currentNav.isBreeder !== undefined) {
+        url += `&isBreeder=${currentNav.isBreeder}`;
+      }
+
+      // 4. Female condition from navigation
+      if (currentNav.femaleCondition) {
+        url += `&femaleCondition=${encodeURIComponent(currentNav.femaleCondition.toUpperCase())}`;
+      }
+
+      // 5. Age Range from navigation
+      if (currentNav.ageRange) {
+        url += `&ageRange=${encodeURIComponent(currentNav.ageRange)}`;
+      }
+
+      // 6. Breed: nav param takes priority, else activeFilters
       const breedArr = filtersToApply?.breeds || [];
-      if (breedArr.length === 1 && allBreeds.length > 0) {
+      if (currentNav.breedId) {
+        url += `&breedId=${encodeURIComponent(currentNav.breedId)}`;
+      } else if (breedArr.length === 1 && allBreeds.length > 0) {
         const selectedBreed = allBreeds.find(b => b.name === breedArr[0]);
         if (selectedBreed) {
           url += `&breedId=${selectedBreed.id}`;
         }
       }
 
+      // 7. Location: nav param takes priority, else activeFilters
       const shedArr = filtersToApply?.sheds || [];
-      if (shedArr.length === 1 && allLocations.length > 0) {
+      if (currentNav.locationId) {
+        url += `&locationId=${encodeURIComponent(currentNav.locationId)}`;
+      } else if (shedArr.length === 1 && allLocations.length > 0) {
         const selectedLoc = allLocations.find(l => l.name === shedArr[0]);
         if (selectedLoc) {
           url += `&locationId=${selectedLoc.id}`;
         }
       }
 
+      // 8. Animal Type
+      const typeArr = filtersToApply?.animalTypes || [];
+      if (typeArr.length === 1) {
+        url += `&animalType=${typeArr[0].toUpperCase()}`;
+      }
+
+      // 9. Time Added filter
       const timeAddedVal = filtersToApply?.timeAdded;
       if (timeAddedVal && timeAddedVal !== 'All') {
         let backendTime = '';
@@ -275,6 +320,7 @@ const AnimalListScreen = ({ navigation, route }) => {
       
       setPage(paginationInfo.page);
       setTotalPages(paginationInfo.totalPages);
+      setTotalCount(paginationInfo.totalAnimals !== undefined ? paginationInfo.totalAnimals : fetchedAnimals.length);
 
       setLoading(false);
       setIsFetchingMore(false);
@@ -297,7 +343,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   const loadMoreAnimals = () => {
     if (!isFetchingMore && page < totalPages && !loading) {
-      fetchAnimals(page + 1, activeFilters, sortBy, sortOrder, activeSearch);
+      fetchAnimals(page + 1, activeFilters, sortBy, sortOrder, activeSearch, route.params);
     }
   };
 
@@ -345,7 +391,7 @@ const AnimalListScreen = ({ navigation, route }) => {
     try {
       await api.delete('/animals/bulk', { data: { ids: selectedIds } });
       // Success - refresh list
-      await fetchAnimals(1);
+      await fetchAnimals(1, activeFilters, sortBy, sortOrder, activeSearch, route.params);
       exitSelectionMode();
       showAlert(t('common.deleted', 'Deleted'), t('animalList.deleteSuccess', 'Successfully removed {{count}} animals.', {count: selectedIds.length}), 'success');
     } catch (error) {
@@ -360,7 +406,7 @@ const AnimalListScreen = ({ navigation, route }) => {
     const term = (textToSearch !== undefined ? textToSearch : searchInputText).trim();
     setActiveSearch(term);
     setPage(1);
-    fetchAnimals(1, activeFilters, sortBy, sortOrder, term);
+    fetchAnimals(1, activeFilters, sortBy, sortOrder, term, route.params);
   };
 
   const handleClearSearch = () => {
@@ -368,7 +414,7 @@ const AnimalListScreen = ({ navigation, route }) => {
     if (activeSearch) {
       setActiveSearch('');
       setPage(1);
-      fetchAnimals(1, activeFilters, sortBy, sortOrder, '');
+      fetchAnimals(1, activeFilters, sortBy, sortOrder, '', route.params);
     }
   };
 
@@ -384,7 +430,7 @@ const AnimalListScreen = ({ navigation, route }) => {
         if (activeSearch) {
           setActiveSearch('');
           setPage(1);
-          fetchAnimals(1, activeFilters, sortBy, sortOrder, '');
+          fetchAnimals(1, activeFilters, sortBy, sortOrder, '', route.params);
         }
       });
     } else {
@@ -493,7 +539,7 @@ const AnimalListScreen = ({ navigation, route }) => {
           setActiveFilters(filters);
           setIsFilterModalVisible(false);
           // Re-fetch from page 1 with new filters (pass directly — setActiveFilters is async)
-          fetchAnimals(1, filters);
+          fetchAnimals(1, filters, sortBy, sortOrder, activeSearch, route.params);
         }}
       />
 
@@ -535,7 +581,7 @@ const AnimalListScreen = ({ navigation, route }) => {
                     setSortBy(option.sortBy);
                     setSortOrder(option.sortOrder);
                     setIsSortModalVisible(false);
-                    fetchAnimals(1, activeFilters, option.sortBy, option.sortOrder);
+                    fetchAnimals(1, activeFilters, option.sortBy, option.sortOrder, activeSearch, route.params);
                   }}
                 >
                   <Text style={[
@@ -571,6 +617,7 @@ const AnimalListScreen = ({ navigation, route }) => {
       ) : (
         <GHeader 
           title={t('animalList.title', 'Animals List')} 
+          subTitle={`${totalCount} ${t('common.animals', 'Animals')}`}
           onMenu={!navigation.canGoBack() ? () => navigation.openDrawer() : undefined} 
           onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} 
           leftAlign={true}
