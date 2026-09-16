@@ -84,30 +84,29 @@ const AddMatingScreen = ({ navigation, route }) => {
     }
   }, [isEditing, editItem]);
 
-  const handleTagChange = async (text) => {
-    setSearchTag(text);
-    const cleaned = text.trim();
-    if (cleaned.length >= 3) {
-      setIsSearching(true);
-      setIsNotFound(false);
-      try {
-        const res = await api.get(`/animals/check-tag/${cleaned}`);
-        if (res.data && res.data.id) {
-          setAnimal(res.data);
-          setIsNotFound(false);
-        } else {
-          setAnimal(null);
-          setIsNotFound(true);
-        }
-      } catch (err) {
-        setAnimal(null);
-        setIsNotFound(true);
-      } finally {
-        setIsSearching(false);
-      }
-    } else {
+  const handleTagSearch = async () => {
+    const cleaned = (searchTag || '').trim();
+    if (!cleaned) {
       setAnimal(null);
       setIsNotFound(false);
+      return;
+    }
+    setIsSearching(true);
+    setIsNotFound(false);
+    try {
+      const res = await api.get(`/animals/check-tag/${cleaned}`);
+      if (res.data && res.data.id) {
+        setAnimal(res.data);
+        setIsNotFound(false);
+      } else {
+        setAnimal(null);
+        setIsNotFound(true);
+      }
+    } catch (err) {
+      setAnimal(null);
+      setIsNotFound(true);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -183,20 +182,38 @@ const AddMatingScreen = ({ navigation, route }) => {
                   <TextInput
                     style={[styles.searchInput, { color: theme.colors.text }]}
                     value={searchTag}
-                    onChangeText={handleTagChange}
-                    placeholder="2012"
+                    onChangeText={(text) => {
+                      setSearchTag(text);
+                      setIsNotFound(false);
+                      if (!text.trim()) setAnimal(null);
+                    }}
+                    placeholder="Enter Tag ID (e.g. BB11)"
                     placeholderTextColor={theme.colors.textMuted}
+                    returnKeyType="search"
+                    onSubmitEditing={handleTagSearch}
+                    autoCapitalize="characters"
                   />
-                  {isSearching ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                  ) : searchTag ? (
-                    <TouchableOpacity onPress={() => {setSearchTag(''); setAnimal(null); setIsNotFound(false);}}>
+                  {searchTag ? (
+                    <TouchableOpacity onPress={() => { setSearchTag(''); setAnimal(null); setIsNotFound(false); }} style={{ padding: 4 }}>
                       <X size={18} color={theme.colors.textMuted} />
                     </TouchableOpacity>
-                  ) : (
-                    <Search size={20} color={theme.colors.textMuted} />
-                  )}
+                  ) : null}
                 </View>
+                <TouchableOpacity
+                  style={[styles.addButton, { backgroundColor: theme.colors.primary, opacity: isSearching ? 0.7 : 1 }]}
+                  onPress={handleTagSearch}
+                  disabled={isSearching}
+                  activeOpacity={0.8}
+                >
+                  {isSearching ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Search size={16} color="#FFF" />
+                      <Text style={styles.addButtonText}>{t('common.search', 'Search')}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
               </View>
 
               {isNotFound && (

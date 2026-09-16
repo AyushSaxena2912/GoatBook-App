@@ -48,42 +48,29 @@ const AddTreatmentScreen = ({ navigation, route }) => {
   const [successVisible, setSuccessVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
-    if (tagNumber && !animal) {
-      handleTagChange(tagNumber);
-    }
-  }, []);
-
-  const searchVersionRef = React.useRef(0);
-  const handleTagChange = async (text) => {
-    setTagNumber(text);
-    const cleaned = text.trim();
-    if (cleaned.length >= 3) {
-      const currentVersion = ++searchVersionRef.current;
-      setSearching(true);
-      setIsNotFound(false);
-      try {
-        const response = await api.get(`/animals/check-tag/${cleaned}`);
-        if (currentVersion !== searchVersionRef.current) return; // stale response
-        if (response.data && response.data.id) {
-          setAnimal(response.data);
-          setIsNotFound(false);
-        } else {
-          setAnimal(null);
-          setIsNotFound(true);
-        }
-      } catch (error) {
-        if (currentVersion !== searchVersionRef.current) return; // stale response
-        setAnimal(null);
-        setIsNotFound(true);
-      } finally {
-        if (currentVersion === searchVersionRef.current) {
-          setSearching(false);
-        }
-      }
-    } else {
+  const handleTagSearch = async (tagToSearch) => {
+    const targetTag = (tagToSearch !== undefined ? tagToSearch : tagNumber || '').trim();
+    if (!targetTag) {
       setAnimal(null);
       setIsNotFound(false);
+      return;
+    }
+    setSearching(true);
+    setIsNotFound(false);
+    try {
+      const response = await api.get(`/animals/check-tag/${targetTag}`);
+      if (response.data && response.data.id) {
+        setAnimal(response.data);
+        setIsNotFound(false);
+      } else {
+        setAnimal(null);
+        setIsNotFound(true);
+      }
+    } catch (error) {
+      setAnimal(null);
+      setIsNotFound(true);
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -157,24 +144,48 @@ const AddTreatmentScreen = ({ navigation, route }) => {
           {/* Tag Search Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('farmActivities.identifyAnimal', 'Identify Animal*')}</Text>
-            <View style={{ flex: 1 }}>
-              <GInput
-                label={t('farmActivities.scanEnterTagId', 'Scan/Enter Tag ID')}
-                value={tagNumber}
-                onChangeText={handleTagChange}
-                placeholder="2012"
-                disabled={isEditing || !!preSelectedAnimal}
-                editable={!isEditing && !preSelectedAnimal}
-                rightIcon={
-                  searching ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                  ) : tagNumber && !isEditing && !preSelectedAnimal ? (
-                    <TouchableOpacity onPress={() => { setTagNumber(''); setAnimal(null); setIsNotFound(false); }}>
-                      <X size={18} color={theme.colors.textMuted} />
-                    </TouchableOpacity>
-                  ) : null
-                }
-              />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <GInput
+                  label={t('farmActivities.scanEnterTagId', 'Scan/Enter Tag ID')}
+                  value={tagNumber}
+                  onChangeText={(text) => {
+                    setTagNumber(text);
+                    setIsNotFound(false);
+                    if (!text.trim()) setAnimal(null);
+                  }}
+                  onSubmitEditing={() => handleTagSearch()}
+                  returnKeyType="search"
+                  placeholder="Enter Tag ID (e.g. BB11)"
+                  disabled={isEditing || !!preSelectedAnimal}
+                  editable={!isEditing && !preSelectedAnimal}
+                  autoCapitalize="characters"
+                  rightIcon={
+                    tagNumber && !isEditing && !preSelectedAnimal ? (
+                      <TouchableOpacity onPress={() => { setTagNumber(''); setAnimal(null); setIsNotFound(false); }} style={{ padding: 4 }}>
+                        <X size={18} color={theme.colors.textMuted} />
+                      </TouchableOpacity>
+                    ) : null
+                  }
+                />
+              </View>
+              {!isEditing && !preSelectedAnimal && (
+                <TouchableOpacity
+                  style={[styles.searchBtn, { backgroundColor: theme.colors.primary, opacity: searching ? 0.7 : 1 }]}
+                  onPress={() => handleTagSearch()}
+                  disabled={searching}
+                  activeOpacity={0.8}
+                >
+                  {searching ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Search size={16} color="#FFF" />
+                      <Text style={styles.searchBtnText}>{t('common.search', 'Search')}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
 
             {isNotFound && (
@@ -380,6 +391,19 @@ const getStyles = (theme, isDarkMode, insets) =>
     animalBreed: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
     animalMeta: { fontSize: 13, fontFamily: 'Inter_400Regular' },
     row: { flexDirection: 'row' },
+    searchBtn: {
+      height: 52,
+      paddingHorizontal: 18,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    searchBtnText: {
+      color: '#FFF',
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 14,
+    },
     footer: {
       paddingHorizontal: SPACING.lg,
       paddingTop: SPACING.md,
