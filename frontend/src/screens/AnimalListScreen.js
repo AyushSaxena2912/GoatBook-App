@@ -21,7 +21,8 @@ const AnimalListScreen = ({ navigation, route }) => {
   const [filteredAnimals, setFilteredAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInputText, setSearchInputText] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
   const { t } = useTranslation();
@@ -53,7 +54,8 @@ const AnimalListScreen = ({ navigation, route }) => {
       fetchBreeds();
       fetchLocations();
       if (route.params?.initialSearch) {
-        setSearchQuery(route.params.initialSearch);
+        setSearchInputText(route.params.initialSearch);
+        setActiveSearch(route.params.initialSearch);
         setIsSearching(true);
       }
       // Reset all filters, sorting and search when user leaves the screen
@@ -61,7 +63,8 @@ const AnimalListScreen = ({ navigation, route }) => {
         setActiveFilters({});
         setSortBy('created_at');
         setSortOrder('desc');
-        setSearchQuery('');
+        setSearchInputText('');
+        setActiveSearch('');
         setIsSearching(false);
         setPage(1);
       };
@@ -112,15 +115,7 @@ const AnimalListScreen = ({ navigation, route }) => {
       });
     }
 
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(animal => 
-        animal.tagNumber.toLowerCase().includes(q) ||
-        (animal.Breed?.name && animal.Breed.name.toLowerCase().includes(q)) ||
-        (animal.Location?.name && animal.Location.name.toLowerCase().includes(q)) ||
-        (animal.gender && animal.gender.toLowerCase().startsWith(q))
-      );
-    }
+
     
     // Apply Advanced Filters
     if (activeFilters.sheds?.length > 0) {
@@ -185,9 +180,9 @@ const AnimalListScreen = ({ navigation, route }) => {
     }
     
     setFilteredAnimals(result);
-  }, [searchQuery, animals, route.params, activeFilters]);
+  }, [animals, route.params, activeFilters]);
 
-  const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null) => {
+  const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null, searchOverride = null) => {
     try {
       if (pageNumber === 1) setLoading(true);
       else setIsFetchingMore(true);
@@ -196,11 +191,15 @@ const AnimalListScreen = ({ navigation, route }) => {
       const filtersToApply = filtersOverride !== null ? filtersOverride : activeFilters;
       const currentSortBy = sortByOverride !== null ? sortByOverride : sortBy;
       const currentSortOrder = sortOrderOverride !== null ? sortOrderOverride : sortOrder;
+      const currentSearch = searchOverride !== null ? searchOverride : activeSearch;
       const genderArr = filtersToApply?.gender || [];
 
       // Build query string — send gender to backend when exactly one is selected.
       // Selecting both Male & Female = no restriction, so we skip the param.
       let url = `/animals?page=${pageNumber}&limit=100&sortBy=${currentSortBy}&sortOrder=${currentSortOrder}`;
+      if (currentSearch && currentSearch.trim() !== '') {
+        url += `&search=${encodeURIComponent(currentSearch.trim())}`;
+      }
       if (genderArr.length === 1) {
         url += `&gender=${genderArr[0].toUpperCase()}`;
       }
@@ -286,7 +285,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   const loadMoreAnimals = () => {
     if (!isFetchingMore && page < totalPages && !loading) {
-      fetchAnimals(page + 1, activeFilters);
+      fetchAnimals(page + 1, activeFilters, sortBy, sortOrder, activeSearch);
     }
   };
 
@@ -345,14 +344,37 @@ const AnimalListScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleTriggerSearch = (textToSearch) => {
+    const term = (textToSearch !== undefined ? textToSearch : searchInputText).trim();
+    setActiveSearch(term);
+    setPage(1);
+    fetchAnimals(1, activeFilters, sortBy, sortOrder, term);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInputText('');
+    if (activeSearch) {
+      setActiveSearch('');
+      setPage(1);
+      fetchAnimals(1, activeFilters, sortBy, sortOrder, '');
+    }
+  };
+
   const toggleSearch = () => {
     if (isSearching) {
-      setSearchQuery('');
+      setSearchInputText('');
       Animated.timing(searchBarTranslateY, {
         toValue: -100,
         duration: 300,
         useNativeDriver: true,
-      }).start(() => setIsSearching(false));
+      }).start(() => {
+        setIsSearching(false);
+        if (activeSearch) {
+          setActiveSearch('');
+          setPage(1);
+          fetchAnimals(1, activeFilters, sortBy, sortOrder, '');
+        }
+      });
     } else {
       setIsSearching(true);
       Animated.timing(searchBarTranslateY, {
@@ -428,9 +450,9 @@ const AnimalListScreen = ({ navigation, route }) => {
     <View style={styles.emptyContainer}>
       <SearchX size={64} color={theme.colors.border} />
       <Text style={[styles.noRecords, { color: theme.colors.text }]}>
-        {searchQuery ? t('animalList.noMatch', "No matching animals found") : t('animalList.noAnimals', "No Animals found")}
+        {(activeSearch || searchInputText) ? t('animalList.noMatch', "No matching animals found") : t('animalList.noAnimals', "No Animals found")}
       </Text>
-      {!searchQuery && (
+      {!(activeSearch || searchInputText) && (
         <Text style={[styles.emptyDescription, { color: theme.colors.textLight }]}>
           {t('animalList.emptyDesc', 'Start managing your farm by adding your first goat or sheep. Click the button below to register an animal.')}
         </Text>
@@ -565,20 +587,30 @@ const AnimalListScreen = ({ navigation, route }) => {
       {isSearching && (
         <Animated.View style={[styles.searchBarContainer, { backgroundColor: theme.colors.surface, transform: [{ translateY: searchBarTranslateY }] }]}>
           <View style={[styles.searchInner, { backgroundColor: isDarkMode ? '#000' : '#F9FAFB' }]}>
-            <Search size={20} color={theme.colors.textLight} style={styles.searchIcon} />
+            <Search size={18} color={theme.colors.textLight} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder={t('animalList.searchPlaceholder', "Search tag, breed, location or gender...")}
+              placeholder={t('animalList.searchPlaceholder', "Search tag, breed, location...")}
               placeholderTextColor={theme.colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
+              value={searchInputText}
+              onChangeText={setSearchInputText}
+              returnKeyType="search"
+              onSubmitEditing={() => handleTriggerSearch(searchInputText)}
+              autoCapitalize="characters"
               autoFocus
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+            {searchInputText.length > 0 && (
+              <TouchableOpacity onPress={handleClearSearch} style={{ padding: 4, marginRight: 6 }}>
                 <X size={18} color={theme.colors.textLight} />
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              style={[styles.manualSearchBtn, { backgroundColor: theme.colors.primary }]}
+              onPress={() => handleTriggerSearch(searchInputText)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.manualSearchBtnText}>{t('common.search', 'Search')}</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       )}
@@ -717,6 +749,19 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: 15,
     paddingVertical: 8,
     fontFamily: 'Inter_500Medium',
+  },
+  manualSearchBtn: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  manualSearchBtnText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
   },
   actionRow: {
     padding: 16,

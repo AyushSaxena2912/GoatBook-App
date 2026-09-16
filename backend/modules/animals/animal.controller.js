@@ -78,20 +78,31 @@ exports.getAnimals = async (req, res) => {
       farm_id: req.farmId
     };
 
+    if (req.query.search && req.query.search.trim() !== '') {
+      const searchStr = req.query.search.trim();
+      where.OR = [
+        { tag_number: { contains: searchStr, mode: 'insensitive' } },
+        { batch_no: { contains: searchStr, mode: 'insensitive' } },
+        { color: { contains: searchStr, mode: 'insensitive' } },
+        { breeds: { name: { contains: searchStr, mode: 'insensitive' } } },
+        { locations: { name: { contains: searchStr, mode: 'insensitive' } } }
+      ];
+    }
+
     if (req.query.gender) {
       where.gender = req.query.gender.toUpperCase();
     }
     if (req.query.animalType) {
-      where.animalType = req.query.animalType.toUpperCase();
+      where.animal_type = req.query.animalType.toUpperCase();
     }
     if (req.query.status) {
       where.status = req.query.status.toUpperCase();
     }
     if (req.query.breedId) {
-      where.breedId = req.query.breedId;
+      where.breed_id = req.query.breedId;
     }
     if (req.query.locationId) {
-      where.locationId = req.query.locationId;
+      where.location_id = req.query.locationId;
     }
 
     if (req.query.timeAdded) {
