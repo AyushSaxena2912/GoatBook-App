@@ -49,17 +49,27 @@ const AddTreatmentScreen = ({ navigation, route }) => {
   const [successMessage, setSuccessMessage] = useState('');
 
   const handleTagSearch = async (tagToSearch) => {
-    const targetTag = (tagToSearch !== undefined ? tagToSearch : tagNumber || '').trim();
-    if (!targetTag) {
+    const raw = (tagToSearch !== undefined ? tagToSearch : tagNumber || '').trim();
+    if (!raw) {
       setAnimal(null);
       setIsNotFound(false);
       return;
     }
+    const cleaned = raw.replace(/^#+/, '').trim();
     setSearching(true);
     setIsNotFound(false);
     try {
-      const response = await api.get(`/animals/check-tag/${targetTag}`);
-      if (response.data && response.data.id) {
+      let response;
+      try {
+        response = await api.get(`/animals/check-tag/${encodeURIComponent(cleaned)}`);
+      } catch (e) {
+        if (cleaned !== raw) {
+          response = await api.get(`/animals/check-tag/${encodeURIComponent(raw)}`);
+        } else {
+          throw e;
+        }
+      }
+      if (response && response.data && response.data.id) {
         setAnimal(response.data);
         setIsNotFound(false);
       } else {

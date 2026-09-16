@@ -177,10 +177,22 @@ const AnimalListScreen = ({ navigation, route }) => {
           if (!isNaN(maxVal)) result = result.filter(a => a.netSalePrice >= priceVal && a.netSalePrice <= maxVal);
         }
       }
+    if (activeSearch && activeSearch.trim() !== '') {
+      const q = activeSearch.toLowerCase().trim().replace(/^#+/, '');
+      result = result.filter(animal => {
+        const tag = String(animal.tagNumber || animal.tag_number || '').toLowerCase();
+        const tagClean = tag.replace(/^#+/, '');
+        const breed = String(animal.Breed?.name || animal.breedName || '').toLowerCase();
+        const loc = String(animal.Location?.name || animal.currentLocationName || '').toLowerCase();
+        const gen = String(animal.gender || '').toLowerCase();
+        const batch = String(animal.batchNo || '').toLowerCase();
+        const color = String(animal.color || '').toLowerCase();
+        return tag.includes(q) || tagClean.includes(q) || breed.includes(q) || loc.includes(q) || gen.startsWith(q) || batch.includes(q) || color.includes(q);
+      });
     }
     
     setFilteredAnimals(result);
-  }, [animals, route.params, activeFilters]);
+  }, [animals, route.params, activeFilters, activeSearch]);
 
   const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null, searchOverride = null) => {
     try {

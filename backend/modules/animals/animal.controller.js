@@ -585,9 +585,16 @@ exports.deleteAnimal = async (req, res) => {
 // @route   GET /api/animals/check-tag/:tagNumber
 exports.checkTagExists = async (req, res) => {
   try {
+    const rawTag = decodeURIComponent(req.params.tagNumber || '').trim();
+    const tagClean = rawTag.replace(/^#+/, '').trim();
+
     const animal = await prisma.animals.findFirst({
       where: {
-        tag_number: req.params.tagNumber,
+        OR: [
+          { tag_number: { equals: rawTag, mode: 'insensitive' } },
+          { tag_number: { equals: tagClean, mode: 'insensitive' } },
+          { tag_number: { equals: `#${tagClean}`, mode: 'insensitive' } },
+        ],
         farm_id: req.farmId
       },
       include: {

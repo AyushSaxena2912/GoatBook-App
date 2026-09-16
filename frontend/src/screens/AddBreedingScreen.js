@@ -85,17 +85,27 @@ const AddBreedingScreen = ({ navigation, route }) => {
   }, [isEditing, editItem]);
 
   const handleTagSearch = async () => {
-    const cleaned = (searchTag || '').trim();
-    if (!cleaned) {
+    const raw = (searchTag || '').trim();
+    if (!raw) {
       setAnimal(null);
       setIsNotFound(false);
       return;
     }
+    const cleaned = raw.replace(/^#+/, '').trim();
     setIsSearching(true);
     setIsNotFound(false);
     try {
-      const res = await api.get(`/animals/check-tag/${cleaned}`);
-      if (res.data && res.data.id) {
+      let res;
+      try {
+        res = await api.get(`/animals/check-tag/${encodeURIComponent(cleaned)}`);
+      } catch (e) {
+        if (cleaned !== raw) {
+          res = await api.get(`/animals/check-tag/${encodeURIComponent(raw)}`);
+        } else {
+          throw e;
+        }
+      }
+      if (res && res.data && res.data.id) {
         setAnimal(res.data);
         setIsNotFound(false);
       } else {
