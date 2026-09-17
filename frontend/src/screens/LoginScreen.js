@@ -23,6 +23,16 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
+    const isEmail = identifier.includes('@');
+    if (isEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+      alert('This email is incorrect');
+      return;
+    }
+    if (!isEmail && identifier.replace(/\D/g, '').slice(-10).length !== 10) {
+      alert('This mobile number is incorrect');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { identifier, password: pwd });

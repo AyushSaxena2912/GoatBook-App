@@ -1,4 +1,5 @@
 const prisma = require('../../config/prisma');
+const { getAnimalAgeInMonths, getKidAgeBucket } = require('../../utils/animalAge');
 
 // @desc    Get Farm Dashboard Analytics
 // @route   GET /api/analytics/dashboard
@@ -6,95 +7,94 @@ exports.getDashboardAnalytics = async (req, res) => {
   try {
     const farmId = req.farmId;
 
-    // Fetch all animals for this farm to calculate metrics in memory (fast enough for typical farm sizes, and easier to calculate age-based metrics)
     const allAnimals = await prisma.animals.findMany({
       where: { farm_id: farmId },
       select: {
-        id: true,
         status: true,
         gender: true,
         birth_date: true,
+        age_in_months: true,
         is_breeder: true,
+        female_condition: true,
         acquisition_method: true,
-      }
+        death_date: true,
+        sold_at: true,
+      },
     });
-
-    let totalAnimals = 0;
-    let breedingDoes = 0;
-    let kidsBorn = 0;
-    let totalDead = 0;
-
-    let bucksCount = 0;
-    let doesCount = 0;
-    let kidsCount = 0;
 
     const now = new Date();
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(now.getMonth() - 6);
-
     const startOfYear = new Date(now.getFullYear(), 0, 1);
 
-    allAnimals.forEach(animal => {
-      // Mortality
+    let liveAnimals = 0;
+    let male = 0;
+    let female = 0;
+    let breeders = 0;
+    let pregnant = 0;
+    let kids0_3 = 0;
+    let kids3_6 = 0;
+    let kids6_9 = 0;
+    let kidsBornThisYear = 0;
+    let deadThisYear = 0;
+    let soldThisYear = 0;
+
+    allAnimals.forEach((animal) => {
       if (animal.status === 'DEAD') {
-        totalDead++;
+        const diedAt = animal.death_date ? new Date(animal.death_date) : null;
+        if (diedAt && diedAt >= startOfYear) deadThisYear++;
       }
 
-      // Total Animals (all statuses — complete farm record)
-      totalAnimals++;
-
-      // Live animal stats
-      if (animal.status === 'LIVE') {
-
-        // Kids Born (This Year)
-        if (animal.acquisition_method === 'BORN' && animal.birth_date && new Date(animal.birth_date) >= startOfYear) {
-          kidsBorn++;
-        }
-
-        // Determine age
-        let isKid = false;
-        if (animal.birth_date) {
-          const birthDate = new Date(animal.birth_date);
-          if (birthDate > sixMonthsAgo) {
-            isKid = true;
-          }
-        }
-
-        if (isKid) {
-          kidsCount++;
-        } else if (animal.gender === 'FEMALE') {
-          doesCount++;
-          if (animal.is_breeder) breedingDoes++;
-        } else if (animal.gender === 'MALE') {
-          bucksCount++;
-        }
+      if (animal.status === 'SOLD') {
+        const soldAt = animal.sold_at ? new Date(animal.sold_at) : null;
+        if (soldAt && soldAt >= startOfYear) soldThisYear++;
       }
+
+      if (animal.status !== 'LIVE') return;
+
+      liveAnimals++;
+
+      if (animal.gender === 'MALE') male++;
+      if (animal.gender === 'FEMALE') {
+        female++;
+        if (animal.female_condition === 'PREGNANT') pregnant++;
+      }
+
+      if (animal.is_breeder) breeders++;
+
+      if (animal.acquisition_method === 'BORN' && animal.birth_date && new Date(animal.birth_date) >= startOfYear) {
+        kidsBornThisYear++;
+      }
+
+      const bucket = getKidAgeBucket(getAnimalAgeInMonths(animal, now));
+      if (bucket === '0-3') kids0_3++;
+      else if (bucket === '3-6') kids3_6++;
+      else if (bucket === '6-9') kids6_9++;
     });
-
-    const mortalityRate = (totalDead > 0 || totalAnimals > 0) 
-      ? ((totalDead / (totalAnimals + totalDead)) * 100).toFixed(1) 
-      : 0;
-
-    // If dates are missing, fallback for does/bucks
-    if (kidsCount === 0) {
-        doesCount = allAnimals.filter(a => a.status === 'LIVE' && a.gender === 'FEMALE').length;
-        bucksCount = allAnimals.filter(a => a.status === 'LIVE' && a.gender === 'MALE').length;
-    }
 
     res.json({
       metrics: {
-        totalAnimals,
-        breedingDoes,
-        kidsBorn,
-        mortalityRate: `${mortalityRate}%`,
+        liveAnimals,
+        male,
+        female,
+        breeders,
+        pregnant,
+        kids0_3,
+        kids3_6,
+        kids6_9,
+        kidsBornThisYear,
+        deadThisYear,
+        soldThisYear,
+        // keep old keys so older app builds do not crash
+        totalAnimals: liveAnimals,
+        breedingDoes: breeders,
+        kidsBorn: kidsBornThisYear,
+        mortalityRate: String(deadThisYear),
       },
       composition: {
-        bucks: bucksCount,
-        does: doesCount,
-        kids: kidsCount,
-      }
+        bucks: male,
+        does: female,
+        kids: kids0_3 + kids3_6 + kids6_9,
+      },
     });
-
   } catch (err) {
     console.error('ANALYTICS ERROR:', err);
     res.status(500).json({ message: 'Server Error fetching analytics' });

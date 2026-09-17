@@ -1,15 +1,14 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Alert, Platform, Modal, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Platform, Modal, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/ThemeContext';
 import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import { 
-  Menu, GitBranch, PawPrint, User, Home, Syringe, Scale, 
+  Menu, PawPrint, User, Home, Syringe, Scale, 
   Heart, Activity, ClipboardList, Globe, Settings, Briefcase,
-  Moon, Sun, RefreshCcw, Milk, Sliders, Bell, AlertTriangle, CheckCircle2,
-  TrendingDown, TrendingUp, Leaf
+  Moon, Sun, RefreshCcw, Milk, Sliders, Bell, Leaf
 } from 'lucide-react-native';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -137,6 +136,25 @@ const DashboardScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const openAnimals = (filters = {}) => {
+    navigation.navigate('AnimalList', {
+      ...CLEARED_ANIMAL_LIST_PARAMS,
+      listReset: false,
+      ...filters,
+    });
+  };
+
+  const StatCell = ({ label, value, onPress, third }) => (
+    <TouchableOpacity
+      style={[styles.statCell, third && styles.statCellThird]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.statValue}>{value ?? 0}</Text>
+      <Text style={styles.statLabel} numberOfLines={2}>{label}</Text>
+    </TouchableOpacity>
+  );
+
   const renderDashboardHeader = () => {
     if (loading) {
       return <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20, marginBottom: 40 }} />;
@@ -144,93 +162,85 @@ const DashboardScreen = ({ navigation }) => {
 
     if (!analytics) return null;
 
-    const { metrics, composition } = analytics;
-    const totalComp = composition.bucks + composition.does + composition.kids;
-    const bucksPct = totalComp > 0 ? (composition.bucks / totalComp) * 100 : 0;
-    const doesPct = totalComp > 0 ? (composition.does / totalComp) * 100 : 0;
-    const kidsPct = totalComp > 0 ? (composition.kids / totalComp) * 100 : 0;
+    const { metrics } = analytics;
+    const live = metrics.liveAnimals ?? metrics.totalAnimals ?? 0;
+    const male = metrics.male ?? 0;
+    const female = metrics.female ?? 0;
+    const year = new Date().getFullYear();
 
     return (
       <View>
-        <Text style={styles.sectionTitle}>{t('dashboard.overview', 'Overview')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiScroll}>
-          {/* Total Animals */}
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconContainer, { backgroundColor: '#f59e0b15' }]}>
-                <PawPrint color="#f59e0b" size={18} />
-              </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.totalAnimals', 'Total Animals')}</Text>
-            </View>
-            <Text style={styles.kpiValue}>{metrics.totalAnimals}</Text>
-          </View>
+        <Text style={styles.sectionTitle}>{t('dashboard.overview', 'Farm summary')}</Text>
 
-          {/* Breeding Does */}
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconContainer, { backgroundColor: '#10b98115' }]}>
-                <Heart color="#10b981" size={18} />
-              </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.breedingDoes', 'Breeding Does')}</Text>
-            </View>
-            <Text style={styles.kpiValue}>{metrics.breedingDoes}</Text>
+        <TouchableOpacity
+          style={styles.heroCard}
+          onPress={() => openAnimals({ status: 'LIVE' })}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.kpiIconContainer, { backgroundColor: '#f59e0b15' }]}>
+            <PawPrint color="#f59e0b" size={18} />
           </View>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.heroLabel}>{t('dashboard.liveAnimals', 'Live animals')}</Text>
+            <Text style={styles.heroValue}>{live}</Text>
+          </View>
+        </TouchableOpacity>
 
-          {/* Kids Born */}
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconContainer, { backgroundColor: '#3b82f615' }]}>
-                <Activity color="#3b82f6" size={18} />
-              </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.kidsBorn', 'Kids Born')}</Text>
-            </View>
-            <Text style={styles.kpiValue}>{metrics.kidsBorn}</Text>
-          </View>
+        <View style={styles.statGrid}>
+          <StatCell
+            label={t('dashboard.male', 'Male')}
+            value={male}
+            onPress={() => openAnimals({ gender: 'MALE', status: 'LIVE' })}
+          />
+          <StatCell
+            label={t('dashboard.female', 'Female')}
+            value={female}
+            onPress={() => openAnimals({ gender: 'FEMALE', status: 'LIVE' })}
+          />
+          <StatCell
+            label={t('dashboard.pregnant', 'Pregnant')}
+            value={metrics.pregnant}
+            onPress={() => openAnimals({ femaleCondition: 'PREGNANT', status: 'LIVE' })}
+          />
+          <StatCell
+            label={t('dashboard.breeders', 'Breeders')}
+            value={metrics.breeders ?? metrics.breedingDoes}
+            onPress={() => openAnimals({ isBreeder: true, status: 'LIVE' })}
+          />
+        </View>
 
-          {/* Mortality */}
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconContainer, { backgroundColor: '#ef444415' }]}>
-                <TrendingDown color="#ef4444" size={18} />
-              </View>
-              <Text style={styles.kpiTitle} numberOfLines={1}>{t('dashboard.mortality', 'Mortality')}</Text>
-            </View>
-            <Text style={styles.kpiValue}>{metrics.mortalityRate}</Text>
-          </View>
-        </ScrollView>
+        <Text style={styles.sectionTitle}>{t('dashboard.kidsByAge', 'Kids by age')}</Text>
+        <View style={styles.statGrid}>
+          <StatCell
+            third
+            label={t('dashboard.kids0_3', '0–3 months')}
+            value={metrics.kids0_3}
+            onPress={() => openAnimals({ ageRange: '0-3', status: 'LIVE' })}
+          />
+          <StatCell
+            third
+            label={t('dashboard.kids3_6', '3–6 months')}
+            value={metrics.kids3_6}
+            onPress={() => openAnimals({ ageRange: '3-6', status: 'LIVE' })}
+          />
+          <StatCell
+            third
+            label={t('dashboard.kids6_9', '6–9 months')}
+            value={metrics.kids6_9}
+            onPress={() => openAnimals({ ageRange: '6-9', status: 'LIVE' })}
+          />
+        </View>
 
-        <Text style={styles.sectionTitle}>{t('dashboard.herdComposition', 'Herd Composition')}</Text>
-        <View style={styles.compositionCard}>
-          <View style={styles.compHeader}>
-            <GitBranch color={theme.colors.primary} size={20} />
-            <Text style={styles.compTitle}>{t('dashboard.byGenderAndAge', 'By Gender & Age')}</Text>
-          </View>
-
-          {/* Custom Horizontal Bar */}
-          <View style={styles.barContainer}>
-            <View style={{ width: `${bucksPct}%`, backgroundColor: '#3b82f6' }} />
-            <View style={{ width: `${doesPct}%`, backgroundColor: '#10b981' }} />
-            <View style={{ width: `${kidsPct}%`, backgroundColor: '#f59e0b' }} />
-          </View>
-
-          {/* Legend */}
-          <View style={styles.compLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} />
-              <Text style={styles.legendText}>{t('dashboard.bucks', 'Bucks')}</Text>
-              <Text style={styles.legendValue}>{Math.round(bucksPct)}%</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
-              <Text style={styles.legendText}>{t('dashboard.does', 'Does')}</Text>
-              <Text style={styles.legendValue}>{Math.round(doesPct)}%</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
-              <Text style={styles.legendText}>{t('dashboard.kids', 'Kids')}</Text>
-              <Text style={styles.legendValue}>{Math.round(kidsPct)}%</Text>
-            </View>
-          </View>
+        <View style={styles.yearCard}>
+          <Heart color={theme.colors.primary} size={16} />
+          <Text style={styles.yearText}>
+            {t('dashboard.thisYear', '{{year}}: {{born}} born · {{dead}} died · {{sold}} sold', {
+              year,
+              born: metrics.kidsBornThisYear ?? metrics.kidsBorn ?? 0,
+              dead: metrics.deadThisYear ?? 0,
+              sold: metrics.soldThisYear ?? 0,
+            })}
+          </Text>
         </View>
 
         <Text style={styles.sectionTitle}>{t('dashboard.quickActions', 'Quick Actions')}</Text>

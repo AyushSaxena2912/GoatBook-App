@@ -9,6 +9,27 @@ const { seedFormulation } = require('../../seed_formulation');
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_123456789');
 
+const normalizeEmail = (value) => {
+  const trimmed = String(value || '').trim().toLowerCase();
+  return trimmed || null;
+};
+
+const phoneDigits = (value) => String(value || '').replace(/\D/g, '');
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const looksLikeEmail = (value) => String(value || '').includes('@');
+
+const farmExistsMessage = (emailConflict, phoneConflict) => {
+  if (emailConflict && phoneConflict) {
+    return 'A farm already exists with this email or mobile number. Please login instead.';
+  }
+  if (emailConflict) {
+    return 'A farm already exists with this email. Please login instead.';
+  }
+  return 'A farm already exists with this mobile number. Please login instead.';
+};
+
 // @desc    Owner Registration Flow (Email + Phone + Password)
 // @route   POST api/auth/register
 exports.register = async (req, res) => {
@@ -17,6 +38,28 @@ exports.register = async (req, res) => {
   // Basic validation to ensure required fields are present
   if (!phone || !password || !name || !farmName || !planName) {
     return res.status(400).json({ message: 'Name, phone, password, farm name, and plan name are required' });
+  }
+
+  const emailNorm = normalizeEmail(email);
+  const phoneNorm = String(phone).trim();
+  const last10 = phoneDigits(phoneNorm).slice(-10);
+  const nameNorm = String(name || '').trim();
+  const farmNameNorm = String(farmName || '').trim();
+
+  if (!nameNorm || nameNorm.length < 2) {
+    return res.status(400).json({ message: 'Please enter a valid name', field: 'name' });
+  }
+  if (!farmNameNorm) {
+    return res.status(400).json({ message: 'Please enter a farm name', field: 'farmName' });
+  }
+  if (last10.length !== 10) {
+    return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number', field: 'phone' });
+  }
+  if (emailNorm && !EMAIL_REGEX.test(emailNorm)) {
+    return res.status(400).json({ message: 'Please enter a valid email address', field: 'email' });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters', field: 'password' });
   }
 
   const isPlanTrial = isTrial !== undefined ? isTrial : true;
@@ -28,25 +71,42 @@ exports.register = async (req, res) => {
   }
 
   try {
-    console.log('--- Register Attempt ---', { name, email, phone, farmName, planName, isTrial: isPlanTrial });
-    // 1. Check if user already exists by either email or phone for uniqueness
-    const existingUser = await prisma.users.findFirst({
-      where: {
-        OR: [
-          email ? { email } : null,
-          { phone }
-        ].filter(Boolean)
-      }
-    });
+    console.log('--- Register Attempt ---', { name, email: emailNorm, phone: phoneNorm, farmName, planName, isTrial: isPlanTrial });
 
-    if (existingUser) {
-      console.log('User already exists:', existingUser.id);
-      if (email && existingUser.email === email) {
-        return res.status(400).json({ message: 'User with this email already exists' });
-      } else {
-        return res.status(400).json({ message: 'User with this phone number already exists' });
-      }
+    const userWhere = [
+      emailNorm ? { email: { equals: emailNorm, mode: 'insensitive' } } : null,
+      { phone: phoneNorm },
+      last10.length === 10 ? { phone: { endsWith: last10 } } : null
+    ].filter(Boolean);
+
+    const existingUser = await prisma.users.findFirst({ where: { OR: userWhere } });
+
+    const farmWhere = [
+      emailNorm ? { email: { equals: emailNorm, mode: 'insensitive' } } : null,
+      { phone: phoneNorm },
+      last10.length === 10 ? { phone: { endsWith: last10 } } : null
+    ].filter(Boolean);
+
+    const existingFarm = farmWhere.length
+      ? await prisma.farms.findFirst({ where: { OR: farmWhere } })
+      : null;
+
+    if (existingUser || existingFarm) {
+      const emailConflict = !!(
+        emailNorm && (
+          (existingUser?.email && existingUser.email.toLowerCase() === emailNorm) ||
+          (existingFarm?.email && existingFarm.email.toLowerCase() === emailNorm)
+        )
+      );
+      const phoneConflict = !!(
+        (existingUser?.phone && phoneDigits(existingUser.phone).slice(-10) === last10) ||
+        (existingFarm?.phone && phoneDigits(existingFarm.phone).slice(-10) === last10)
+      );
+      return res.status(400).json({
+        message: farmExistsMessage(emailConflict, phoneConflict || !emailConflict)
+      });
     }
+
     console.log('User check passed, starting transaction...');
 
     // Encrypt password before saving
@@ -59,9 +119,9 @@ exports.register = async (req, res) => {
       const user = await tx.users.create({
         data: {
           id: uuidv4(),
-          name,
-          email: email || null,
-          phone,
+          name: nameNorm,
+          email: emailNorm,
+          phone: phoneNorm,
           password: hashedPassword,
           created_at: now,
           updated_at: now
@@ -86,7 +146,7 @@ exports.register = async (req, res) => {
       const farm = await tx.farms.create({
         data: {
           id: uuidv4(),
-          name: farmName,
+          name: farmNameNorm,
           location: farmLocation || null,
           owner_employee_id: employee.id,
           created_by_user_id: user.id,
@@ -161,6 +221,14 @@ exports.register = async (req, res) => {
 
   } catch (err) {
     console.error('REGISTRATION ERROR:', err);
+    if (err.code === 'P2002') {
+      const fields = Array.isArray(err.meta?.target) ? err.meta.target.join(' ') : String(err.meta?.target || '');
+      const emailConflict = fields.includes('email');
+      const phoneConflict = fields.includes('phone');
+      return res.status(400).json({
+        message: farmExistsMessage(emailConflict, phoneConflict || !emailConflict)
+      });
+    }
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
@@ -177,14 +245,25 @@ exports.login = async (req, res) => {
   const strIdentifier = String(identifier).trim();
 
   try {
-    // Find user where identifier matches EITHER email OR phone
+    const last10 = phoneDigits(strIdentifier).slice(-10);
+    const identifierIsEmail = looksLikeEmail(strIdentifier);
+
+    if (identifierIsEmail && !EMAIL_REGEX.test(strIdentifier.toLowerCase())) {
+      return res.status(400).json({ message: 'This email is incorrect', field: 'email' });
+    }
+    if (!identifierIsEmail && last10.length !== 10) {
+      return res.status(400).json({ message: 'This mobile number is incorrect', field: 'phone' });
+    }
+
     const user = await prisma.users.findFirst({
-      where: {
-        OR: [
-          { email: { equals: strIdentifier, mode: 'insensitive' } },
-          { phone: strIdentifier }
-        ]
-      },
+      where: identifierIsEmail
+        ? { email: { equals: strIdentifier.toLowerCase(), mode: 'insensitive' } }
+        : {
+            OR: [
+              { phone: strIdentifier },
+              { phone: { endsWith: last10 } }
+            ]
+          },
       include: {
         employees: {
           include: {
@@ -198,9 +277,15 @@ exports.login = async (req, res) => {
       }
     });
 
-    // Validate existence and password match
-    if (!user || !(await comparePassword(password, user.password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user) {
+      return res.status(401).json({
+        message: identifierIsEmail ? 'This email is incorrect' : 'This mobile number is incorrect',
+        field: identifierIsEmail ? 'email' : 'phone'
+      });
+    }
+
+    if (!(await comparePassword(password, user.password))) {
+      return res.status(401).json({ message: 'This password is incorrect', field: 'password' });
     }
 
     const employeeProfile = user.employees?.[0];

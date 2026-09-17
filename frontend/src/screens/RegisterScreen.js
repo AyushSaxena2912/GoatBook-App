@@ -27,28 +27,55 @@ const RegisterScreen = ({ navigation }) => {
 
   // Function to handle user registration
   const handleRegister = async () => {
-    // 1. Basic validation: ensure all mandatory fields have values
-    if (!formData.firstName || !formData.phone || !formData.password || !formData.farmName) {
-      alert('Please fill in required fields');
+    const firstName = formData.firstName.trim();
+    const email = formData.email.trim();
+    const phone = formData.phone.trim();
+    const password = formData.password;
+    const farmName = formData.farmName.trim();
+    const phoneDigits = phone.replace(/\D/g, '').slice(-10);
+
+    if (!firstName) {
+      alert('Please enter your first name');
       return;
     }
-
-    // 2. Security Check: ensure password and confirmation match
-    if (formData.password !== formData.confirmPassword) {
+    if (!phone) {
+      alert('Please enter your mobile number');
+      return;
+    }
+    if (phoneDigits.length !== 10) {
+      alert('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    if (!password) {
+      alert('Please enter a password');
+      return;
+    }
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+    if (password !== formData.confirmPassword) {
       alert('Passwords do not match');
+      return;
+    }
+    if (!farmName) {
+      alert('Please enter a farm name');
       return;
     }
 
     setLoading(true);
     try {
-      // 3. Prepare payload for the backend API
       const payload = {
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        farmName: formData.farmName,
-        farmLocation: formData.farmLocation,
+        name: `${firstName} ${formData.lastName}`.trim(),
+        email,
+        phone,
+        password,
+        farmName,
+        farmLocation: formData.farmLocation.trim(),
         planName: formData.planName,
         isTrial: true
       };

@@ -29,7 +29,17 @@
     "gotIt": "Got it"
   },
   "dashboard": {
-    "overview": "Overview",
+    "overview": "Farm summary",
+    "liveAnimals": "Live animals",
+    "male": "Male",
+    "female": "Female",
+    "pregnant": "Pregnant",
+    "breeders": "Breeders",
+    "kidsByAge": "Kids by age",
+    "kids0_3": "0–3 months",
+    "kids3_6": "3–6 months",
+    "kids6_9": "6–9 months",
+    "thisYear": "{{year}}: {{born}} born · {{dead}} died · {{sold}} sold",
     "totalAnimals": "Total Animals",
     "breedingDoes": "Breeding Does",
     "kidsBorn": "Kids Born",

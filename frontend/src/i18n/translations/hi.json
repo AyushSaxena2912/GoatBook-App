@@ -29,7 +29,17 @@
     "gotIt": "समझ गया"
   },
   "dashboard": {
-    "overview": "अवलोकन",
+    "overview": "फार्म सारांश",
+    "liveAnimals": "जीवित पशु",
+    "male": "नर",
+    "female": "मादा",
+    "pregnant": "गर्भवती",
+    "breeders": "प्रजनक",
+    "kidsByAge": "बच्चों की उम्र",
+    "kids0_3": "0–3 महीने",
+    "kids3_6": "3–6 महीने",
+    "kids6_9": "6–9 महीने",
+    "thisYear": "{{year}}: {{born}} जन्म · {{dead}} मृत्यु · {{sold}} बिक्री",
     "totalAnimals": "कुल पशु",
     "breedingDoes": "प्रजनक मादाएं",
     "kidsBorn": "पैदा हुए बच्चे",
