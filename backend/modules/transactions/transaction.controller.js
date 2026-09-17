@@ -19,7 +19,7 @@ const parseSafeDate = (dateVal) => {
 // @access  Private
 const getTransactions = async (req, res) => {
   try {
-    const farmId = req.headers['x-farm-id'] || req.query.farmId;
+    const farmId = req.farmId || req.headers['x-farm-id'] || req.query.farmId;
     if (!farmId) return res.status(400).json({ message: 'Farm ID is required' });
 
     const { startDate, endDate, category, type } = req.query;

@@ -12,6 +12,32 @@ import { getFromCache, saveToCache } from '../utils/cache';
 import AnimalFilterModal from '../components/AnimalFilterModal';
 import { useTranslation } from 'react-i18next';
 
+const normalizeSearchValue = (value) =>
+  String(value || '').trim().toLowerCase().replace(/^#+/, '');
+
+const getAnimalSearchRank = (animal, query) => {
+  const q = normalizeSearchValue(query);
+  if (!q) return 4;
+  const fields = [
+    normalizeSearchValue(animal.tagNumber || animal.tag_number),
+    normalizeSearchValue(animal.batchNo),
+    normalizeSearchValue(animal.color),
+    normalizeSearchValue(animal.Breed?.name || animal.breedName),
+    normalizeSearchValue(animal.Location?.name || animal.currentLocationName),
+    normalizeSearchValue(animal.gender),
+  ];
+  let best = 4;
+  for (const field of fields) {
+    if (!field) continue;
+    let rank = 4;
+    if (field === q) rank = 1;
+    else if (field.startsWith(q)) rank = 2;
+    else if (field.includes(q)) rank = 3;
+    if (rank < best) best = rank;
+  }
+  return best;
+};
+
 const AnimalListScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -204,6 +230,14 @@ const AnimalListScreen = ({ navigation, route }) => {
         const batch = String(animal.batchNo || '').toLowerCase();
         const color = String(animal.color || '').toLowerCase();
         return tag.includes(q) || tagClean.includes(q) || breed.includes(q) || loc.includes(q) || gen.startsWith(q) || batch.includes(q) || color.includes(q);
+      });
+      result = [...result].sort((a, b) => {
+        const rankDiff = getAnimalSearchRank(a, q) - getAnimalSearchRank(b, q);
+        if (rankDiff !== 0) return rankDiff;
+        const tagA = String(a.tagNumber || a.tag_number || '');
+        const tagB = String(b.tagNumber || b.tag_number || '');
+        if (tagA.length !== tagB.length) return tagA.length - tagB.length;
+        return tagA.localeCompare(tagB, undefined, { numeric: true, sensitivity: 'base' });
       });
     }
     

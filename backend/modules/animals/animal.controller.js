@@ -36,6 +36,43 @@ const parseSafeDate = (dateVal) => {
   return null;
 };
 
+const normalizeSearchValue = (value) =>
+  String(value || '').trim().toLowerCase().replace(/^#+/, '');
+
+// 1 exact, 2 starts with, 3 contains, 4 other
+const getSearchRank = (animal, query) => {
+  const q = normalizeSearchValue(query);
+  if (!q) return 4;
+
+  const fields = [
+    normalizeSearchValue(animal.tag_number),
+    normalizeSearchValue(animal.batch_no),
+    normalizeSearchValue(animal.color),
+    normalizeSearchValue(animal.breeds?.name),
+    normalizeSearchValue(animal.locations?.name),
+  ];
+
+  let best = 4;
+  for (const field of fields) {
+    if (!field) continue;
+    let rank = 4;
+    if (field === q) rank = 1;
+    else if (field.startsWith(q)) rank = 2;
+    else if (field.includes(q)) rank = 3;
+    if (rank < best) best = rank;
+  }
+  return best;
+};
+
+const compareAnimalsBySearch = (a, b, query) => {
+  const rankDiff = getSearchRank(a, query) - getSearchRank(b, query);
+  if (rankDiff !== 0) return rankDiff;
+  const tagA = String(a.tag_number || '');
+  const tagB = String(b.tag_number || '');
+  if (tagA.length !== tagB.length) return tagA.length - tagB.length;
+  return tagA.localeCompare(tagB, undefined, { numeric: true, sensitivity: 'base' });
+};
+
 // @desc    Get all animals for the current farm
 // @route   GET /api/animals
 exports.getAnimals = async (req, res) => {
@@ -78,8 +115,8 @@ exports.getAnimals = async (req, res) => {
       farm_id: req.farmId
     };
 
-    if (req.query.search && req.query.search.trim() !== '') {
-      const searchStr = req.query.search.trim();
+    const searchStr = req.query.search ? req.query.search.trim() : '';
+    if (searchStr) {
       where.OR = [
         { tag_number: { contains: searchStr, mode: 'insensitive' } },
         { batch_no: { contains: searchStr, mode: 'insensitive' } },
@@ -201,23 +238,30 @@ exports.getAnimals = async (req, res) => {
     }
 
 
-    // Total Animals Count
-    const totalAnimals = await prisma.animals.count({
-      where
-    });
+    const include = {
+      breeds: { select: { name: true, animal_type: true } },
+      locations: { select: { name: true, code: true } }
+    };
 
-    // 2. Fetch animals linked to this farm with breed and location details
-    const animals = await prisma.animals.findMany({
-      where,
-      include: {
-        breeds: { select: { name: true, animal_type: true } },
-        locations: { select: { name: true, code: true } }
-      },
-      orderBy: { [sortBy]: sortOrder },
-      skip: offset,
-      take: limit
+    let totalAnimals;
+    let animals;
 
-    });
+    if (searchStr) {
+      // Rank the full match set before paging so exact tags like BB11 are not buried
+      const matchedAnimals = await prisma.animals.findMany({ where, include });
+      matchedAnimals.sort((a, b) => compareAnimalsBySearch(a, b, searchStr));
+      totalAnimals = matchedAnimals.length;
+      animals = matchedAnimals.slice(offset, offset + limit);
+    } else {
+      totalAnimals = await prisma.animals.count({ where });
+      animals = await prisma.animals.findMany({
+        where,
+        include,
+        orderBy: { [sortBy]: sortOrder },
+        skip: offset,
+        take: limit
+      });
+    }
 
     // 3. Transform database (snake_case) to API standard (camelCase)
     const mapped = animals.map(a => ({
