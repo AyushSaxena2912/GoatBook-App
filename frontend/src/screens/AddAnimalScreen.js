@@ -1370,7 +1370,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                   <View style={styles.weightContent}>
                     <TouchableOpacity 
                       style={styles.addNewBtn}
-                      onPress={() => navigation.navigate('AddVaccination', { mode: 'single', preSelectedAnimal: existingAnimal })}
+                      onPress={() => navigation.navigate('AddVaccination', { mode: 'single', preSelectedAnimal: existingAnimal, tagNumber: existingAnimal.tagNumber })}
                     >
                       <Plus size={14} color="#FFF" />
                       <Text style={styles.addNewText}>Add New Record</Text>

@@ -21,14 +21,22 @@ const AddVaccinationScreen = ({ navigation, route }) => {
   
   const existingRecord = route.params?.record;
   const isEditing = !!existingRecord;
+  const preSelectedAnimal = route.params?.preSelectedAnimal || null;
+  const initialTag =
+    existingRecord?.animal?.tagNumber ||
+    existingRecord?.animal?.tag_number ||
+    preSelectedAnimal?.tagNumber ||
+    preSelectedAnimal?.tag_number ||
+    route.params?.tagNumber ||
+    '';
 
   // Form State
   const [date, setDate] = useState(existingRecord?.date ? new Date(existingRecord.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
   const [vaccineId, setVaccineId] = useState(existingRecord?.vaccineId || '');
   const [nextDueDate, setNextDueDate] = useState(existingRecord?.nextDueDate ? new Date(existingRecord.nextDueDate).toISOString().split('T')[0] : '');
   const [remark, setRemark] = useState(existingRecord?.remark || '');
-  const [tagNumber, setTagNumber] = useState('');
-  const [animal, setAnimal] = useState(existingRecord?.animal || null);
+  const [tagNumber, setTagNumber] = useState(initialTag);
+  const [animal, setAnimal] = useState(existingRecord?.animal || preSelectedAnimal || null);
   
   // UI Data
   const [vaccines, setVaccines] = useState([]);
@@ -110,6 +118,12 @@ const AddVaccinationScreen = ({ navigation, route }) => {
       setSearching(false);
     }
   };
+
+  useEffect(() => {
+    if (!isEditing && initialTag) {
+      handleTagSearch(initialTag);
+    }
+  }, [initialTag]);
 
   const confirmDelete = async () => {
     setDeleting(true);
@@ -206,17 +220,17 @@ const AddVaccinationScreen = ({ navigation, route }) => {
                     placeholder="Enter Tag ID (e.g. BB11)"
                     autoCapitalize="characters"
                     rightIcon={
-                      tagNumber && !isEditing ? (
+                      tagNumber && !isEditing && !preSelectedAnimal ? (
                         <TouchableOpacity onPress={() => { setTagNumber(''); setAnimal(null); setIsNotFound(false); }} style={{ padding: 4 }}>
                           <X size={18} color={theme.colors.textMuted} />
                         </TouchableOpacity>
                       ) : null
                     }
-                    disabled={isEditing}
-                    editable={!isEditing}
+                    disabled={isEditing || !!preSelectedAnimal}
+                    editable={!isEditing && !preSelectedAnimal}
                   />
                 </View>
-                {!isEditing && (
+                {!isEditing && !preSelectedAnimal && (
                   <TouchableOpacity
                     style={[styles.searchBtn, { backgroundColor: theme.colors.primary, opacity: searching ? 0.7 : 1 }]}
                     onPress={() => handleTagSearch()}
@@ -244,7 +258,7 @@ const AddVaccinationScreen = ({ navigation, route }) => {
               {animal && (
                 <View style={[styles.animalCard, { backgroundColor: theme.colors.primary + '08', borderColor: theme.colors.primary + '20' }]}>
                   <View style={styles.animalCardHeader}>
-                    <Text style={[styles.animalTitle, { color: theme.colors.primary }]}>#{animal.tagNumber}</Text>
+                    <Text style={[styles.animalTitle, { color: theme.colors.primary }]}>#{animal.tagNumber || animal.tag_number}</Text>
                     <Text style={[styles.animalBreed, { color: theme.colors.textLight }]}>{animal.breedName}</Text>
                   </View>
                   <Text style={[styles.animalMeta, { color: theme.colors.textLight }]}>
