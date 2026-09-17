@@ -196,7 +196,6 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     marginBottom: 16,
-    gap: 8,
   },
   yearText: {
     flex: 1,
@@ -204,5 +203,6 @@ export const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     color: theme.colors.text,
     lineHeight: 18,
+    marginLeft: 8,
   },
 });
