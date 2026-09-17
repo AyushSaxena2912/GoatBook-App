@@ -4,6 +4,7 @@ import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import { MapPin, Edit, ArrowRight, Info, Users, LayoutGrid, Tag } from 'lucide-react-native';
 import api from '../api';
+import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import { useFocusEffect } from '@react-navigation/native';
 import { SPACING, SHADOW } from '../theme';
 
@@ -101,6 +102,8 @@ const LocationDetailsScreen = ({ navigation, route }) => {
               key={index} 
               style={[styles.breedCard, { backgroundColor: theme.colors.surface }]}
               onPress={() => navigation.navigate('AnimalList', { 
+                ...CLEARED_ANIMAL_LIST_PARAMS,
+                listReset: false,
                 breedId: item.breedId, 
                 locationId: location.id,
                 initialSearch: item.breedName 

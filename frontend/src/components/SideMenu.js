@@ -9,6 +9,7 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { LinearGradient } from 'expo-linear-gradient';
 import api, { setAuthToken, setSelectedFarm } from '../api';
+import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { Modal } from 'react-native';
@@ -127,7 +128,9 @@ const SideMenu = (props) => {
                 isActive && { backgroundColor: theme.colors.primary + '10' }
               ]}
               onPress={() => {
-                if (item.screen) {
+                if (item.screen === 'AnimalList') {
+                  navigation.navigate('AnimalList', { ...CLEARED_ANIMAL_LIST_PARAMS, ...(item.params || {}) });
+                } else if (item.screen) {
                   navigation.navigate(item.screen, item.params);
                 } else {
                   setSoonVisible(true);

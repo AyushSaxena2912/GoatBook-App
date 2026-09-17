@@ -7,6 +7,7 @@ import { ChevronDown } from 'lucide-react-native';
 import api from '../api';
 import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
+import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 
 const OverallReportScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -20,6 +21,14 @@ const OverallReportScreen = ({ navigation }) => {
       fetchStats();
     }, [])
   );
+
+  const openAnimals = (filters = {}) => {
+    navigation.navigate('AnimalList', {
+      ...CLEARED_ANIMAL_LIST_PARAMS,
+      listReset: false,
+      ...filters,
+    });
+  };
 
   const fetchStats = async () => {
     try {
@@ -149,7 +158,7 @@ const OverallReportScreen = ({ navigation }) => {
               label={t('reports.totalAnimal', 'Total Animal')} 
               value={stats.total} 
               color="#4F46E5" 
-              onPress={() => navigation.navigate('AnimalList', { status: 'LIVE' })}
+              onPress={() => openAnimals({ status: 'LIVE' })}
             />
             <View style={styles.gridRow}>
                 <StatRow 
@@ -157,14 +166,14 @@ const OverallReportScreen = ({ navigation }) => {
                     value={stats.male} 
                     color="#F59E0B" 
                     half
-                    onPress={() => navigation.navigate('AnimalList', { gender: 'MALE', status: 'LIVE' })}
+                    onPress={() => openAnimals({ gender: 'MALE', status: 'LIVE' })}
                 />
                 <StatRow 
                     label={t('enums.female', 'Female')} 
                     value={stats.female} 
                     color="#10B981" 
                     half
-                    onPress={() => navigation.navigate('AnimalList', { gender: 'FEMALE', status: 'LIVE' })}
+                    onPress={() => openAnimals({ gender: 'FEMALE', status: 'LIVE' })}
                 />
             </View>
             <View style={styles.gridRow}>
@@ -173,33 +182,33 @@ const OverallReportScreen = ({ navigation }) => {
                     value={stats.breeder} 
                     color="#06B6D4" 
                     half
-                    onPress={() => navigation.navigate('AnimalList', { isBreeder: true, status: 'LIVE' })}
+                    onPress={() => openAnimals({ isBreeder: true, status: 'LIVE' })}
                 />
                 <StatRow 
                     label={t('enums.pregnant', 'Pregnant')} 
                     value={stats.pregnant} 
                     color="#EF4444" 
                     half
-                    onPress={() => navigation.navigate('AnimalList', { femaleCondition: 'PREGNANT', status: 'LIVE' })}
+                    onPress={() => openAnimals({ femaleCondition: 'PREGNANT', status: 'LIVE' })}
                 />
             </View>
             <StatRow 
               label={t('reports.kids0_3', 'Kids (0 - 3 months)')} 
               value={stats.kids0_3} 
               color="#3B82F6" 
-              onPress={() => navigation.navigate('AnimalList', { ageRange: '0-3', status: 'LIVE' })}
+              onPress={() => openAnimals({ ageRange: '0-3', status: 'LIVE' })}
             />
             <StatRow 
               label={t('reports.kids3_6', 'Kids (3 - 6 months)')} 
               value={stats.kids3_6} 
               color="#8B5CF6" 
-              onPress={() => navigation.navigate('AnimalList', { ageRange: '3-6', status: 'LIVE' })}
+              onPress={() => openAnimals({ ageRange: '3-6', status: 'LIVE' })}
             />
             <StatRow 
               label={t('reports.kids6_9', 'Kids (6 - 9 months)')} 
               value={stats.kids6_9} 
               color="#FACC15" 
-              onPress={() => navigation.navigate('AnimalList', { ageRange: '6-9', status: 'LIVE' })}
+              onPress={() => openAnimals({ ageRange: '6-9', status: 'LIVE' })}
             />
           </View>
         </ScrollView>

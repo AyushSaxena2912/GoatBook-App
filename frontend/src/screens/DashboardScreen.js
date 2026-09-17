@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Alert, Platform, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/ThemeContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, CommonActions } from '@react-navigation/native';
+import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import { 
   Menu, GitBranch, PawPrint, User, Home, Syringe, Scale, 
   Heart, Activity, ClipboardList, Globe, Settings, Briefcase,
@@ -43,6 +44,15 @@ const DashboardScreen = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
+      const parent = navigation.getParent();
+      const animalRoute = parent?.getState?.()?.routes?.find((r) => r.name === 'AnimalList');
+      if (animalRoute?.key) {
+        parent.dispatch({
+          ...CommonActions.setParams({ ...CLEARED_ANIMAL_LIST_PARAMS, listReset: true }),
+          source: animalRoute.key,
+        });
+      }
+
       const loadDashboardData = async () => {
         try {
           // 1. Get current farm ID (Check header first, then storage)
@@ -110,7 +120,9 @@ const DashboardScreen = ({ navigation }) => {
     <TouchableOpacity 
       style={styles.tile}
       onPress={() => {
-        if (item.screen) {
+        if (item.screen === 'AnimalList') {
+          navigation.navigate('AnimalList', { ...CLEARED_ANIMAL_LIST_PARAMS });
+        } else if (item.screen) {
           navigation.navigate(item.screen);
         } else {
           setSoonVisible(true);

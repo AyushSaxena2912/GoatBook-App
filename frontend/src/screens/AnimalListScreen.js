@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getFromCache, saveToCache } from '../utils/cache';
 import AnimalFilterModal from '../components/AnimalFilterModal';
 import { useTranslation } from 'react-i18next';
+import { CLEARED_ANIMAL_LIST_PARAMS, hasAnimalListNavFilters } from '../utils/animalListNav';
 
 const normalizeSearchValue = (value) =>
   String(value || '').trim().toLowerCase().replace(/^#+/, '');
@@ -77,16 +78,9 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchAnimals(1, null, null, null, null, route.params);
-      fetchBreeds();
-      fetchLocations();
-      if (route.params?.initialSearch) {
-        setSearchInputText(route.params.initialSearch);
-        setActiveSearch(route.params.initialSearch);
-        setIsSearching(true);
-      }
-      // Reset all filters, sorting and search when user leaves the screen
-      return () => {
+      const params = route.params || {};
+
+      if (params.listReset) {
         setActiveFilters({});
         setSortBy('created_at');
         setSortOrder('desc');
@@ -94,8 +88,43 @@ const AnimalListScreen = ({ navigation, route }) => {
         setActiveSearch('');
         setIsSearching(false);
         setPage(1);
-      };
-    }, [route.params])
+        setIsSelectionMode(false);
+        setSelectedIds([]);
+        fetchAnimals(1, {}, 'created_at', 'desc', '', {});
+        navigation.setParams({ listReset: false });
+      } else if (hasAnimalListNavFilters(params)) {
+        fetchAnimals(1, {}, 'created_at', 'desc', params.initialSearch || '', params);
+        if (params.initialSearch) {
+          setSearchInputText(params.initialSearch);
+          setActiveSearch(params.initialSearch);
+          setIsSearching(true);
+        }
+      } else {
+        fetchAnimals(1, null, null, null, null, params);
+      }
+
+      fetchBreeds();
+      fetchLocations();
+
+      const unsubscribe = navigation.addListener('blur', () => {
+        const drawerState = navigation.getParent()?.getState?.();
+        const activeName = drawerState?.routes?.[drawerState.index]?.name;
+        if (activeName === 'Dashboard') {
+          setActiveFilters({});
+          setSortBy('created_at');
+          setSortOrder('desc');
+          setSearchInputText('');
+          setActiveSearch('');
+          setIsSearching(false);
+          setPage(1);
+          setIsSelectionMode(false);
+          setSelectedIds([]);
+          navigation.setParams({ ...CLEARED_ANIMAL_LIST_PARAMS, listReset: false });
+        }
+      });
+
+      return unsubscribe;
+    }, [route.params, navigation])
   );
 
   const fetchBreeds = async () => {
@@ -136,7 +165,7 @@ const AnimalListScreen = ({ navigation, route }) => {
     if (locationId) result = result.filter(a => a.locationId === locationId);
     if (gender) result = result.filter(a => (a.gender || '').toUpperCase() === gender.toUpperCase());
     if (status) result = result.filter(a => (a.status || '').toUpperCase() === status.toUpperCase());
-    if (isBreeder !== undefined) result = result.filter(a => a.isBreeder === isBreeder);
+    if (isBreeder === true || isBreeder === false) result = result.filter(a => a.isBreeder === isBreeder);
     if (femaleCondition) result = result.filter(a => (a.femaleCondition || '').toUpperCase() === femaleCondition.toUpperCase());
 
     if (ageRange) {
@@ -279,7 +308,7 @@ const AnimalListScreen = ({ navigation, route }) => {
       }
 
       // 3. Breeder status from navigation
-      if (currentNav.isBreeder !== undefined) {
+      if (currentNav.isBreeder === true || currentNav.isBreeder === false) {
         url += `&isBreeder=${currentNav.isBreeder}`;
       }
 
