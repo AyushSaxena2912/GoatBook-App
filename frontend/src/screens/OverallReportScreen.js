@@ -53,7 +53,6 @@ const OverallReportScreen = ({ navigation }) => {
     const data = [
       { label: t('enums.male', 'Male'), value: stats.male, color: '#F59E0B' },
       { label: t('enums.female', 'Female'), value: stats.female, color: '#10B981' },
-      { label: t('enums.kids', 'Kids'), value: stats.kids0_3 + stats.kids3_6 + stats.kids6_9, color: '#3B82F6' },
     ].filter(d => d.value > 0);
 
     let currentAngle = -90;

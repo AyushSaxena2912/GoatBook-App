@@ -12,6 +12,7 @@ import { getFromCache, saveToCache } from '../utils/cache';
 import AnimalFilterModal from '../components/AnimalFilterModal';
 import { useTranslation } from 'react-i18next';
 import { CLEARED_ANIMAL_LIST_PARAMS, hasAnimalListNavFilters } from '../utils/animalListNav';
+import { getAnimalAgeInMonths, getKidAgeBucket } from '../utils/animalAge';
 
 const normalizeSearchValue = (value) =>
   String(value || '').trim().toLowerCase().replace(/^#+/, '');
@@ -149,16 +150,6 @@ const AnimalListScreen = ({ navigation, route }) => {
     let result = animals;
     
     const { breedId, locationId, gender, isBreeder, femaleCondition, ageRange, status } = route.params || {};
-    const now = new Date();
-
-    function calculateAgeInMonths(birthDate, nowDate = new Date()) {
-      const b = new Date(birthDate);
-      let months = (nowDate.getFullYear() - b.getFullYear()) * 12 + (nowDate.getMonth() - b.getMonth());
-      if (nowDate.getDate() < b.getDate()) {
-        months--;
-      }
-      return Math.max(0, months);
-    }
 
     // Strict filters from navigation
     if (breedId) result = result.filter(a => a.breedId === breedId);
@@ -169,20 +160,8 @@ const AnimalListScreen = ({ navigation, route }) => {
     if (femaleCondition) result = result.filter(a => (a.femaleCondition || '').toUpperCase() === femaleCondition.toUpperCase());
 
     if (ageRange) {
-      result = result.filter(a => {
-        let age = null;
-        if (a.birthDate) {
-          age = calculateAgeInMonths(a.birthDate, now);
-        } else if (a.ageInMonths !== null && a.ageInMonths !== undefined) {
-          age = Number(a.ageInMonths);
-        }
-        if (age === null || isNaN(age)) return false;
-        
-        if (ageRange === '0-3') return age >= 0 && age < 3;
-        if (ageRange === '3-6') return age >= 3 && age < 6;
-        if (ageRange === '6-9') return age >= 6 && age < 9;
-        return true;
-      });
+      const nowDate = new Date();
+      result = result.filter(a => getKidAgeBucket(getAnimalAgeInMonths(a, nowDate)) === ageRange);
     }
 
 

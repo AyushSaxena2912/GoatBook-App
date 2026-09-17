@@ -1,4 +1,5 @@
 const prisma = require('../../config/prisma');
+const { getAnimalAgeInMonths, getKidAgeBucket } = require('../../utils/animalAge');
 
 // @desc    Generate a high-level inventory summary for the farm dashboard
 // @route   GET /api/reports/overall
@@ -39,24 +40,10 @@ exports.getOverallReport = async (req, res) => {
       // Categorize by functional role
       if (animal.is_breeder) stats.breeder++;
 
-      // Categorize by Growth Stage (Age in months)
-      let ageInMonths = null;
-      if (animal.birth_date) {
-        const b = new Date(animal.birth_date);
-        let months = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
-        if (now.getDate() < b.getDate()) {
-          months--;
-        }
-        ageInMonths = Math.max(0, months);
-      } else if (animal.age_in_months !== null && animal.age_in_months !== undefined) {
-        ageInMonths = Number(animal.age_in_months);
-      }
-      
-      if (ageInMonths !== null && !isNaN(ageInMonths)) {
-        if (ageInMonths >= 0 && ageInMonths < 3) stats.kids0_3++;
-        else if (ageInMonths >= 3 && ageInMonths < 6) stats.kids3_6++;
-        else if (ageInMonths >= 6 && ageInMonths < 9) stats.kids6_9++;
-      }
+      const bucket = getKidAgeBucket(getAnimalAgeInMonths(animal, now));
+      if (bucket === '0-3') stats.kids0_3++;
+      else if (bucket === '3-6') stats.kids3_6++;
+      else if (bucket === '6-9') stats.kids6_9++;
     });
 
     res.json(stats);
