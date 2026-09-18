@@ -268,6 +268,15 @@ EXPENSE EXPENSE
     }
   
 
+  "notes" {
+    String id "🗝️"
+    String title 
+    String content "❓"
+    DateTime created_at 
+    DateTime updated_at 
+    }
+  
+
   "vaccination_schedules" {
     String id "🗝️"
     Int start_day 
@@ -443,6 +452,10 @@ EXPENSE EXPENSE
     "weights" }o--|o "users" : "users_weights_created_by_user_idTousers"
     "weights" }o--|| "farms" : "farms"
     "weights" }o--|o "users" : "users_weights_updated_by_user_idTousers"
+    "notes" }o--|o "animals" : "animals"
+    "notes" }o--|| "farms" : "farms"
+    "notes" }o--|o "users" : "users_notes_created_by_user_idTousers"
+    "notes" }o--|o "users" : "users_notes_updated_by_user_idTousers"
     "vaccination_schedules" }o--|| "vaccines" : "vaccines"
     "animal_transactions" }o--|| "animals" : "animals"
     "matings" |o--|| "enum_mating_type" : "enum:mating_type"

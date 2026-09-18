@@ -67,6 +67,7 @@
     "reports": "Reports",
     "bulkData": "Bulk Import / Export",
     "feedFormulation": "Feed Formulation",
+    "notes": "Notes",
     "logOut": "Log Out"
   },
   "actions": {
@@ -516,5 +517,27 @@
     "exportDesc": "Download a comprehensive spreadsheet containing all animal details, pedigree tags, weights, and statuses.",
     "selectFilter": "Select Status Filter:",
     "startExportBtn": "Download Animals Spreadsheet (.xlsx)"
+  },
+  "notes": {
+    "newNote": "New Note",
+    "editNote": "Edit Note",
+    "lastEdited": "Last edited",
+    "titlePlaceholder": "Title (optional)",
+    "bodyPlaceholder": "Start writing...",
+    "saveNote": "Save Note",
+    "updateNote": "Update Note",
+    "deleteNote": "Delete Note",
+    "untitled": "Untitled Note",
+    "required": "Nothing to save",
+    "requiredMessage": "Write something before saving your note.",
+    "saved": "Note saved successfully",
+    "updated": "Note updated successfully",
+    "deleted": "Note deleted successfully",
+    "saveFailed": "Failed to save note",
+    "deleteFailed": "Failed to delete note",
+    "deleteTitle": "Delete Note?",
+    "deleteMessage": "Are you sure you want to remove this note permanently? This cannot be undone.",
+    "emptyTitle": "No notes yet",
+    "emptySub": "Jot down anything you want to remember about your farm or animals."
   }
 }

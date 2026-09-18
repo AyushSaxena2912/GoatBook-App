@@ -65,6 +65,8 @@ import LocationMenuScreen from './src/screens/LocationMenuScreen';
 import MassLocationScreen from './src/screens/MassLocationScreen';
 import MassVaccinationScreen from './src/screens/MassVaccinationScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import NoteListScreen from './src/screens/NoteListScreen';
+import AddNoteScreen from './src/screens/AddNoteScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import SideMenu from './src/components/SideMenu';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
@@ -278,6 +280,8 @@ function AppContent() {
           <Stack.Screen name="FinancialList" component={FinancialListScreen} />
           <Stack.Screen name="AddFinancialRecord" component={AddFinancialRecordScreen} />
           <Stack.Screen name="BulkData" component={BulkDataScreen} />
+          <Stack.Screen name="NoteList" component={NoteListScreen} />
+          <Stack.Screen name="AddNote" component={AddNoteScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

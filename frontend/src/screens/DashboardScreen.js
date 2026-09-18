@@ -6,9 +6,10 @@ import { useTheme } from '../theme/ThemeContext';
 import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import { 
-  Menu, PawPrint, User, Home, Syringe, Scale, 
+  Menu, PawPrint, User, Home, Syringe, Scale,
   Heart, Activity, ClipboardList, Globe, Settings, Briefcase,
-  Moon, Sun, RefreshCcw, Milk, Sliders, Bell, Leaf
+  Moon, Sun, RefreshCcw, Milk, Sliders, Bell, Leaf,
+  StickyNote
 } from 'lucide-react-native';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -99,6 +100,7 @@ const DashboardScreen = ({ navigation }) => {
       { id: '7', title: t('actions.mating', 'Mating'), icon: <MatingIcon size={32} color={theme.colors.primary} />, screen: 'MatingList' },
       { id: '8', title: t('actions.breeding', 'Breeding'), icon: <BreedingIcon size={32} color={theme.colors.primary} />, screen: 'BreedingList' },
       { id: '9', title: t('actions.report', 'Report'), icon: <ClipboardList color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReportsMenu' },
+      { id: '17', title: t('menu.notes', 'Notes'), icon: <StickyNote color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'NoteList' },
       { id: '10', title: t('actions.language', 'Language'), icon: <Globe color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'LanguageSelection' },
       { id: '11', title: t('actions.settings', 'Settings'), icon: <Settings color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'Settings' },
       { id: '12', title: t('actions.financials', 'Financials'), icon: <Briefcase color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'FinancialList' },
