@@ -50,8 +50,17 @@ exports.addWeight = async (req, res) => {
     }
 
     // 1. Verify that an animal with this tag exists in the current farm's inventory
+    const rawTag = String(tagNumber || '').trim();
+    const tagClean = rawTag.replace(/^#+/, '').trim();
     const animal = await prisma.animals.findFirst({
-      where: { tag_number: tagNumber, farm_id: req.farmId }
+      where: {
+        farm_id: req.farmId,
+        OR: [
+          { tag_number: { equals: rawTag, mode: 'insensitive' } },
+          { tag_number: { equals: tagClean, mode: 'insensitive' } },
+          { tag_number: { equals: `#${tagClean}`, mode: 'insensitive' } },
+        ],
+      }
     });
     if (!animal) {
       return res.status(404).json({ message: 'No animal found with this Tag Number in your farm' });
@@ -64,7 +73,7 @@ exports.addWeight = async (req, res) => {
         id: uuidv4(), 
         animal_id: animal.id, 
         farm_id: req.farmId || animal.farm_id, 
-        tag_number: tagNumber, 
+        tag_number: animal.tag_number, 
         weight: numericWeight, 
         height: height ? parseFloat(height) : null,
         date: date ? new Date(date) : now, 

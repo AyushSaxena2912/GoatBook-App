@@ -41,13 +41,27 @@ const AddWeightScreen = ({ route, navigation }) => {
     }
   }, [initialTag]);
 
-  const fetchAnimalDetails = async (tag) => {
-    if (!tag) return;
+  const fetchAnimalDetails = async (tagToSearch) => {
+    const raw = String(tagToSearch || '').trim();
+    if (!raw) {
+      setAnimalInfo(null);
+      return;
+    }
+    const cleaned = raw.replace(/^#+/, '').trim();
     try {
       setFetchingAnimal(true);
-      const response = await api.get(`/animals?tagNumber=${tag}`);
-      if (response.data && response.data.length > 0) {
-        setAnimalInfo(response.data[0]);
+      let response;
+      try {
+        response = await api.get(`/animals/check-tag/${encodeURIComponent(cleaned)}`);
+      } catch (e) {
+        if (cleaned !== raw) {
+          response = await api.get(`/animals/check-tag/${encodeURIComponent(raw)}`);
+        } else {
+          throw e;
+        }
+      }
+      if (response?.data?.id) {
+        setAnimalInfo(response.data);
       } else {
         setAnimalInfo(null);
       }
@@ -61,7 +75,7 @@ const AddWeightScreen = ({ route, navigation }) => {
 
   const handleTagChange = (text) => {
     setTagNumber(text);
-    if (text.length >= 3) {
+    if (text.trim().length >= 2) {
       fetchAnimalDetails(text);
     } else {
       setAnimalInfo(null);
@@ -106,22 +120,23 @@ const AddWeightScreen = ({ route, navigation }) => {
         setSuccessMessage('Weight record updated successfully');
         setSuccessVisible(true);
       } else {
-        // Explicit validation check to ensure tag exists
-        const checkRes = await api.get(`/animals?tagNumber=${tagNumber}`);
-        if (!checkRes.data || checkRes.data.length === 0) {
-          Alert.alert('Invalid Tag ID', 'The scanned Tag ID does not exist in our system. Please check and try again.');
+        const cleanedTag = String(tagNumber || '').trim().replace(/^#+/, '');
+        try {
+          await api.get(`/animals/check-tag/${encodeURIComponent(cleanedTag)}`);
+        } catch (e) {
+          Alert.alert('Invalid Tag ID', 'The Tag ID does not exist in your farm. Please check and try again.');
           setLoading(false);
           return;
         }
 
         await api.post('/weights', {
-          tagNumber,
+          tagNumber: cleanedTag,
           weight: parseFloat(weight),
           height: height ? parseFloat(height) : null,
           date,
           remark
         });
-        setSuccessMessage(`Weight record for Tag ${tagNumber} has been saved successfully.`);
+        setSuccessMessage(`Weight record for Tag ${cleanedTag} has been saved successfully.`);
         setSuccessVisible(true);
       }
     } catch (error) {
@@ -167,8 +182,15 @@ const AddWeightScreen = ({ route, navigation }) => {
             <View style={styles.animalDetailCard}>
                <View style={styles.detailRow}>
                 <Info size={16} color={theme.colors.primary} />
+                <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>{t('animalForm.tagId', 'Tag')}: </Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>#{animalInfo.tagNumber || animalInfo.tag_number}</Text>
+              </View>
+               <View style={styles.detailRow}>
+                <Info size={16} color={theme.colors.primary} />
                 <Text style={[styles.detailLabel, { color: theme.colors.textLight }]}>{t('animalForm.breed', 'Breed')}: </Text>
-                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{animalInfo.breed?.name || animalInfo.Breed?.name}</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                  {animalInfo.breedName || animalInfo.breed?.name || animalInfo.Breed?.name || '—'}
+                </Text>
               </View>
               <View style={styles.detailRow}>
                 <Info size={16} color={theme.colors.primary} />
