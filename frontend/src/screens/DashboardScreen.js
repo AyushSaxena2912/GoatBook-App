@@ -1,15 +1,15 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Platform, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, FlatList, ScrollView, Platform, Modal, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/ThemeContext';
 import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import { 
-  Menu, PawPrint, User, Home, Syringe, Scale,
+  Menu, User, Home, Syringe, Scale,
   Heart, Activity, ClipboardList, Globe, Settings, Briefcase,
   Moon, Sun, RefreshCcw, Milk, Sliders, Bell, Leaf,
-  StickyNote, Stethoscope
+  StickyNote, Stethoscope, Search, X, SearchX
 } from 'lucide-react-native';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,16 +31,45 @@ const DashboardScreen = ({ navigation }) => {
   const [soonVisible, setSoonVisible] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [animalResults, setAnimalResults] = useState([]);
+  const [searchingAnimals, setSearchingAnimals] = useState(false);
+
   // Memoize styles to avoid re-calculation on every render
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   
   useEffect(() => {
     // Register for push notifications on app start
-    registerForPushNotificationsAsync().catch(err => 
+    registerForPushNotificationsAsync().catch(err =>
       console.error('Failed to register for push notifications:', err)
     );
   }, []);
+
+  // Debounced live animal search inside the search modal
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!searchVisible || query.length < 2) {
+      setAnimalResults([]);
+      setSearchingAnimals(false);
+      return;
+    }
+
+    setSearchingAnimals(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get(`/animals?page=1&limit=6&search=${encodeURIComponent(query)}`);
+        setAnimalResults(res.data?.animals || []);
+      } catch (err) {
+        console.warn('Dashboard search: Failed to fetch animals:', err);
+        setAnimalResults([]);
+      } finally {
+        setSearchingAnimals(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchVisible]);
 
   useFocusEffect(
     useCallback(() => {
@@ -118,18 +147,20 @@ const DashboardScreen = ({ navigation }) => {
     });
   }, [theme, userRole, t]);
 
+  const goToTile = (item) => {
+    if (item.screen === 'AnimalList') {
+      navigation.navigate('AnimalList', { ...CLEARED_ANIMAL_LIST_PARAMS });
+    } else if (item.screen) {
+      navigation.navigate(item.screen);
+    } else {
+      setSoonVisible(true);
+    }
+  };
+
   const renderTile = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.tile}
-      onPress={() => {
-        if (item.screen === 'AnimalList') {
-          navigation.navigate('AnimalList', { ...CLEARED_ANIMAL_LIST_PARAMS });
-        } else if (item.screen) {
-          navigation.navigate(item.screen);
-        } else {
-          setSoonVisible(true);
-        }
-      }}
+      onPress={() => goToTile(item)}
       activeOpacity={0.7}
     >
       <View style={[styles.tileIconContainer, { backgroundColor: theme.colors.primary + '10' }]}>
@@ -139,6 +170,35 @@ const DashboardScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const matchedTiles = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (query.length < 1) return [];
+    return tiles.filter(tile => tile.title.toLowerCase().includes(query));
+  }, [tiles, searchQuery]);
+
+  const closeSearch = () => {
+    setSearchVisible(false);
+    setSearchQuery('');
+    setAnimalResults([]);
+  };
+
+  const openAnimalFromSearch = (animal) => {
+    closeSearch();
+    navigation.navigate('EditAnimal', { animal });
+  };
+
+  const submitAnimalSearch = (query) => {
+    const trimmed = (query ?? searchQuery).trim();
+    if (!trimmed) return;
+    closeSearch();
+    navigation.navigate('AnimalList', { ...CLEARED_ANIMAL_LIST_PARAMS, initialSearch: trimmed });
+  };
+
+  const goToTileFromSearch = (item) => {
+    closeSearch();
+    goToTile(item);
+  };
+
   const openAnimals = (filters = {}) => {
     navigation.navigate('AnimalList', {
       ...CLEARED_ANIMAL_LIST_PARAMS,
@@ -147,14 +207,10 @@ const DashboardScreen = ({ navigation }) => {
     });
   };
 
-  const StatCell = ({ label, value, onPress, third }) => (
-    <TouchableOpacity
-      style={[styles.statCell, third && styles.statCellThird]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.statValue}>{value ?? 0}</Text>
-      <Text style={styles.statLabel} numberOfLines={2}>{label}</Text>
+  const StatChip = ({ label, value, onPress }) => (
+    <TouchableOpacity style={styles.statChip} onPress={onPress} activeOpacity={0.7}>
+      <Text style={styles.statChipValue}>{value ?? 0}</Text>
+      <Text style={styles.statChipLabel} numberOfLines={1}>{label}</Text>
     </TouchableOpacity>
   );
 
@@ -180,59 +236,57 @@ const DashboardScreen = ({ navigation }) => {
           onPress={() => openAnimals({ status: 'LIVE' })}
           activeOpacity={0.7}
         >
-          <View style={[styles.kpiIconContainer, { backgroundColor: '#f59e0b15' }]}>
-            <PawPrint color="#f59e0b" size={18} />
+          <View style={[styles.kpiIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+            <AnimalIcon color={theme.colors.primary} size={16} />
           </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.heroLabel}>{t('dashboard.liveAnimals', 'Live animals')}</Text>
             <Text style={styles.heroValue}>{live}</Text>
           </View>
         </TouchableOpacity>
 
-        <View style={styles.statGrid}>
-          <StatCell
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.statScroll}
+          contentContainerStyle={styles.statScrollContent}
+        >
+          <StatChip
             label={t('dashboard.male', 'Male')}
             value={male}
             onPress={() => openAnimals({ gender: 'MALE', status: 'LIVE' })}
           />
-          <StatCell
+          <StatChip
             label={t('dashboard.female', 'Female')}
             value={female}
             onPress={() => openAnimals({ gender: 'FEMALE', status: 'LIVE' })}
           />
-          <StatCell
+          <StatChip
             label={t('dashboard.pregnant', 'Pregnant')}
             value={metrics.pregnant}
             onPress={() => openAnimals({ femaleCondition: 'PREGNANT', status: 'LIVE' })}
           />
-          <StatCell
+          <StatChip
             label={t('dashboard.breeders', 'Breeders')}
             value={metrics.breeders ?? metrics.breedingDoes}
             onPress={() => openAnimals({ isBreeder: true, status: 'LIVE' })}
           />
-        </View>
-
-        <Text style={styles.sectionTitle}>{t('dashboard.kidsByAge', 'Kids by age')}</Text>
-        <View style={styles.statGrid}>
-          <StatCell
-            third
-            label={t('dashboard.kids0_3', '0–3 months')}
+          <StatChip
+            label={t('dashboard.kids0_3Short', '0–3 mo')}
             value={metrics.kids0_3}
             onPress={() => openAnimals({ ageRange: '0-3', status: 'LIVE' })}
           />
-          <StatCell
-            third
-            label={t('dashboard.kids3_6', '3–6 months')}
+          <StatChip
+            label={t('dashboard.kids3_6Short', '3–6 mo')}
             value={metrics.kids3_6}
             onPress={() => openAnimals({ ageRange: '3-6', status: 'LIVE' })}
           />
-          <StatCell
-            third
-            label={t('dashboard.kids6_9', '6–9 months')}
+          <StatChip
+            label={t('dashboard.kids6_9Short', '6–9 mo')}
             value={metrics.kids6_9}
             onPress={() => openAnimals({ ageRange: '6-9', status: 'LIVE' })}
           />
-        </View>
+        </ScrollView>
 
         <View style={styles.yearCard}>
           <Heart color={theme.colors.primary} size={16} />
@@ -265,9 +319,17 @@ const DashboardScreen = ({ navigation }) => {
             <Menu color="#FFF" size={26} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>{farmName}</Text>
-          
+
+          {/* Search Button */}
+          <TouchableOpacity
+            style={styles.themeToggle}
+            onPress={() => setSearchVisible(true)}
+          >
+            <Search color="#FFF" size={22} strokeWidth={2} />
+          </TouchableOpacity>
+
           {/* Notification Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.themeToggle}
             onPress={() => navigation.navigate('Notifications')}
           >
@@ -344,6 +406,109 @@ const DashboardScreen = ({ navigation }) => {
              </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* Global Search Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={searchVisible}
+        onRequestClose={closeSearch}
+      >
+        <View style={[styles.searchModalOverlay, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.searchModalBar}>
+            <Search color={theme.colors.textLight} size={18} />
+            <TextInput
+              autoFocus
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={() => submitAnimalSearch()}
+              placeholder={t('dashboard.searchPlaceholder', 'Search animals, notes, treatments...')}
+              placeholderTextColor={theme.colors.textLight}
+              style={styles.searchModalInput}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <X color={theme.colors.textLight} size={18} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity onPress={closeSearch} style={styles.searchCancelBtn}>
+            <Text style={styles.searchCancelText}>{t('common.cancel', 'Cancel')}</Text>
+          </TouchableOpacity>
+
+          <ScrollView
+            style={styles.searchResultsScroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {searchQuery.trim().length === 0 && (
+              <Text style={styles.searchHint}>
+                {t('dashboard.searchHint', 'Search animals by tag, breed or color — or jump straight to a module.')}
+              </Text>
+            )}
+
+            {matchedTiles.length > 0 && (
+              <View style={styles.searchSection}>
+                <Text style={styles.searchSectionLabel}>{t('dashboard.searchModules', 'Modules')}</Text>
+                {matchedTiles.map(tile => (
+                  <TouchableOpacity
+                    key={tile.id}
+                    style={styles.searchResultRow}
+                    onPress={() => goToTileFromSearch(tile)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.searchResultIcon, { backgroundColor: theme.colors.primary + '12' }]}>
+                      {tile.icon}
+                    </View>
+                    <Text style={styles.searchResultTitle}>{tile.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {searchQuery.trim().length >= 2 && (
+              <View style={styles.searchSection}>
+                <Text style={styles.searchSectionLabel}>{t('dashboard.searchAnimals', 'Animals')}</Text>
+                {searchingAnimals ? (
+                  <ActivityIndicator color={theme.colors.primary} style={{ marginVertical: 16 }} />
+                ) : animalResults.length === 0 ? (
+                  <View style={styles.searchEmptyState}>
+                    <SearchX color={theme.colors.textLight} size={22} />
+                    <Text style={styles.searchEmptyText}>{t('dashboard.searchNoAnimals', 'No matching animals')}</Text>
+                  </View>
+                ) : (
+                  animalResults.map(animal => (
+                    <TouchableOpacity
+                      key={animal.id}
+                      style={styles.searchResultRow}
+                      onPress={() => openAnimalFromSearch(animal)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.searchResultIcon, { backgroundColor: theme.colors.primary + '12' }]}>
+                        <AnimalIcon color={theme.colors.primary} size={16} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.searchResultTitle}>{animal.tagNumber}</Text>
+                        <Text style={styles.searchResultSubtitle} numberOfLines={1}>
+                          {[animal.Breed?.name, animal.gender].filter(Boolean).join(' · ')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                )}
+                {!searchingAnimals && animalResults.length > 0 && (
+                  <TouchableOpacity onPress={() => submitAnimalSearch()} style={styles.searchSeeAllBtn}>
+                    <Text style={styles.searchSeeAllText}>
+                      {t('dashboard.searchSeeAll', 'See all results for "{{query}}"', { query: searchQuery.trim() })}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </ScrollView>
+        </View>
       </Modal>
     </SafeAreaView>
   );

@@ -39,6 +39,9 @@
     "kids0_3": "0–3 months",
     "kids3_6": "3–6 months",
     "kids6_9": "6–9 months",
+    "kids0_3Short": "0–3 mo",
+    "kids3_6Short": "3–6 mo",
+    "kids6_9Short": "6–9 mo",
     "thisYear": "{{year}}: {{born}} born · {{dead}} died · {{sold}} sold",
     "totalAnimals": "Total Animals",
     "breedingDoes": "Breeding Does",
@@ -51,7 +54,13 @@
     "kids": "Kids",
     "quickActions": "Quick Actions",
     "comingSoon": "Coming Soon!",
-    "comingSoonDesc": "We are currently working on this module. This feature will be available soon!"
+    "comingSoonDesc": "We are currently working on this module. This feature will be available soon!",
+    "searchPlaceholder": "Search animals, notes, treatments...",
+    "searchHint": "Search animals by tag, breed or color — or jump straight to a module.",
+    "searchModules": "Modules",
+    "searchAnimals": "Animals",
+    "searchNoAnimals": "No matching animals",
+    "searchSeeAll": "See all results for \"{{query}}\""
   },
   "menu": {
     "dashboard": "Dashboard",
