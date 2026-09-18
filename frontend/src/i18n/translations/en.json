@@ -68,6 +68,7 @@
     "bulkData": "Bulk Import / Export",
     "feedFormulation": "Feed Formulation",
     "notes": "Notes",
+    "treatment": "Treatment",
     "logOut": "Log Out"
   },
   "actions": {
