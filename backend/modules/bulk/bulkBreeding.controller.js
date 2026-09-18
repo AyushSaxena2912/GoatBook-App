@@ -526,61 +526,16 @@ exports.importBreedings = async (req, res) => {
     await prisma.$transaction(async (tx) => {
       await tx.breedings.createMany({ data: createdData });
 
-      // Fetch mothers to inherit breed/location
-      const motherIds = validRecords.map(r => r.animalId);
-      const mothers = await tx.animals.findMany({
-        where: { id: { in: motherIds } }
-      });
-      const motherMap = new Map(mothers.map(m => [m.id, m]));
-
-      // Reset female condition on mother animal if applicable & auto-create kids
+      // Reset female condition on mother animal if applicable.
+      // Kid details are stored on the breeding record's kids_details field
+      // above; animal records are only ever created through manual
+      // "Add Animal" entry or the Excel animal import — not automatically
+      // from an imported breeding/delivery record.
       for (const rec of validRecords) {
         await tx.animals.update({
           where: { id: rec.animalId },
           data: { female_condition: 'NONE' }
         });
-
-        if (rec.birthType !== 'ABORTION' && Array.isArray(rec.kidsDetails)) {
-          const mother = motherMap.get(rec.animalId);
-          for (const kid of rec.kidsDetails) {
-            if (!kid.tag_number || !String(kid.tag_number).trim()) continue;
-            const cleanTag = String(kid.tag_number).trim();
-
-            const existingKid = await tx.animals.findFirst({
-              where: { farm_id: farmId, tag_number: cleanTag }
-            });
-
-            let safeWeight = null;
-            if (kid.birth_weight) {
-              const parsed = parseFloat(kid.birth_weight);
-              if (!isNaN(parsed) && parsed > 0 && parsed <= 50) {
-                safeWeight = parsed;
-              }
-            }
-
-            if (!existingKid) {
-              await tx.animals.create({
-                data: {
-                  id: uuidv4(),
-                  farm_id: farmId,
-                  tag_number: cleanTag,
-                  animal_type: mother ? mother.animal_type : 'GOAT',
-                  breed_id: mother ? mother.breed_id : null,
-                  location_id: mother ? mother.location_id : null,
-                  gender: kid.gender ? kid.gender.toUpperCase() : 'MALE',
-                  birth_date: rec.deliveryDate ? new Date(rec.deliveryDate) : null,
-                  birth_weight: safeWeight,
-                  birth_type: rec.birthType || 'SINGLE',
-                  mother_tag_id: mother ? mother.tag_number : null,
-                  status: 'LIVE',
-                  acquisition_method: 'BORN_ON_FARM',
-                  remark: kid.remark || null,
-                  created_by_user_id: userId
-                }
-              });
-            }
-          }
-        }
       }
     });
 

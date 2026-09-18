@@ -107,51 +107,10 @@ exports.addBreeding = async (req, res) => {
         data: { female_condition: 'NONE' }
       });
 
-      // 3. Automatically register live kids into animals table
-      if (!isAbortion && Array.isArray(kids)) {
-        const mother = await tx.animals.findUnique({
-          where: { id: animal_id }
-        });
-
-        for (const kid of kids) {
-          if (!kid.tag_number || !String(kid.tag_number).trim()) continue;
-          const cleanTag = String(kid.tag_number).trim();
-
-          const existingKid = await tx.animals.findFirst({
-            where: { farm_id: req.farmId, tag_number: cleanTag }
-          });
-
-          let safeWeight = null;
-          if (kid.birth_weight) {
-            const parsed = parseFloat(kid.birth_weight);
-            if (!isNaN(parsed) && parsed > 0 && parsed <= 50) {
-              safeWeight = parsed;
-            }
-          }
-
-          if (!existingKid) {
-            await tx.animals.create({
-              data: {
-                id: uuidv4(),
-                farm_id: req.farmId,
-                tag_number: cleanTag,
-                animal_type: mother ? mother.animal_type : 'GOAT',
-                breed_id: mother ? mother.breed_id : null,
-                location_id: mother ? mother.location_id : null,
-                gender: kid.gender ? kid.gender.toUpperCase() : 'MALE',
-                birth_date: new Date(effectiveDate),
-                birth_weight: safeWeight,
-                birth_type: birth_type || 'SINGLE',
-                mother_tag_id: mother ? mother.tag_number : null,
-                status: 'LIVE',
-                acquisition_method: 'BORN_ON_FARM',
-                remark: kid.remark || null,
-                created_by_user_id: req.user.id
-              }
-            });
-          }
-        }
-      }
+      // Kid details (tag, gender, weight, remark) are stored on the breeding
+      // record itself via kids_details above. Animal records are only ever
+      // created through manual "Add Animal" entry or the Excel import — not
+      // automatically from a delivery record.
 
       return breeding;
     });
