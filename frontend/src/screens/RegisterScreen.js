@@ -4,8 +4,10 @@ import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GInput from '../components/GInput';
 import GPhoneInput from '../components/GPhoneInput';
+import GSelect from '../components/GSelect';
 import GButton from '../components/GButton';
 import api, { setAuthToken, setSelectedFarm } from '../api';
+import { getCountryOptions, getStateOptions } from '../constants/location';
 
 import { ArrowLeft } from 'lucide-react-native';
 
@@ -21,10 +23,16 @@ const RegisterScreen = ({ navigation }) => {
     password: '',
     confirmPassword: '',
     farmName: '',
-    farmLocation: '',
+    farmAddress: '',
+    farmCity: '',
+    farmState: '',
+    farmCountry: 'India',
     planName: 'BASIC'
   });
   const [loading, setLoading] = useState(false);
+
+  const countryOptions = useMemo(() => getCountryOptions(), []);
+  const stateOptions = useMemo(() => getStateOptions(formData.farmCountry), [formData.farmCountry]);
 
   // Function to handle user registration
   const handleRegister = async () => {
@@ -76,7 +84,10 @@ const RegisterScreen = ({ navigation }) => {
         phone,
         password,
         farmName,
-        farmLocation: formData.farmLocation.trim(),
+        farmAddress: formData.farmAddress.trim(),
+        farmCity: formData.farmCity.trim(),
+        farmState: formData.farmState,
+        farmCountry: formData.farmCountry,
         planName: formData.planName,
         isTrial: true
       };
@@ -192,21 +203,51 @@ const RegisterScreen = ({ navigation }) => {
                 required 
             />
             <View style={styles.gap} />
-            <GInput 
-                label="Farm Location" 
-                value={formData.farmLocation} 
-                onChangeText={(v) => updateField('farmLocation', v)} 
+            <GInput
+                label="Address Line"
+                value={formData.farmAddress}
+                onChangeText={(v) => updateField('farmAddress', v)}
+                placeholder="Street / Area / Colony"
+                multiline
+                numberOfLines={2}
+            />
+            <View style={styles.gap} />
+            <GInput
+                label="City / District"
+                value={formData.farmCity}
+                onChangeText={(v) => updateField('farmCity', v)}
+                placeholder="City Name"
+            />
+            <View style={styles.gap} />
+            <GSelect
+                label="State"
+                value={formData.farmState}
+                onSelect={(v) => updateField('farmState', v)}
+                options={stateOptions}
+                searchable={true}
+                searchPlaceholder="Search State..."
+                allowCustom
+            />
+            <View style={styles.gap} />
+            <GSelect
+                label="Country"
+                value={formData.farmCountry}
+                onSelect={(v) => setFormData(prev => ({ ...prev, farmCountry: v, farmState: '' }))}
+                options={countryOptions}
+                searchable={true}
+                searchPlaceholder="Search Country..."
+                allowCustom
             />
 
-            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Select Plan (7-Day Free Trial)</Text>
+            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Select Plan (10-Day Free Trial)</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                 {['BASIC', 'STANDARD', 'ADVANCED', 'ULTIMATE'].map(plan => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         key={plan}
-                        style={{ 
-                            width: '48%', 
-                            padding: 12, 
-                            borderWidth: 1, 
+                        style={{
+                            width: '48%',
+                            padding: 12,
+                            borderWidth: 1,
                             borderColor: formData.planName === plan ? theme.colors.primary : theme.colors.border,
                             borderRadius: 8,
                             marginBottom: 12,
@@ -222,7 +263,7 @@ const RegisterScreen = ({ navigation }) => {
                 ))}
             </View>
 
-            <GButton 
+            <GButton
                 title="Register" 
                 onPress={handleRegister} 
                 loading={loading}

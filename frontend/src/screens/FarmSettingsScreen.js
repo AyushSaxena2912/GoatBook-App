@@ -14,6 +14,7 @@ import api from '../api';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToCloudinary as cloudinaryUpload } from '../utils/cloudinary';
+import { getCountryOptions, getStateOptions } from '../constants/location';
 
 const FarmSettingsScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -194,28 +195,8 @@ const FarmSettingsScreen = ({ navigation }) => {
     );
   }
 
-  const INDIAN_STATES = [
-    { label: 'Andhra Pradesh', value: 'Andhra Pradesh' },
-    { label: 'Assam', value: 'Assam' },
-    { label: 'Bihar', value: 'Bihar' },
-    { label: 'Chhattisgarh', value: 'Chhattisgarh' },
-    { label: 'Delhi', value: 'Delhi' },
-    { label: 'Goa', value: 'Goa' },
-    { label: 'Gujarat', value: 'Gujarat' },
-    { label: 'Haryana', value: 'Haryana' },
-    { label: 'Jharkhand', value: 'Jharkhand' },
-    { label: 'Karnataka', value: 'Karnataka' },
-    { label: 'Kerala', value: 'Kerala' },
-    { label: 'Madhya Pradesh', value: 'Madhya Pradesh' },
-    { label: 'Maharashtra', value: 'Maharashtra' },
-    { label: 'Odisha', value: 'Odisha' },
-    { label: 'Punjab', value: 'Punjab' },
-    { label: 'Rajasthan', value: 'Rajasthan' },
-    { label: 'Tamil Nadu', value: 'Tamil Nadu' },
-    { label: 'Telangana', value: 'Telangana' },
-    { label: 'Uttar Pradesh', value: 'Uttar Pradesh' },
-    { label: 'West Bengal', value: 'West Bengal' }
-  ];
+  const countryOptions = useMemo(() => getCountryOptions(), []);
+  const stateOptions = useMemo(() => getStateOptions(formData.country), [formData.country]);
 
   return (
     <View style={styles.container}>
@@ -360,22 +341,21 @@ const FarmSettingsScreen = ({ navigation }) => {
               label={t('settings.state', 'State')}
               value={formData.state}
               onSelect={(v) => setFormData({...formData, state: v})}
-              options={INDIAN_STATES}
+              options={stateOptions}
               searchable={true}
               searchPlaceholder="Search State..."
+              allowCustom
             />
             <View style={styles.gap} />
 
             <GSelect
               label={t('settings.country', 'Country')}
               value={formData.country}
-              onSelect={(v) => setFormData({...formData, country: v})}
-              options={[
-                { label: 'India', value: 'India' },
-                { label: 'USA', value: 'USA' },
-                { label: 'UK', value: 'UK' },
-                { label: 'Australia', value: 'Australia' }
-              ]}
+              onSelect={(v) => setFormData({...formData, country: v, state: ''})}
+              options={countryOptions}
+              searchable={true}
+              searchPlaceholder="Search Country..."
+              allowCustom
             />
           </View>
         </ScrollView>

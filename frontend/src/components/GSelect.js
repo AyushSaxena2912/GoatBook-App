@@ -4,18 +4,21 @@ import { useTheme } from '../theme/ThemeContext';
 import { lightTheme } from '../theme';
 import { ChevronDown, X, AlertCircle, HelpCircle, Search } from 'lucide-react-native';
 
-const GSelect = ({ 
-  label, 
-  value, 
-  options = [], 
-  onSelect, 
-  error, 
+const GSelect = ({
+  label,
+  value,
+  options = [],
+  onSelect,
+  error,
   required,
   placeholder = '',
   containerStyle,
   helpAction,
   rightIcon,
-  disabled = false
+  disabled = false,
+  searchable,
+  searchPlaceholder,
+  allowCustom = false
 }) => {
   const { isDarkMode, theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
@@ -61,10 +64,17 @@ const GSelect = ({
   };
 
   const selectedOption = options.find(opt => opt.value === value);
+  const displayLabel = selectedOption?.label || value || placeholder;
 
-  const filteredOptions = options.filter(opt => 
+  const filteredOptions = options.filter(opt =>
     opt.label?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const trimmedQuery = searchQuery.trim();
+  const showCustomOption = allowCustom && trimmedQuery.length > 0 &&
+    !filteredOptions.some(opt => opt.label?.toLowerCase() === trimmedQuery.toLowerCase());
+
+  const showSearch = searchable !== false && (options.length >= 6 || allowCustom);
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -89,7 +99,7 @@ const GSelect = ({
           ]} 
           numberOfLines={1}
         >
-          {selectedOption?.label || placeholder}
+          {displayLabel}
         </Text>
 
         <View style={styles.iconContainer}>
@@ -177,13 +187,13 @@ const GSelect = ({
               </TouchableOpacity>
             </View>
             
-            {options.length >= 6 && (
+            {showSearch && (
               <View style={[styles.searchContainer, { borderBottomColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
                 <View style={[styles.searchInputWrapper, { backgroundColor: isDarkMode ? '#1E293B' : '#F3F4F6' }]}>
                   <Search size={18} color={theme.colors.textMuted} style={styles.searchIcon} />
                   <TextInput
                     style={[styles.searchInput, { color: theme.colors.text }]}
-                    placeholder="Search..."
+                    placeholder={searchPlaceholder || 'Search...'}
                     placeholderTextColor={theme.colors.textMuted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -197,8 +207,22 @@ const GSelect = ({
               data={filteredOptions}
               keyExtractor={(item) => item.value}
               contentContainerStyle={styles.listContainer}
+              ListHeaderComponent={showCustomOption ? (
+                <TouchableOpacity
+                  style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}
+                  onPress={() => {
+                    onSelect(trimmedQuery);
+                    setModalVisible(false);
+                    setSearchQuery('');
+                  }}
+                >
+                  <Text style={[styles.optionText, { color: theme.colors.primary, fontWeight: '600' }]}>
+                    Use "{trimmedQuery}"
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
               renderItem={({ item }) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.optionItem,
                     { borderBottomColor: theme.colors.border },
