@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, ScrollView, Modal, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
+import GInput from '../components/GInput';
 import { useFocusEffect } from '@react-navigation/native';
 import { Search, Plus, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, Check, Activity, X } from 'lucide-react-native';
 import { SPACING } from '../theme';
@@ -35,6 +36,8 @@ const MatingListScreen = ({ navigation, route }) => {
   const [isNotFound, setIsNotFound] = useState(false);
   const [animal, setAnimal] = useState(null);
   const [matings, setMatings] = useState([]);
+  const tagDebounceRef = useRef(null);
+  const latestTagQueryRef = useRef('');
   const [matingsLoading, setMatingsLoading] = useState(false);
   
   const [accordionOpen, setAccordionOpen] = useState(true);
@@ -115,14 +118,29 @@ const MatingListScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleTagChange = async (text) => {
+  const handleTagChange = (text) => {
     setSearchTag(text);
     const cleaned = text.trim();
-    if (cleaned.length >= 3) {
-      setIsSearching(true);
+
+    if (tagDebounceRef.current) clearTimeout(tagDebounceRef.current);
+
+    if (cleaned.length < 3) {
+      latestTagQueryRef.current = '';
+      setIsSearching(false);
+      setAnimal(null);
+      setMatings([]);
       setIsNotFound(false);
+      return;
+    }
+
+    latestTagQueryRef.current = cleaned;
+    setIsSearching(true);
+    setIsNotFound(false);
+
+    tagDebounceRef.current = setTimeout(async () => {
       try {
         const res = await api.get(`/animals/check-tag/${cleaned}`);
+        if (latestTagQueryRef.current !== cleaned) return; // a newer keystroke has superseded this response
         if (res.data && res.data.id) {
           setAnimal(res.data);
           setIsNotFound(false);
@@ -133,17 +151,14 @@ const MatingListScreen = ({ navigation, route }) => {
           setIsNotFound(true);
         }
       } catch (err) {
+        if (latestTagQueryRef.current !== cleaned) return;
         setAnimal(null);
         setMatings([]);
         setIsNotFound(true);
       } finally {
-        setIsSearching(false);
+        if (latestTagQueryRef.current === cleaned) setIsSearching(false);
       }
-    } else {
-      setAnimal(null);
-      setMatings([]);
-      setIsNotFound(false);
-    }
+    }, 400);
   };
 
   const fetchAnimalMatings = async (animalId) => {
@@ -281,17 +296,14 @@ const MatingListScreen = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Search Section */}
         <View style={styles.searchSection}>
-          <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
-          <View style={styles.searchRow}>
-            <View style={[styles.searchInputContainer, { borderColor: theme.colors.border, flex: 1 }]}>
-              <TextInput
-                style={[styles.searchInput, { color: theme.colors.text }]}
-                value={searchTag}
-                onChangeText={handleTagChange}
-                placeholder="2012"
-                placeholderTextColor={theme.colors.textMuted}
-              />
-              {isSearching ? (
+          <GInput
+            label={t('animalForm.tagId', 'Tag ID')}
+            value={searchTag}
+            onChangeText={handleTagChange}
+            placeholder="2012"
+            required
+            rightIcon={
+              isSearching ? (
                 <ActivityIndicator size="small" color={theme.colors.primary} />
               ) : searchTag ? (
                 <TouchableOpacity onPress={() => {setSearchTag(''); setAnimal(null); setIsNotFound(false);}}>
@@ -299,9 +311,9 @@ const MatingListScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               ) : (
                 <Search size={20} color={theme.colors.textMuted} />
-              )}
-            </View>
-          </View>
+              )
+            }
+          />
 
           {isNotFound && (
             <View style={styles.notFoundContainer}>

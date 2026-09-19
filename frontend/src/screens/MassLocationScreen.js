@@ -4,6 +4,7 @@ import {
   SafeAreaView, Modal, TextInput, Alert, ActivityIndicator, Platform 
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import GHeader from '../components/GHeader';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
@@ -17,6 +18,7 @@ import api from '../api';
 
 const MassLocationScreen = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { kgToDisplay } = useFarmSettings();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
   const [animals, setAnimals] = useState([]);
@@ -183,7 +185,7 @@ const MassLocationScreen = ({ navigation }) => {
             <View style={styles.dot} />
             <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{item.ageInMonths} Months</Text>
             <View style={styles.dot} />
-            <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{item.currentWeight || item.birthWeight || 0} kg</Text>
+            <Text style={[styles.metaItem, { color: theme.colors.textLight }]}>{kgToDisplay(item.currentWeight || item.birthWeight || 0).value} {kgToDisplay(item.currentWeight || item.birthWeight || 0).unit}</Text>
           </View>
         </View>
       </TouchableOpacity>

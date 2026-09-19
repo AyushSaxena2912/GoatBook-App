@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS, SPACING } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
@@ -12,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AddBreedScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const { isAnimalTypeAllowed } = useFarmSettings();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => getStyles(theme, isDarkMode, insets), [theme, isDarkMode, insets]);
   const isEditing = !!route.params?.breed;
@@ -105,7 +107,7 @@ const AddBreedScreen = ({ navigation, route }) => {
               options={[
                 { label: 'Goat', value: 'Goat' },
                 { label: 'Sheep', value: 'Sheep' }
-              ]}
+              ].filter(opt => isAnimalTypeAllowed(opt.value) || opt.value === animalType)}
               required
               disabled={isSystemBreed}
             />

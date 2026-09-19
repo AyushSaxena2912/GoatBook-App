@@ -119,7 +119,7 @@ const AddLocationScreen = ({ navigation, route }) => {
             <View style={styles.inputRow}>
               <View style={styles.inputFlex}>
                 <GInput 
-                  label={t('animalForm.tagId', 'Enter Tag ID*')} 
+                  label={t('animalForm.tagId', 'Tag ID')}
                   value={tagNumber} 
                   onChangeText={(val) => {
                     setTagNumber(val);

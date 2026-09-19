@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
+import GInput from '../components/GInput';
 import { Search, Plus, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, Stethoscope, X } from 'lucide-react-native';
 import { SPACING } from '../theme';
 import api from '../api';
@@ -17,6 +18,8 @@ const TreatmentListScreen = ({ navigation, route }) => {
   const [isNotFound, setIsNotFound] = useState(false);
   const [animal, setAnimal] = useState(null);
   const [treatments, setTreatments] = useState([]);
+  const tagDebounceRef = useRef(null);
+  const latestTagQueryRef = useRef('');
   const [treatmentsLoading, setTreatmentsLoading] = useState(false);
   const [accordionOpen, setAccordionOpen] = useState(true);
 
@@ -62,14 +65,29 @@ const TreatmentListScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleTagChange = async (text) => {
+  const handleTagChange = (text) => {
     setSearchTag(text);
     const cleaned = text.trim();
-    if (cleaned.length >= 3) {
-      setIsSearching(true);
+
+    if (tagDebounceRef.current) clearTimeout(tagDebounceRef.current);
+
+    if (cleaned.length < 3) {
+      latestTagQueryRef.current = '';
+      setIsSearching(false);
+      setAnimal(null);
+      setTreatments([]);
       setIsNotFound(false);
+      return;
+    }
+
+    latestTagQueryRef.current = cleaned;
+    setIsSearching(true);
+    setIsNotFound(false);
+
+    tagDebounceRef.current = setTimeout(async () => {
       try {
         const res = await api.get(`/animals/check-tag/${cleaned}`);
+        if (latestTagQueryRef.current !== cleaned) return; // a newer keystroke has superseded this response
         if (res.data && res.data.id) {
           setAnimal(res.data);
           setIsNotFound(false);
@@ -80,17 +98,14 @@ const TreatmentListScreen = ({ navigation, route }) => {
           setIsNotFound(true);
         }
       } catch (err) {
+        if (latestTagQueryRef.current !== cleaned) return;
         setAnimal(null);
         setTreatments([]);
         setIsNotFound(true);
       } finally {
-        setIsSearching(false);
+        if (latestTagQueryRef.current === cleaned) setIsSearching(false);
       }
-    } else {
-      setAnimal(null);
-      setTreatments([]);
-      setIsNotFound(false);
-    }
+    }, 400);
   };
 
   const fetchAnimalTreatments = async (animalId) => {
@@ -135,17 +150,14 @@ const TreatmentListScreen = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Search Section */}
         <View style={styles.searchSection}>
-          <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
-          <View style={styles.searchRow}>
-            <View style={[styles.searchInputContainer, { borderColor: theme.colors.border, flex: 1 }]}>
-              <TextInput
-                style={[styles.searchInput, { color: theme.colors.text }]}
-                value={searchTag}
-                onChangeText={handleTagChange}
-                placeholder="2012"
-                placeholderTextColor={theme.colors.textMuted}
-              />
-              {isSearching ? (
+          <GInput
+            label={t('animalForm.tagId', 'Tag ID')}
+            value={searchTag}
+            onChangeText={handleTagChange}
+            placeholder="2012"
+            required
+            rightIcon={
+              isSearching ? (
                 <ActivityIndicator size="small" color={theme.colors.primary} />
               ) : searchTag ? (
                 <TouchableOpacity onPress={() => { setSearchTag(''); setAnimal(null); setIsNotFound(false); }}>
@@ -153,9 +165,9 @@ const TreatmentListScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               ) : (
                 <Search size={20} color={theme.colors.textMuted} />
-              )}
-            </View>
-          </View>
+              )
+            }
+          />
 
           {isNotFound && (
             <View style={styles.notFoundContainer}>

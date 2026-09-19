@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
+import GInput from '../components/GInput';
 import { Search, ChevronDown, Calendar, CheckCircle, Tag, X } from 'lucide-react-native';
 import { SPACING } from '../theme';
 import api from '../api';
@@ -186,28 +187,27 @@ const AddMatingScreen = ({ navigation, route }) => {
           {/* Search Section */}
           {!preSelectedAnimal ? (
             <View style={styles.searchSection}>
-              <Text style={styles.searchLabel}>{t('farmActivities.scanEnterTagId', 'Scan / Enter Tag Id*')}</Text>
               <View style={styles.searchRow}>
-                <View style={[styles.searchInputContainer, { borderColor: theme.colors.border, flex: 1 }]}>
-                  <TextInput
-                    style={[styles.searchInput, { color: theme.colors.text }]}
+                <View style={{ flex: 1 }}>
+                  <GInput
+                    label={t('animalForm.tagId', 'Tag ID')}
                     value={searchTag}
                     onChangeText={(text) => {
                       setSearchTag(text);
                       setIsNotFound(false);
                       if (!text.trim()) setAnimal(null);
                     }}
-                    placeholder="Enter Tag ID (e.g. BB11)"
-                    placeholderTextColor={theme.colors.textMuted}
+                    placeholder="e.g. BB11"
+                    required
                     returnKeyType="search"
                     onSubmitEditing={handleTagSearch}
                     autoCapitalize="characters"
+                    rightIcon={searchTag ? (
+                      <TouchableOpacity onPress={() => { setSearchTag(''); setAnimal(null); setIsNotFound(false); }}>
+                        <X size={18} color={theme.colors.textMuted} />
+                      </TouchableOpacity>
+                    ) : null}
                   />
-                  {searchTag ? (
-                    <TouchableOpacity onPress={() => { setSearchTag(''); setAnimal(null); setIsNotFound(false); }} style={{ padding: 4 }}>
-                      <X size={18} color={theme.colors.textMuted} />
-                    </TouchableOpacity>
-                  ) : null}
                 </View>
                 <TouchableOpacity
                   style={[styles.addButton, { backgroundColor: theme.colors.primary, opacity: isSearching ? 0.7 : 1 }]}
@@ -502,7 +502,7 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   // Search
   searchSection: { marginBottom: 24 },
   searchLabel: { fontSize: 12, fontFamily: 'Inter_500Medium', color: theme.colors.textMuted, marginBottom: 8 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  searchRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   notFoundContainer: {
     padding: 12,
     backgroundColor: isDarkMode ? '#3F1A1A' : '#FEE2E2',

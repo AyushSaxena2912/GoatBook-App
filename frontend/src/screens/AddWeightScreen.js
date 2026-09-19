@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, Platform, Alert, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GDatePicker from '../components/GDatePicker';
-import { Scan, Info } from 'lucide-react-native';
+import { Scan, Info, Search, X } from 'lucide-react-native';
 import api from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 import GAlert from '../components/GAlert';
@@ -14,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 
 const AddWeightScreen = ({ route, navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { weightUnit, heightUnit, kgToDisplay, displayToKg, cmToDisplay, displayToCm } = useFarmSettings();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const { t } = useTranslation();
   const existingRecord = route.params?.record;
@@ -21,8 +23,12 @@ const AddWeightScreen = ({ route, navigation }) => {
 
   const initialTag = route.params?.tagNumber || '';
   const [tagNumber, setTagNumber] = useState(initialTag);
-  const [weight, setWeight] = useState(existingRecord?.weight?.toString() || '');
-  const [height, setHeight] = useState(existingRecord?.height?.toString() || '');
+  const [weight, setWeight] = useState(
+    existingRecord?.weight != null ? String(kgToDisplay(existingRecord.weight).value) : ''
+  );
+  const [height, setHeight] = useState(
+    existingRecord?.height != null ? String(cmToDisplay(existingRecord.height).value) : ''
+  );
   const [date, setDate] = useState(existingRecord?.date ? new Date(existingRecord.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
   const [remark, setRemark] = useState(existingRecord?.remark || '');
   const [animalInfo, setAnimalInfo] = useState(null);
@@ -34,6 +40,7 @@ const AddWeightScreen = ({ route, navigation }) => {
   // Delete state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const latestTagQueryRef = useRef('');
 
   useEffect(() => {
     if (initialTag) {
@@ -44,10 +51,12 @@ const AddWeightScreen = ({ route, navigation }) => {
   const fetchAnimalDetails = async (tagToSearch) => {
     const raw = String(tagToSearch || '').trim();
     if (!raw) {
+      latestTagQueryRef.current = '';
       setAnimalInfo(null);
       return;
     }
     const cleaned = raw.replace(/^#+/, '').trim();
+    latestTagQueryRef.current = raw;
     try {
       setFetchingAnimal(true);
       let response;
@@ -60,24 +69,30 @@ const AddWeightScreen = ({ route, navigation }) => {
           throw e;
         }
       }
+      if (latestTagQueryRef.current !== raw) return; // a newer keystroke has superseded this response
       if (response?.data?.id) {
         setAnimalInfo(response.data);
       } else {
         setAnimalInfo(null);
       }
     } catch (error) {
+      if (latestTagQueryRef.current !== raw) return;
       console.error('Fetch animal details error:', error);
       setAnimalInfo(null);
     } finally {
-      setFetchingAnimal(false);
+      if (latestTagQueryRef.current === raw) setFetchingAnimal(false);
     }
   };
 
+  const tagDebounceRef = useRef(null);
+
   const handleTagChange = (text) => {
     setTagNumber(text);
+    if (tagDebounceRef.current) clearTimeout(tagDebounceRef.current);
     if (text.trim().length >= 2) {
-      fetchAnimalDetails(text);
+      tagDebounceRef.current = setTimeout(() => fetchAnimalDetails(text), 400);
     } else {
+      latestTagQueryRef.current = '';
       setAnimalInfo(null);
     }
   };
@@ -112,8 +127,8 @@ const AddWeightScreen = ({ route, navigation }) => {
       
       if (isEditing) {
         await api.put(`/weights/${existingRecord.id}`, {
-          weight: parseFloat(weight),
-          height: height ? parseFloat(height) : null,
+          weight: parseFloat(displayToKg(weight)),
+          height: height ? parseFloat(displayToCm(height)) : null,
           date,
           remark
         });
@@ -131,8 +146,8 @@ const AddWeightScreen = ({ route, navigation }) => {
 
         await api.post('/weights', {
           tagNumber: cleanedTag,
-          weight: parseFloat(weight),
-          height: height ? parseFloat(height) : null,
+          weight: parseFloat(displayToKg(weight)),
+          height: height ? parseFloat(displayToCm(height)) : null,
           date,
           remark
         });
@@ -160,14 +175,25 @@ const AddWeightScreen = ({ route, navigation }) => {
         <View style={styles.formCard}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <GInput 
-                label={t('animalForm.tagId', 'Tag ID*')} 
-                value={tagNumber} 
-                onChangeText={handleTagChange} 
+              <GInput
+                label={t('animalForm.tagId', 'Tag ID')}
+                value={tagNumber}
+                onChangeText={handleTagChange}
                 placeholder="2912"
                 required
                 disabled={isEditing}
                 editable={!isEditing}
+                rightIcon={
+                  isEditing ? null : fetchingAnimal ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : tagNumber ? (
+                    <TouchableOpacity onPress={() => { setTagNumber(''); setAnimalInfo(null); }}>
+                      <X size={18} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  ) : (
+                    <Search size={20} color={theme.colors.textMuted} />
+                  )
+                }
               />
             </View>
           </View>
@@ -211,10 +237,10 @@ const AddWeightScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.row}>
-            <GInput 
-              label={t('farmActivities.weight', 'Weight')} 
-              value={weight} 
-              onChangeText={setWeight} 
+            <GInput
+              label={`${t('farmActivities.weight', 'Weight')} (${weightUnit})`}
+              value={weight}
+              onChangeText={setWeight}
               keyboardType="decimal-pad"
               placeholder="55"
               required
@@ -222,10 +248,10 @@ const AddWeightScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.row}>
-            <GInput 
-              label={t('farmActivities.height', 'Height')} 
-              value={height} 
-              onChangeText={setHeight} 
+            <GInput
+              label={`${t('farmActivities.height', 'Height')} (${heightUnit})`}
+              value={height}
+              onChangeText={setHeight}
               keyboardType="decimal-pad"
               placeholder="5"
             />

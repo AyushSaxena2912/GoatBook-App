@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert, RefreshControl, Modal, ScrollView } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import GHeader from '../components/GHeader';
 import GConfirmModal from '../components/GConfirmModal';
 import { Search, Plus, Scale, Trash2, Tag, ChevronRight, X, SearchX } from 'lucide-react-native';
@@ -12,6 +13,7 @@ import { Animated } from 'react-native';
 
 const WeightListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
+  const { kgToDisplay, cmToDisplay } = useFarmSettings();
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const [weights, setWeights] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +170,7 @@ const WeightListScreen = ({ navigation }) => {
       <View style={styles.tagCardFooter}>
         <View>
           <Text style={[styles.latestLabel, { color: theme.colors.textLight }]}>Latest Weight</Text>
-          <Text style={[styles.latestValue, { color: theme.colors.primary }]}>{item.latestWeight} KG</Text>
+          <Text style={[styles.latestValue, { color: theme.colors.primary }]}>{kgToDisplay(item.latestWeight).value} {kgToDisplay(item.latestWeight).unit}</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={[styles.latestLabel, { color: theme.colors.textLight }]}>Last Recorded</Text>
@@ -278,12 +280,12 @@ const WeightListScreen = ({ navigation }) => {
                     <View style={styles.historyCardContent}>
                       <View style={styles.historyCardLeft}>
                         <Text style={[styles.historyDate, { color: theme.colors.text }]}>{new Date(record.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
-                        {record.height ? <Text style={[styles.historyHeight, { color: theme.colors.textLight }]}>Height: {record.height} cm</Text> : null}
+                        {record.height ? <Text style={[styles.historyHeight, { color: theme.colors.textLight }]}>Height: {cmToDisplay(record.height).value} {cmToDisplay(record.height).unit}</Text> : null}
                         {record.remark ? <Text style={[styles.historyRemark, { color: theme.colors.textLight }]} numberOfLines={2}>{record.remark}</Text> : null}
                       </View>
                       
                       <View style={styles.historyCardRight}>
-                        <Text style={[styles.historyWeight, { color: theme.colors.primary }]}>{record.weight} KG</Text>
+                        <Text style={[styles.historyWeight, { color: theme.colors.primary }]}>{kgToDisplay(record.weight).value} {kgToDisplay(record.weight).unit}</Text>
                         <TouchableOpacity onPress={() => handleDeletePress(record)} style={styles.deleteHistoryBtn}>
                           <Trash2 size={16} color={theme.colors.error + '70'} />
                         </TouchableOpacity>

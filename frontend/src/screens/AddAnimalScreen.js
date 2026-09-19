@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import { SPACING } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import { getStyles } from './AddAnimalScreen.styles';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
@@ -26,6 +27,7 @@ import { FileText } from 'lucide-react-native';
 
 const AddAnimalScreen = ({ navigation, route }) => {
   const { isDarkMode, theme } = useTheme();
+  const { kgToDisplay, isAnimalTypeAllowed } = useFarmSettings();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => getStyles(theme, isDarkMode, insets), [theme, isDarkMode, insets]);
@@ -792,6 +794,26 @@ const AddAnimalScreen = ({ navigation, route }) => {
             </View>
           )}
 
+          {isEditing && status === 'Live' && (
+            <View style={styles.readyToSellCard}>
+               <View style={styles.readyHeaderRow}>
+                  <Text style={[styles.readyTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>{t('animalForm.soldThisAnimal', 'Sold this animal?')}</Text>
+                  <FileText size={18} color={theme.colors.textMuted} />
+               </View>
+               <Text style={styles.soldPromptText}>
+                  {t('animalForm.soldPrompt', 'Mark it as sold to record the sale details and generate an invoice.')}
+               </Text>
+               <TouchableOpacity
+                  style={styles.markSoldBtn}
+                  activeOpacity={0.7}
+                  onPress={() => setStatus('Sold')}
+               >
+                  <FileText size={14} color={theme.colors.primary} />
+                  <Text style={styles.markSoldBtnText}>{t('animalForm.markAsSold', 'Mark as Sold')}</Text>
+               </TouchableOpacity>
+            </View>
+          )}
+
           {status === 'Dead' && (
             <View style={styles.readyToSellCard}>
                <View style={styles.readyHeaderRow}>
@@ -908,8 +930,15 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     value={soldRemark} 
                     onChangeText={setSoldRemark} 
                   />
-                  <GButton 
-                    title="Generate Invoice" 
+                  <View style={styles.invoiceDivider} />
+                  <View style={styles.invoiceHintRow}>
+                    <FileText size={15} color={theme.colors.primary} />
+                    <Text style={styles.invoiceHintText}>
+                      {t('animalForm.invoiceHint', 'Create a printable invoice for this sale')}
+                    </Text>
+                  </View>
+                  <GButton
+                    title="Generate Invoice"
                     onPress={async () => {
                       try {
                         setGeneratingInvoice(true);
@@ -952,7 +981,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     variant="outline"
                     icon={<FileText size={20} color={theme.colors.primary} />}
                     loading={generatingInvoice}
-                    containerStyle={{ marginTop: 16 }}
+                    containerStyle={{ marginTop: 4 }}
                   />
                </View>
             </View>
@@ -1000,7 +1029,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                       options={[
                         { label: t('enums.goat', 'Goat'), value: 'Goat' },
                         { label: t('enums.sheep', 'Sheep'), value: 'Sheep' }
-                      ]}
+                      ].filter(opt => isAnimalTypeAllowed(opt.value) || opt.value === animalType)}
                       placeholder="Select Type"
                       required
                     />
@@ -1326,7 +1355,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                               <Calendar size={20} color={theme.colors.textMuted} />
                             </View>
                             <View style={styles.weightInfoBlock}>
-                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{w.weight} KG</Text>
+                              <Text style={[styles.weightKg, { color: theme.colors.text }]}>{kgToDisplay(w.weight).value} {kgToDisplay(w.weight).unit}</Text>
                               <Text style={[styles.weightDate, { color: theme.colors.textLight }]}>{new Date(w.date).toLocaleDateString()}</Text>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, Platform, Modal, KeyboardAvoidingView } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import GHeader from '../components/GHeader';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
@@ -14,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const MassVaccinationScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { theme, isDarkMode } = useTheme();
+  const { kgToDisplay } = useFarmSettings();
   const styles = useMemo(() => getStyles(theme, insets), [theme, insets]);
   
   // Data State
@@ -193,7 +195,7 @@ const MassVaccinationScreen = ({ navigation }) => {
               {item.locations?.name || 'Unassigned'}
             </Text>
             <Text style={[styles.metaText, { color: theme.colors.textLight }]}>
-              {item.currentWeight || item.birthWeight || 0}kg
+              {kgToDisplay(item.currentWeight || item.birthWeight || 0).value}{kgToDisplay(item.currentWeight || item.birthWeight || 0).unit}
             </Text>
           </View>
         </View>

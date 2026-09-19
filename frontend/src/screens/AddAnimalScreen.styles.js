@@ -296,6 +296,46 @@ export const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  soldPromptText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.textLight,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  markSoldBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  markSoldBtnText: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+    color: theme.colors.primary,
+    marginLeft: 6,
+  },
+  invoiceDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  invoiceHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  invoiceHintText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.textLight,
+    marginLeft: 6,
+  },
 
   // ─── Photo card ───────────────────────────────────────────
   photoCard: {

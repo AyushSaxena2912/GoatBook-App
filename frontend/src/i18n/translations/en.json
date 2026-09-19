@@ -179,7 +179,7 @@
     "remark": "Remark",
     "generateSaleInvoice": "Generate Sale Invoice",
     "identification": "Identification",
-    "tagId": "Tag ID*",
+    "tagId": "Tag ID",
     "animalType": "Animal Type*",
     "breed": "Breed*",
     "gender": "Gender*",
