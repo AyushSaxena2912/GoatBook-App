@@ -798,17 +798,15 @@ const AddAnimalScreen = ({ navigation, route }) => {
             <View style={styles.readyToSellCard}>
                <View style={styles.readyHeaderRow}>
                   <Text style={[styles.readyTitle, { color: theme.colors.primary, fontFamily: 'Inter_600SemiBold' }]}>{t('animalForm.soldThisAnimal', 'Sold this animal?')}</Text>
-                  <FileText size={18} color={theme.colors.textMuted} />
                </View>
                <Text style={styles.soldPromptText}>
-                  {t('animalForm.soldPrompt', 'Mark it as sold to record the sale details and generate an invoice.')}
+                  {t('animalForm.soldPrompt', 'Record the sale and generate an invoice.')}
                </Text>
                <TouchableOpacity
                   style={styles.markSoldBtn}
                   activeOpacity={0.7}
                   onPress={() => setStatus('Sold')}
                >
-                  <FileText size={14} color={theme.colors.primary} />
                   <Text style={styles.markSoldBtnText}>{t('animalForm.markAsSold', 'Mark as Sold')}</Text>
                </TouchableOpacity>
             </View>
