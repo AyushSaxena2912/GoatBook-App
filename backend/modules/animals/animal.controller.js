@@ -654,7 +654,7 @@ exports.checkTagExists = async (req, res) => {
     const rawTag = decodeURIComponent(req.params.tagNumber || '').trim();
     const tagClean = rawTag.replace(/^#+/, '').trim();
 
-    const animal = await prisma.animals.findFirst({
+    let animal = await prisma.animals.findFirst({
       where: {
         OR: [
           { tag_number: { equals: rawTag, mode: 'insensitive' } },
@@ -668,6 +668,25 @@ exports.checkTagExists = async (req, res) => {
         locations: { select: { name: true } }
       }
     });
+
+    // No exact match — fall back to a partial match (e.g. tag stored as "SJ F 3282"
+    // searched by just "3282"), but only when it's unambiguous.
+    if (!animal && tagClean.length >= 2) {
+      const partialMatches = await prisma.animals.findMany({
+        where: {
+          tag_number: { contains: tagClean, mode: 'insensitive' },
+          farm_id: req.farmId
+        },
+        include: {
+          breeds: { select: { name: true } },
+          locations: { select: { name: true } }
+        },
+        take: 2
+      });
+      if (partialMatches.length === 1) {
+        animal = partialMatches[0];
+      }
+    }
 
     if (!animal) {
       return res.status(404).json({ message: 'Tag ID not found in your farm' });
