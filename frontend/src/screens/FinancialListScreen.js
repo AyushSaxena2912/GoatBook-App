@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Modal, Platform } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Modal, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
@@ -8,6 +8,15 @@ import api from '../api';
 import GAlert from '../components/GAlert';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+const DATE_PRESETS = [
+  { id: '30', label: 'Last 30 Days', days: 30 },
+  { id: '90', label: 'Last 90 Days', days: 90 },
+  { id: '180', label: 'Last 6 Months', days: 180 },
+  { id: '365', label: 'Last 1 Year', days: 365 },
+  { id: '730', label: 'Last 2 Years', days: 730 },
+  { id: '1095', label: 'Last 3 Years', days: 1095 },
+];
 
 const FinancialListScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
@@ -20,7 +29,7 @@ const FinancialListScreen = ({ navigation }) => {
   
   // Filtering States
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
-  const [filterType, setFilterType] = useState('30'); // '30', '90', 'custom'
+  const [filterType, setFilterType] = useState('30'); // one of DATE_PRESETS' ids, or 'custom'
   const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
   const [endDate, setEndDate] = useState(new Date());
   
@@ -44,15 +53,17 @@ const FinancialListScreen = ({ navigation }) => {
       let sDate = null;
       let eDate = null;
       
-      if (filterType === '30') {
-        sDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        eDate = new Date().toISOString();
-      } else if (filterType === '90') {
-        sDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      const preset = DATE_PRESETS.find(p => p.id === filterType);
+      if (preset) {
+        sDate = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000).toISOString();
         eDate = new Date().toISOString();
       } else if (filterType === 'custom') {
-        sDate = startDate.toISOString();
-        eDate = endDate.toISOString();
+        const dayStart = new Date(startDate);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(endDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        sDate = dayStart.toISOString();
+        eDate = dayEnd.toISOString();
       }
 
       if (sDate) url += `startDate=${sDate}&`;
@@ -105,9 +116,8 @@ const FinancialListScreen = ({ navigation }) => {
   };
 
   const getFilterLabel = () => {
-    if (filterType === '30') return 'Last 30 Days';
-    if (filterType === '90') return 'Last 90 Days';
-    return 'Custom Range';
+    const preset = DATE_PRESETS.find(p => p.id === filterType);
+    return preset ? preset.label : 'Custom Range';
   };
 
   const renderTransactionItem = ({ item }) => {
@@ -245,42 +255,37 @@ const FinancialListScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Last 30 Days */}
-            <TouchableOpacity style={styles.filterOption} onPress={() => setFilterType('30')}>
-              <View style={[styles.radio, filterType === '30' && styles.radioActive]}>
-                {filterType === '30' && <View style={styles.radioInner} />}
-              </View>
-              <Text style={styles.optionLabel}>Last 30 Days</Text>
-            </TouchableOpacity>
-
-            {/* Last 90 Days */}
-            <TouchableOpacity style={styles.filterOption} onPress={() => setFilterType('90')}>
-              <View style={[styles.radio, filterType === '90' && styles.radioActive]}>
-                {filterType === '90' && <View style={styles.radioInner} />}
-              </View>
-              <Text style={styles.optionLabel}>Last 90 Days</Text>
-            </TouchableOpacity>
-
-            {/* Date Range Selection */}
-            <TouchableOpacity style={styles.filterOption} onPress={() => setFilterType('custom')}>
-              <View style={[styles.radio, filterType === 'custom' && styles.radioActive]}>
-                {filterType === 'custom' && <View style={styles.radioInner} />}
-              </View>
-              <Text style={styles.optionLabel}>Date Range</Text>
-            </TouchableOpacity>
-
-            {filterType === 'custom' && (
-              <View style={styles.customDateContainer}>
-                <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowStartPicker(true)}>
-                  <Calendar size={16} color={theme.colors.textLight} />
-                  <Text style={styles.datePickerBtnText}>Start Date: {startDate.toLocaleDateString()}</Text>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {DATE_PRESETS.map(preset => (
+                <TouchableOpacity key={preset.id} style={styles.filterOption} onPress={() => setFilterType(preset.id)}>
+                  <View style={[styles.radio, filterType === preset.id && styles.radioActive]}>
+                    {filterType === preset.id && <View style={styles.radioInner} />}
+                  </View>
+                  <Text style={styles.optionLabel}>{preset.label}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowEndPicker(true)}>
-                  <Calendar size={16} color={theme.colors.textLight} />
-                  <Text style={styles.datePickerBtnText}>End Date: {endDate.toLocaleDateString()}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              ))}
+
+              {/* Date Range Selection */}
+              <TouchableOpacity style={styles.filterOption} onPress={() => setFilterType('custom')}>
+                <View style={[styles.radio, filterType === 'custom' && styles.radioActive]}>
+                  {filterType === 'custom' && <View style={styles.radioInner} />}
+                </View>
+                <Text style={styles.optionLabel}>Date Range</Text>
+              </TouchableOpacity>
+
+              {filterType === 'custom' && (
+                <View style={styles.customDateContainer}>
+                  <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowStartPicker(true)}>
+                    <Calendar size={16} color={theme.colors.textLight} />
+                    <Text style={styles.datePickerBtnText}>Start Date: {startDate.toLocaleDateString()}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowEndPicker(true)}>
+                    <Calendar size={16} color={theme.colors.textLight} />
+                    <Text style={styles.datePickerBtnText}>End Date: {endDate.toLocaleDateString()}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
 
             {showStartPicker && (
               <DateTimePicker
@@ -351,7 +356,8 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   noRecords: { fontSize: 16, color: theme.colors.textMuted, fontFamily: 'Inter_500Medium' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: theme.colors.surface, width: '85%', borderRadius: 14, padding: 20 },
+  modalContent: { backgroundColor: theme.colors.surface, width: '85%', maxHeight: '80%', borderRadius: 14, padding: 20 },
+  modalScroll: { flexGrow: 0 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontFamily: 'Inter_700Bold', color: theme.colors.text },
   filterOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
