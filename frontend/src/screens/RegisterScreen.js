@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingV
 import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GInput from '../components/GInput';
+import GPhoneInput from '../components/GPhoneInput';
 import GButton from '../components/GButton';
 import api, { setAuthToken, setSelectedFarm } from '../api';
 
@@ -159,12 +160,11 @@ const RegisterScreen = ({ navigation }) => {
                 autoCapitalize="none"
             />
             <View style={styles.gap} />
-            <GInput 
-                label="Phone Number" 
-                value={formData.phone} 
-                onChangeText={(v) => updateField('phone', v)} 
+            <GPhoneInput
+                label="Phone Number"
+                value={formData.phone}
+                onChangeText={(v) => updateField('phone', v)}
                 placeholder="9876543210"
-                keyboardType="phone-pad"
                 required
             />
             <View style={styles.gap} />

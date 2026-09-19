@@ -4,6 +4,7 @@ import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
+import GPhoneInput from '../components/GPhoneInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import GConfirmModal from '../components/GConfirmModal';
@@ -248,12 +249,11 @@ const AddEmployeeScreen = ({ navigation, route }) => {
             
             <View style={styles.gap} />
             
-            <GInput 
-              label={t('settings.phoneNumber', 'Phone Number')} 
-              value={phone} 
-              onChangeText={setPhone} 
-              keyboardType="phone-pad"
-              required 
+            <GPhoneInput
+              label={t('settings.phoneNumber', 'Phone Number')}
+              value={phone}
+              onChangeText={setPhone}
+              required
             />
             
             <View style={styles.gap} />

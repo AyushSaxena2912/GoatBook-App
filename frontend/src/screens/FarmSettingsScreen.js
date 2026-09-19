@@ -6,6 +6,7 @@ import { SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
+import GPhoneInput from '../components/GPhoneInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
 import { ShieldAlert, Store, Camera, ImageIcon, Trash2, Plus, MinusCircle, Info } from 'lucide-react-native';
@@ -22,7 +23,6 @@ const FarmSettingsScreen = ({ navigation }) => {
 
   const [formData, setFormData] = useState({
     name: '',
-    location: '',
     address: '',
     city: '',
     state: '',
@@ -59,7 +59,6 @@ const FarmSettingsScreen = ({ navigation }) => {
       
       const mappedData = {
         name: farm.name || '',
-        location: farm.location || '',
         address: farm.address || '',
         city: farm.city || '',
         state: farm.state || '',
@@ -220,7 +219,7 @@ const FarmSettingsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <GHeader title={t('settings.farmSettingsTitle', 'Farm Settings')} onBack={() => navigation.goBack()} />
+      <GHeader title={t('settings.farmSettingsTitle', 'Farm Profile')} onBack={() => navigation.goBack()} leftAlign />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
@@ -294,15 +293,6 @@ const FarmSettingsScreen = ({ navigation }) => {
             <View style={styles.gap} />
 
             <GInput
-              label={t('settings.shortLocation', 'Short Location')}
-              value={formData.location}
-              onChangeText={(v) => setFormData({...formData, location: v})}
-              placeholder="e.g. Village, District"
-              editable={isOwner}
-            />
-            <View style={styles.gap} />
-
-            <GInput
               label={t('settings.farmEmail', 'Farm Email')}
               value={formData.email}
               onChangeText={(v) => setFormData({...formData, email: v})}
@@ -317,12 +307,11 @@ const FarmSettingsScreen = ({ navigation }) => {
             {phones.map((p, index) => (
               <View key={index.toString()} style={styles.phoneRow}>
                 <View style={{ flex: 1 }}>
-                  <GInput
+                  <GPhoneInput
                     label={`${t('settings.phoneNumber', 'Phone Number')} ${index + 1}`}
                     value={p}
                     onChangeText={(v) => handlePhoneChange(v, index)}
                     placeholder="9876543210"
-                    keyboardType="phone-pad"
                     editable={isOwner}
                   />
                 </View>
@@ -398,7 +387,7 @@ const FarmSettingsScreen = ({ navigation }) => {
           <View style={styles.buttonRow}>
             <View style={styles.halfBtn}>
               <GButton 
-                title={t('common.reset', 'Reset')} 
+                title={t('common.reset', 'Cancel')} 
                 variant="outline" 
                 onPress={handleReset}
                 disabled={loading || uploading}

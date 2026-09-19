@@ -5,20 +5,23 @@ import { COLORS, SPACING, lightTheme } from '../theme';
 
 import { useTheme } from '../theme/ThemeContext';
 
-const GInput = ({ 
-  label, 
-  value, 
-  onChangeText, 
-  secureTextEntry, 
-  error, 
-  keyboardType, 
+const GInput = ({
+  label,
+  value,
+  onChangeText,
+  secureTextEntry,
+  error,
+  keyboardType,
   required,
   placeholder,
   containerStyle,
   helpAction,
   leftIcon,
   rightIcon,
-  ...props 
+  style,
+  onFocus,
+  onBlur,
+  ...props
 }) => {
   const { isDarkMode, theme } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
@@ -92,17 +95,17 @@ const GInput = ({
           style={StyleSheet.flatten([
             styles.input,
             isMultiline && { textAlignVertical: 'top', height: 'auto', minHeight: 60, marginTop: 8 },
-            props.style,
-            { 
-              color: theme.colors.text, 
+            style,
+            {
+              color: theme.colors.text,
               fontFamily: theme.typography.medium,
-              outlineStyle: Platform.OS === 'web' ? 'none' : undefined 
+              outlineStyle: Platform.OS === 'web' ? 'none' : undefined
             },
           ])}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={(e) => { setIsFocused(true); onFocus && onFocus(e); }}
+          onBlur={(e) => { setIsFocused(false); onBlur && onBlur(e); }}
           keyboardType={keyboardType}
           placeholder={(isFocused && !value) ? placeholder : ""} 
           placeholderTextColor={theme.colors.textMuted}

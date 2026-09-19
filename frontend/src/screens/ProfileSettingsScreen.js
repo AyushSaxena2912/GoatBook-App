@@ -4,6 +4,7 @@ import { COLORS, SPACING, SHADOW } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
+import GPhoneInput from '../components/GPhoneInput';
 import GButton from '../components/GButton';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
@@ -140,7 +141,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title={t('settings.profileSettingsTitle', 'User Profile Settings')} onBack={() => navigation.goBack()} />
+      <GHeader title={t('settings.profileSettingsTitle', 'User Profile')} onBack={() => navigation.goBack()} leftAlign />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
@@ -154,7 +155,13 @@ const ProfileSettingsScreen = ({ navigation }) => {
                 <Image source={{ uri: formData.profilePhotoUrl }} style={styles.avatarImage} />
               ) : (
                 <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primary + '15' }]}>
-                  <User size={44} color={theme.colors.primary} />
+                  {formData.name ? (
+                    <Text style={[styles.avatarInitial, { color: theme.colors.primary }]}>
+                      {formData.name.charAt(0).toUpperCase()}
+                    </Text>
+                  ) : (
+                    <User size={44} color={theme.colors.primary} />
+                  )}
                 </View>
               )}
             </TouchableOpacity>
@@ -198,11 +205,10 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
             <View style={styles.gap} />
 
-            <GInput
+            <GPhoneInput
               label={t('settings.phoneNumber', 'Phone Number')}
               value={formData.phone}
               onChangeText={(v) => setFormData({...formData, phone: v})}
-              keyboardType="phone-pad"
               editable={formData.employeeType === 'OWNER'}
               style={formData.employeeType !== 'OWNER' && { color: theme.colors.textMuted }}
             />
@@ -215,7 +221,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
             <GInput
               label={t('settings.role', 'Role')}
-              value={formData.employeeType}
+              value={formData.employeeType ? formData.employeeType.charAt(0) + formData.employeeType.slice(1).toLowerCase() : ''}
               editable={false}
               containerStyle={{ opacity: 0.7 }}
             />
@@ -229,7 +235,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
           <View style={styles.buttonRow}>
             <View style={styles.halfBtn}>
               <GButton 
-                title={t('common.reset', 'Reset')} 
+                title={t('common.reset', 'Cancel')} 
                 variant="outline" 
                 onPress={handleReset}
               />
@@ -281,6 +287,10 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
+  },
+  avatarInitial: {
+    fontSize: 40,
+    fontFamily: 'Inter_700Bold',
   },
   avatarPlaceholder: {
     width: '100%',
