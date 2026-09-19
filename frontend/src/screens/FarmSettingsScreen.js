@@ -8,7 +8,7 @@ import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import GSelect from '../components/GSelect';
-import { ShieldAlert, Store, Camera, ImageIcon, Trash2, Plus, MinusCircle } from 'lucide-react-native';
+import { ShieldAlert, Store, Camera, ImageIcon, Trash2, Plus, MinusCircle, Info } from 'lucide-react-native';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
@@ -231,6 +231,12 @@ const FarmSettingsScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Invoice usage note */}
+          <View style={styles.invoiceNoteRow}>
+            <Info size={13} color={theme.colors.textMuted} />
+            <Text style={[styles.invoiceNoteText, { color: theme.colors.textMuted }]}>{t('settings.farmInvoiceNote', 'These details appear on the invoices you generate.')}</Text>
+          </View>
+
           {/* Owner warning */}
           {!isOwner && (
             <View style={[styles.infoBox, {
@@ -508,6 +514,17 @@ const getStyles = (theme, isDarkMode, insets) => StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
     marginLeft: 6,
+  },
+  invoiceNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 6,
+  },
+  invoiceNoteText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    flex: 1,
   },
   infoBox: {
     padding: 12,

@@ -9,6 +9,10 @@ import {
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { LinearGradient } from 'expo-linear-gradient';
+import AnimalIcon from './AnimalIcon';
+import BreedIcon from './BreedIcon';
+import MatingIcon from './MatingIcon';
+import BreedingIcon from './BreedingIcon';
 import api, { setAuthToken, setSelectedFarm } from '../api';
 import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -64,23 +68,17 @@ const SideMenu = (props) => {
 
   const menuItems = [
     { title: t('menu.dashboard', 'Dashboard'), icon: <Home size={22} />, screen: 'Dashboard' },
-    { title: t('menu.animals', 'Animals'), icon: <PawPrint size={22} />, screen: 'AnimalList' },
+    { title: t('menu.animals', 'Animals'), icon: <AnimalIcon size={22} />, screen: 'AnimalList' },
     { title: t('menu.bulkData', 'Bulk Import / Export'), icon: <FileSpreadsheet size={22} />, screen: 'BulkData' },
-    { title: t('menu.animalImport', 'Animal Import'), icon: <PawPrint size={22} />, screen: 'BulkData', params: { initialEntity: 'animals' } },
-    { title: t('menu.breedingImport', 'Breeding Import'), icon: <Activity size={22} />, screen: 'BulkData', params: { initialEntity: 'breeding' } },
-    { title: t('menu.matingImport', 'Mating Import'), icon: <Heart size={22} />, screen: 'BulkData', params: { initialEntity: 'mating' } },
-    { title: t('menu.weightImport', 'Weight Import'), icon: <Scale size={22} />, screen: 'BulkData', params: { initialEntity: 'weight' } },
-    { title: t('menu.vaccinationImport', 'Vaccination Import'), icon: <Syringe size={22} />, screen: 'BulkData', params: { initialEntity: 'vaccination' } },
-    { title: t('menu.treatmentImport', 'Treatment Import'), icon: <Stethoscope size={22} />, screen: 'BulkData', params: { initialEntity: 'treatment' } },
-    { title: t('menu.breeds', 'Breeds'), icon: <GitBranch size={22} />, screen: 'BreedList' },
+    { title: t('menu.breeds', 'Breeds'), icon: <BreedIcon size={22} />, screen: 'BreedList' },
     { title: t('menu.employee', 'Employee'), icon: <User size={22} />, screen: 'EmployeeList', role: 'OWNER' },
     { title: t('menu.mySubscription', 'My Subscription'), icon: <Crown size={22} />, screen: 'SubscriptionScreen', role: 'OWNER' },
     { title: t('menu.locations', 'Locations'), icon: <MapPin size={22} />, screen: 'LocationMenu' },
     { title: t('menu.vaccines', 'Vaccines'), icon: <Syringe size={22} />, screen: 'VaccinesMenu' },
     { title: t('menu.treatment', 'Treatment'), icon: <Stethoscope size={22} />, screen: 'TreatmentList' },
     { title: t('menu.weight', 'Weight'), icon: <Scale size={22} />, screen: 'AddWeight' },
-    { title: t('menu.mating', 'Mating'), icon: <Heart size={22} />, screen: 'MatingList' },
-    { title: t('menu.breeding', 'Breeding'), icon: <Activity size={22} />, screen: 'BreedingList' },
+    { title: t('menu.mating', 'Mating'), icon: <MatingIcon size={22} />, screen: 'MatingList' },
+    { title: t('menu.breeding', 'Breeding'), icon: <BreedingIcon size={22} />, screen: 'BreedingList' },
     { title: t('menu.notes', 'Notes'), icon: <StickyNote size={22} />, screen: 'NoteList' },
     { title: t('menu.reports', 'Reports'), icon: <ClipboardList size={22} />, screen: 'ReportsMenu' },
     { title: t('menu.feedFormulation', 'Feed Formulation'), icon: <Leaf size={22} />, screen: 'FormulationList' },

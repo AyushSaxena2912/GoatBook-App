@@ -5,7 +5,6 @@ import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import GInput from '../components/GInput';
 import GButton from '../components/GButton';
-import GSelect from '../components/GSelect';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
 import { User, Camera, ImageIcon, Trash2 } from 'lucide-react-native';
@@ -21,14 +20,10 @@ const ProfileSettingsScreen = ({ navigation }) => {
     name: '',
     email: '',
     phone: '',
-    address: '',
-    city: '',
-    state: '',
-    country: 'India',
     employeeType: '',
     profilePhotoUrl: null
   });
-  
+
   const [originalData, setOriginalData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,17 +38,13 @@ const ProfileSettingsScreen = ({ navigation }) => {
       setLoading(true);
       const response = await api.get('/users/profile');
       const data = response.data;
-      
+
       const mappedData = {
         name: data.name || '',
         email: data.email || '',
         phone: data.phone || '',
         employeeType: data.employeeProfile?.employeeType || '',
-        profilePhotoUrl: data.profilePhotoUrl || null,
-        address: '',
-        city: '',
-        state: '',
-        country: 'India'
+        profilePhotoUrl: data.profilePhotoUrl || null
       };
 
       setFormData(mappedData);
@@ -128,6 +119,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
         phone: formData.phone,
         profilePhotoUrl: uploadedPhotoUrl
       });
+
       setFormData({ ...formData, profilePhotoUrl: uploadedPhotoUrl });
       setOriginalData({ ...formData, profilePhotoUrl: uploadedPhotoUrl });
       setSaving(false);
@@ -148,7 +140,7 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <GHeader title={t('settings.profileSettingsTitle', 'Profile Settings')} onBack={() => navigation.goBack()} />
+      <GHeader title={t('settings.profileSettingsTitle', 'User Profile Settings')} onBack={() => navigation.goBack()} />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
@@ -185,30 +177,30 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
           <View style={styles.formContainer}>
             <Text style={styles.sectionTitle}>{t('settings.basicInformation', 'Basic Information')}</Text>
-            
-            <GInput 
-              label={t('settings.fullName', 'Full Name')} 
-              value={formData.name} 
-              onChangeText={(v) => setFormData({...formData, name: v})} 
-              required 
+
+            <GInput
+              label={t('settings.ownerName', 'Farm Owner Name')}
+              value={formData.name}
+              onChangeText={(v) => setFormData({...formData, name: v})}
+              required
             />
-            
+
             <View style={styles.gap} />
-            
-            <GInput 
-              label={t('settings.emailAddress', 'Email Address')} 
-              value={formData.email} 
-              onChangeText={(v) => setFormData({...formData, email: v})} 
+
+            <GInput
+              label={t('settings.emailAddress', 'Email Address')}
+              value={formData.email}
+              onChangeText={(v) => setFormData({...formData, email: v})}
               keyboardType="email-address"
               editable={formData.employeeType === 'OWNER'}
               style={formData.employeeType !== 'OWNER' && { color: theme.colors.textMuted }}
             />
-            
+
             <View style={styles.gap} />
-            
-            <GInput 
-              label={t('settings.phoneNumber', 'Phone Number')} 
-              value={formData.phone} 
+
+            <GInput
+              label={t('settings.phoneNumber', 'Phone Number')}
+              value={formData.phone}
               onChangeText={(v) => setFormData({...formData, phone: v})}
               keyboardType="phone-pad"
               editable={formData.employeeType === 'OWNER'}
@@ -221,32 +213,11 @@ const ProfileSettingsScreen = ({ navigation }) => {
 
             <View style={styles.gap} />
 
-            <GInput 
-              label={t('settings.role', 'Role')} 
-              value={formData.employeeType} 
+            <GInput
+              label={t('settings.role', 'Role')}
+              value={formData.employeeType}
               editable={false}
               containerStyle={{ opacity: 0.7 }}
-            />
-
-            <Text style={[styles.sectionTitle, { marginTop: SPACING.xl }]}>{t('settings.addressDetails', 'Address Details')}</Text>
-            
-            <GInput 
-              label={t('settings.address', 'Address')} 
-              value={formData.address} 
-              onChangeText={(v) => setFormData({...formData, address: v})} 
-            />
-            
-            <View style={styles.gap} />
-            
-            <GSelect 
-              label={t('settings.country', 'Country')} 
-              value={formData.country} 
-              onSelect={(v) => setFormData({...formData, country: v})}
-              options={[
-                { label: 'India', value: 'India' },
-                { label: 'USA', value: 'USA' },
-                { label: 'UK', value: 'UK' }
-              ]}
             />
           </View>
 

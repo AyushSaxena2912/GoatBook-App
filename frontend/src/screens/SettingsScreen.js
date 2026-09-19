@@ -34,14 +34,14 @@ const SettingsScreen = ({ navigation }) => {
   const settingsOptions = [
     { 
       id: 'profile', 
-      title: t('settings.profile', 'Profile Settings'), 
+      title: t('settings.profile', 'User Profile'),
       icon: <User color={theme.colors.primary} size={32} />, 
       onPress: () => navigation.navigate('ProfileSettings'),
       visible: true
     },
     { 
       id: 'farm', 
-      title: t('settings.farm', 'Farm Settings'), 
+      title: t('settings.farm', 'Farm Profile'),
       icon: <Home color={theme.colors.primary} size={32} />, 
       onPress: () => navigation.navigate('FarmSettings'),
       visible: role === 'OWNER'
