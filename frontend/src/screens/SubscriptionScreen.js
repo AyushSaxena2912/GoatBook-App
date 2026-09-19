@@ -48,7 +48,7 @@ const PLANS = [
   },
   {
     id: 'ULTIMATE',
-    name: 'Ultimate / Elite',
+    name: 'Ultimate',
     price: '₹15,000/yr',
     Icon: Crown,
     features: [
