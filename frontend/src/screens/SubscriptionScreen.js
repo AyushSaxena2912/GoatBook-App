@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, Platform, 
 import { useTheme } from '../theme/ThemeContext';
 import GHeader from '../components/GHeader';
 import { CheckCircle2, Shield, Crown, Zap, User } from 'lucide-react-native';
-import { SPACING, SHADOW } from '../theme';
+import { SPACING } from '../theme';
 import api from '../api';
 import { load } from '@cashfreepayments/cashfree-js';
 
@@ -12,8 +12,7 @@ const PLANS = [
     id: 'BASIC',
     name: 'Basic Version',
     price: '₹5,000/yr',
-    icon: <User size={24} color="#64748b" />,
-    color: '#64748b',
+    Icon: User,
     features: [
       'Data entry for 1–50 Goats',
       'Single user access',
@@ -25,8 +24,7 @@ const PLANS = [
     id: 'STANDARD',
     name: 'Standard Version',
     price: '₹7,500/yr',
-    icon: <Shield size={24} color="#0ea5e9" />,
-    color: '#0ea5e9',
+    Icon: Shield,
     features: [
       'Data entry for 1–110 Goats',
       'Single user access',
@@ -39,8 +37,7 @@ const PLANS = [
     id: 'ADVANCED',
     name: 'Advanced Version',
     price: '₹10,000/yr',
-    icon: <Zap size={24} color="#8b5cf6" />,
-    color: '#8b5cf6',
+    Icon: Zap,
     features: [
       'Supports 110–500 Goats',
       'Up to 3 users',
@@ -53,8 +50,7 @@ const PLANS = [
     id: 'ULTIMATE',
     name: 'Ultimate / Elite',
     price: '₹15,000/yr',
-    icon: <Crown size={24} color="#f59e0b" />,
-    color: '#f59e0b',
+    Icon: Crown,
     features: [
       'Unlimited Goats and users (employees)',
       'Full cloud-based system',
@@ -173,15 +169,39 @@ const SubscriptionScreen = ({ navigation }) => {
         ) : (
           <>
             {currentPlan && (
-              <View style={[styles.card, { borderColor: theme.colors.primary, borderWidth: 2, backgroundColor: theme.colors.primary + '10' }]}>
-                <Text style={{ fontSize: 14, fontFamily: 'Inter_700Bold', color: theme.colors.primary, marginBottom: 8 }}>CURRENT ACTIVE PLAN</Text>
-                <Text style={styles.planName}>{currentPlan.plan_name} Version</Text>
-                <Text style={[styles.featureText, { marginTop: 8 }]}>
-                  Valid until: {currentPlan.end_date ? new Date(currentPlan.end_date).toLocaleDateString() : 'N/A'}
-                </Text>
-                <Text style={[styles.featureText, { marginTop: 4 }]}>
-                  Status: <Text style={{ color: currentPlan.status === 'ACTIVE' ? theme.colors.success : theme.colors.error, fontFamily: 'Inter_700Bold' }}>{currentPlan.status}</Text>
-                </Text>
+              <View style={styles.currentPlanCard}>
+                <View style={styles.currentPlanHeader}>
+                  <View style={styles.currentPlanIconBox}>
+                    <Crown size={16} color={theme.colors.primary} />
+                  </View>
+                  <Text style={styles.currentPlanLabel}>CURRENT ACTIVE PLAN</Text>
+                </View>
+
+                <Text style={styles.currentPlanName}>{currentPlan.plan_name} Version</Text>
+
+                <View style={styles.currentPlanMetaRow}>
+                  <View style={styles.currentPlanMetaItem}>
+                    <Text style={styles.currentPlanMetaLabel}>Valid until</Text>
+                    <Text style={styles.currentPlanMetaValue}>
+                      {currentPlan.end_date ? new Date(currentPlan.end_date).toLocaleDateString() : 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.currentPlanMetaItem}>
+                    <Text style={styles.currentPlanMetaLabel}>Status</Text>
+                    <View style={styles.statusPill}>
+                      <View style={[
+                        styles.statusDot,
+                        { backgroundColor: currentPlan.status === 'ACTIVE' ? theme.colors.success : theme.colors.error }
+                      ]} />
+                      <Text style={[
+                        styles.statusPillText,
+                        { color: currentPlan.status === 'ACTIVE' ? theme.colors.success : theme.colors.error }
+                      ]}>
+                        {currentPlan.status}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               </View>
             )}
 
@@ -192,33 +212,34 @@ const SubscriptionScreen = ({ navigation }) => {
 
             {PLANS.map((plan) => {
               const isCurrent = currentPlan && currentPlan.plan_name === plan.id;
+              const Icon = plan.Icon;
               return (
-                <View 
-                  key={plan.id} 
+                <View
+                  key={plan.id}
                   style={[
-                    styles.card, 
-                    plan.isPopular && styles.popularCard,
+                    styles.card,
+                    { borderColor: (plan.isPopular || isCurrent) ? theme.colors.primary : theme.colors.border },
                     isCurrent && { opacity: 0.6 },
-                    { borderColor: plan.isPopular ? plan.color : theme.colors.border }
                   ]}
                 >
-                  {plan.isPopular && (
-                    <View style={[styles.popularBadge, { backgroundColor: plan.color }]}>
-                      <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
-                    </View>
-                  )}
-                  {isCurrent && (
-                    <View style={[styles.popularBadge, { backgroundColor: theme.colors.success, top: -12 }]}>
-                      <Text style={styles.popularBadgeText}>CURRENT PLAN</Text>
-                    </View>
-                  )}
-
                   <View style={styles.cardHeader}>
-                    <View style={[styles.iconBox, { backgroundColor: `${plan.color}15` }]}>
-                      {plan.icon}
+                    <View style={styles.iconBox}>
+                      <Icon size={22} color={theme.colors.primary} />
                     </View>
                     <View style={styles.cardTitleContainer}>
-                      <Text style={styles.planName}>{plan.name}</Text>
+                      <View style={styles.cardTitleRow}>
+                        <Text style={styles.planName}>{plan.name}</Text>
+                        {plan.isPopular && !isCurrent && (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>POPULAR</Text>
+                          </View>
+                        )}
+                        {isCurrent && (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>CURRENT</Text>
+                          </View>
+                        )}
+                      </View>
                       <Text style={styles.planPrice}>{plan.price}</Text>
                     </View>
                   </View>
@@ -226,22 +247,21 @@ const SubscriptionScreen = ({ navigation }) => {
                   <View style={styles.featuresList}>
                     {plan.features.map((feat, index) => (
                       <View key={index} style={styles.featureItem}>
-                        <CheckCircle2 size={18} color={plan.color} style={styles.featureIcon} />
+                        <CheckCircle2 size={18} color={theme.colors.primary} style={styles.featureIcon} />
                         <Text style={styles.featureText}>{feat}</Text>
                       </View>
                     ))}
                   </View>
 
-                  <TouchableOpacity 
-                    style={[
-                      styles.selectBtn, 
-                      { backgroundColor: isCurrent ? theme.colors.textLight : plan.color }
-                    ]}
+                  <TouchableOpacity
+                    style={[styles.selectBtn, isCurrent && styles.selectBtnDisabled]}
                     onPress={() => handleSelectPlan(plan.id)}
                     activeOpacity={isCurrent ? 1 : 0.8}
                     disabled={isCurrent}
                   >
-                    <Text style={styles.selectBtnText}>{isCurrent ? 'Current Plan' : 'Select Plan'}</Text>
+                    <Text style={[styles.selectBtnText, isCurrent && styles.selectBtnTextDisabled]}>
+                      {isCurrent ? 'Current Plan' : 'Select Plan'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               );
@@ -281,63 +301,125 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  currentPlanCard: {
+    backgroundColor: theme.colors.primary + '0A',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '40',
+    padding: SPACING.md,
+    marginBottom: SPACING.xl,
+  },
+  currentPlanHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  currentPlanIconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: theme.colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  currentPlanLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    color: theme.colors.primary,
+    letterSpacing: 0.4,
+  },
+  currentPlanName: {
+    fontSize: 19,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.text,
+    marginBottom: 14,
+  },
+  currentPlanMetaRow: {
+    flexDirection: 'row',
+  },
+  currentPlanMetaItem: {
+    flex: 1,
+  },
+  currentPlanMetaLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    color: theme.colors.textLight,
+    marginBottom: 3,
+  },
+  currentPlanMetaValue: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    color: theme.colors.text,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusPillText: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+  },
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    padding: SPACING.lg,
-    marginBottom: SPACING.lg,
-    ...SHADOW.md,
-    position: 'relative',
-  },
-  popularCard: {
-    borderWidth: 2,
-    marginTop: 12,
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -12,
-    alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 1,
-  },
-  popularBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: 1,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   iconBox: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 12,
+    backgroundColor: theme.colors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   cardTitleContainer: {
     flex: 1,
   },
+  cardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   planName: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
     color: theme.colors.text,
   },
+  badge: {
+    backgroundColor: theme.colors.primary + '15',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 8,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter_700Bold',
+    color: theme.colors.primary,
+    letterSpacing: 0.4,
+  },
   planPrice: {
-    fontSize: 22,
-    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 20,
+    fontFamily: 'Inter_700Bold',
     color: theme.colors.text,
     marginTop: 2,
   },
   featuresList: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   featureItem: {
     flexDirection: 'row',
@@ -356,14 +438,23 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     lineHeight: 20,
   },
   selectBtn: {
-    paddingVertical: 14,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 13,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  selectBtnDisabled: {
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   selectBtnText: {
     color: '#fff',
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
+  },
+  selectBtnTextDisabled: {
+    color: theme.colors.textLight,
   }
 });
 
