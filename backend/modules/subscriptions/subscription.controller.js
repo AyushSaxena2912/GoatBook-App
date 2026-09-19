@@ -9,9 +9,9 @@ const CASHFREE_API_VERSION = '2023-08-01';
 // Price lookup for plans
 const PLAN_PRICES = {
   BASIC: 5000,
-  STANDARD: 10000,
-  ADVANCED: 15000,
-  ULTIMATE: 20000
+  STANDARD: 7500,
+  ADVANCED: 10000,
+  ULTIMATE: 15000
 };
 
 // @desc    Create a payment order for Cashfree

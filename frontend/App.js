@@ -75,6 +75,8 @@ import { registerForPushNotificationsAsync } from './src/utils/notifications';
 import i18n from './src/i18n';
 import api from './src/api';
 import LanguageSelectionScreen from './src/screens/LanguageSelectionScreen';
+import SubscriptionExpiredModal from './src/components/SubscriptionExpiredModal';
+import { navigationRef } from './src/navigation/navigationRef';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -219,8 +221,9 @@ function AppContent() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <StatusBar style="auto" />
+        <SubscriptionExpiredModal />
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{

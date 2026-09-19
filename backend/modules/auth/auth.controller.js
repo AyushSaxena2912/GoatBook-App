@@ -33,7 +33,7 @@ const farmExistsMessage = (emailConflict, phoneConflict) => {
 // @desc    Owner Registration Flow (Email + Phone + Password)
 // @route   POST api/auth/register
 exports.register = async (req, res) => {
-  const { name, email, phone, password, farmName, farmLocation, planName, isTrial } = req.body;
+  const { name, email, phone, password, farmName, farmLocation, farmAddress, farmCity, farmState, farmCountry, planName, isTrial } = req.body;
 
   // Basic validation to ensure required fields are present
   if (!phone || !password || !name || !farmName || !planName) {
@@ -148,6 +148,10 @@ exports.register = async (req, res) => {
           id: uuidv4(),
           name: farmNameNorm,
           location: farmLocation || null,
+          address: farmAddress || null,
+          city: farmCity || null,
+          state: farmState || null,
+          country: farmCountry || 'India',
           owner_employee_id: employee.id,
           created_by_user_id: user.id,
           created_at: now,
@@ -159,7 +163,7 @@ exports.register = async (req, res) => {
       // 4.5 Initialize the Subscription
       const endDate = new Date(now);
       if (isPlanTrial) {
-         endDate.setDate(endDate.getDate() + 7); // 7 days trial
+         endDate.setDate(endDate.getDate() + 10); // 10 days trial
       } else {
          endDate.setFullYear(endDate.getFullYear() + 1); // 1 year subscription
       }

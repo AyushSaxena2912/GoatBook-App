@@ -86,7 +86,9 @@ const SubscriptionScreen = ({ navigation }) => {
   };
 
   const handleSelectPlan = async (planId) => {
-    if (currentPlan && currentPlan.plan_name === planId) {
+    const isSamePlan = currentPlan && currentPlan.plan_name === planId;
+    const isStillActive = currentPlan?.status === 'ACTIVE' && currentPlan?.end_date && new Date(currentPlan.end_date) > new Date();
+    if (isSamePlan && isStillActive) {
       if (Platform.OS === 'web') alert('You are already subscribed to this plan.');
       else Alert.alert('Already Subscribed', 'You are already subscribed to this plan.');
       return;
@@ -170,9 +172,13 @@ const SubscriptionScreen = ({ navigation }) => {
           <>
             {currentPlan && (() => {
               const CurrentPlanIcon = PLANS.find(p => p.id === currentPlan.plan_name)?.Icon || Crown;
-              const statusLabel = currentPlan.status
-                ? currentPlan.status.charAt(0) + currentPlan.status.slice(1).toLowerCase()
-                : 'Unknown';
+              const isExpired = currentPlan.end_date && new Date(currentPlan.end_date) < new Date();
+              const effectiveIsActive = currentPlan.status === 'ACTIVE' && !isExpired;
+              const statusLabel = isExpired
+                ? 'Expired'
+                : (currentPlan.status
+                  ? currentPlan.status.charAt(0) + currentPlan.status.slice(1).toLowerCase()
+                  : 'Unknown');
               const planNameLabel = currentPlan.plan_name
                 ? currentPlan.plan_name.charAt(0) + currentPlan.plan_name.slice(1).toLowerCase()
                 : '';
@@ -199,11 +205,11 @@ const SubscriptionScreen = ({ navigation }) => {
                       <View style={styles.statusPill}>
                         <View style={[
                           styles.statusDot,
-                          { backgroundColor: currentPlan.status === 'ACTIVE' ? theme.colors.success : theme.colors.error }
+                          { backgroundColor: effectiveIsActive ? theme.colors.success : theme.colors.error }
                         ]} />
                         <Text style={[
                           styles.statusPillText,
-                          { color: currentPlan.status === 'ACTIVE' ? theme.colors.success : theme.colors.error }
+                          { color: effectiveIsActive ? theme.colors.success : theme.colors.error }
                         ]}>
                           {statusLabel}
                         </Text>
@@ -221,6 +227,7 @@ const SubscriptionScreen = ({ navigation }) => {
 
             {PLANS.map((plan) => {
               const isCurrent = currentPlan && currentPlan.plan_name === plan.id;
+              const isCurrentActive = isCurrent && currentPlan?.status === 'ACTIVE' && currentPlan?.end_date && new Date(currentPlan.end_date) > new Date();
               const Icon = plan.Icon;
               return (
                 <View
@@ -228,7 +235,7 @@ const SubscriptionScreen = ({ navigation }) => {
                   style={[
                     styles.planCard,
                     { borderColor: isCurrent ? theme.colors.primary : theme.colors.border },
-                    isCurrent && { opacity: 0.6 },
+                    isCurrentActive && { opacity: 0.6 },
                   ]}
                 >
                   <View style={styles.planCardHeader}>
@@ -253,13 +260,13 @@ const SubscriptionScreen = ({ navigation }) => {
                   </View>
 
                   <TouchableOpacity
-                    style={[styles.selectBtn, isCurrent && styles.selectBtnDisabled]}
+                    style={[styles.selectBtn, isCurrentActive && styles.selectBtnDisabled]}
                     onPress={() => handleSelectPlan(plan.id)}
-                    activeOpacity={isCurrent ? 1 : 0.8}
-                    disabled={isCurrent}
+                    activeOpacity={isCurrentActive ? 1 : 0.8}
+                    disabled={isCurrentActive}
                   >
-                    <Text style={[styles.selectBtnText, isCurrent && styles.selectBtnTextDisabled]}>
-                      {isCurrent ? 'Current Plan' : 'Select Plan'}
+                    <Text style={[styles.selectBtnText, isCurrentActive && styles.selectBtnTextDisabled]}>
+                      {isCurrentActive ? 'Current Plan' : (isCurrent ? 'Renew Plan' : 'Select Plan')}
                     </Text>
                   </TouchableOpacity>
                 </View>

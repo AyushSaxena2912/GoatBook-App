@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
+import { triggerSubscriptionExpired } from '../utils/subscriptionExpiredBus';
 
 // Cross-platform secure storage wrapper
 // expo-secure-store doesn't work on web, so we use localStorage as fallback
@@ -89,8 +90,15 @@ api.interceptors.response.use(
       console.warn('AUTH: Session expired or invalid. Clearing storage.');
       await storage.deleteItem('token');
       await storage.deleteItem('selectedFarmId');
-      // Note: Ideally you would navigate to Login here, but clearing storage 
+      // Note: Ideally you would navigate to Login here, but clearing storage
       // will trigger state changes in most AuthContext implementations.
+    }
+    if (error.response?.status === 402 && error.response?.data?.code === 'SUBSCRIPTION_EXPIRED') {
+      triggerSubscriptionExpired(error.response.data);
+      // Never settle this call — the screen that made it is about to be covered by the
+      // blocking expiry modal, so its own catch/finally (loading spinners, error alerts,
+      // etc.) should simply never run instead of surfacing a second, conflicting message.
+      return new Promise(() => {});
     }
     return Promise.reject(error);
   }
