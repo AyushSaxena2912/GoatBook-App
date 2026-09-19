@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
+import React, { useState, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   ActivityIndicator,
   Alert
 } from 'react-native';
@@ -15,7 +15,7 @@ import GInput from '../components/GInput';
 import GButton from '../components/GButton';
 import api from '../api';
 import { getStyles } from './ReplaceTagScreen.styles';
-import { Tag, ArrowRight, CheckCircle2 } from 'lucide-react-native';
+import { Tag, ArrowRight, CheckCircle2, Search, X } from 'lucide-react-native';
 import GAlert from '../components/GAlert';
 
 const ReplaceTagScreen = ({ navigation }) => {
@@ -28,20 +28,39 @@ const ReplaceTagScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
+  const tagDebounceRef = useRef(null);
+  const latestTagQueryRef = useRef('');
 
   const handleCheckTag = async (tag) => {
     const tagToSearch = tag || existingTag;
     if (!tagToSearch) return;
 
+    latestTagQueryRef.current = tagToSearch;
     setLoading(true);
     try {
       const response = await api.get(`/animals/check-tag/${tagToSearch}`);
+      if (latestTagQueryRef.current !== tagToSearch) return; // superseded by a newer keystroke
       setAnimal(response.data);
     } catch (error) {
+      if (latestTagQueryRef.current !== tagToSearch) return;
       setAnimal(null);
     } finally {
-      setLoading(false);
+      if (latestTagQueryRef.current === tagToSearch) setLoading(false);
     }
+  };
+
+  const handleExistingTagChange = (val) => {
+    setExistingTag(val);
+    if (tagDebounceRef.current) clearTimeout(tagDebounceRef.current);
+
+    if (val.length < 3) {
+      latestTagQueryRef.current = '';
+      setLoading(false);
+      setAnimal(null);
+      return;
+    }
+
+    tagDebounceRef.current = setTimeout(() => handleCheckTag(val), 400);
   };
 
   const handleReplaceTag = async () => {
@@ -87,18 +106,25 @@ const ReplaceTagScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <GInput 
+          <GInput
             label="Existing Tag ID"
             value={existingTag}
-            onChangeText={(val) => {
-              setExistingTag(val);
-              // We can still auto-fetch details in background if needed
-              if (val.length >= 3) handleCheckTag(val);
-            }}
+            onChangeText={handleExistingTagChange}
             placeholder="Search old tag ID"
             autoCapitalize="characters"
             required
             editable={!submitting}
+            rightIcon={
+              loading ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : existingTag ? (
+                <TouchableOpacity onPress={() => { setExistingTag(''); setAnimal(null); }}>
+                  <X size={18} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              ) : (
+                <Search size={20} color={theme.colors.textMuted} />
+              )
+            }
           />
 
           {existingTag.length >= 3 && !loading && !animal && (

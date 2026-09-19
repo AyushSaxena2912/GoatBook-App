@@ -66,6 +66,8 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const searchBarTranslateY = useRef(new Animated.Value(-100)).current;
+  const searchDebounceRef = useRef(null);
+  const fetchRequestTokenRef = useRef(0);
 
   // Selection State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -253,6 +255,7 @@ const AnimalListScreen = ({ navigation, route }) => {
   }, [animals, route.params, activeFilters, activeSearch]);
 
   const fetchAnimals = async (pageNumber = 1, filtersOverride = null, sortByOverride = null, sortOrderOverride = null, searchOverride = null, navParamsOverride = null) => {
+    const myRequestToken = ++fetchRequestTokenRef.current;
     try {
       if (pageNumber === 1) setLoading(true);
       else setIsFetchingMore(true);
@@ -347,7 +350,13 @@ const AnimalListScreen = ({ navigation, route }) => {
       }
 
       const response = await api.get(url);
-      
+
+      if (myRequestToken !== fetchRequestTokenRef.current) {
+        // A newer fetch has since started (e.g. the user kept typing/changed
+        // filters) — this response is stale, don't let it clobber fresher data.
+        return;
+      }
+
       const fetchedAnimals = response.data.animals || [];
       const paginationInfo = response.data.pagination || { page: 1, totalPages: 1 };
       
@@ -368,8 +377,9 @@ const AnimalListScreen = ({ navigation, route }) => {
       setLoading(false);
       setIsFetchingMore(false);
     } catch (error) {
+      if (myRequestToken !== fetchRequestTokenRef.current) return;
       console.warn('Fetch animals failed, looking for cache...', error);
-      
+
       if (pageNumber === 1) {
         const cachedData = await getFromCache('animals');
         if (cachedData) {
@@ -446,13 +456,21 @@ const AnimalListScreen = ({ navigation, route }) => {
   };
 
   const handleTriggerSearch = (textToSearch) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     const term = (textToSearch !== undefined ? textToSearch : searchInputText).trim();
     setActiveSearch(term);
     setPage(1);
     fetchAnimals(1, activeFilters, sortBy, sortOrder, term, route.params);
   };
 
+  const handleSearchInputChange = (text) => {
+    setSearchInputText(text);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => handleTriggerSearch(text), 400);
+  };
+
   const handleClearSearch = () => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     setSearchInputText('');
     if (activeSearch) {
       setActiveSearch('');
@@ -463,6 +481,7 @@ const AnimalListScreen = ({ navigation, route }) => {
 
   const toggleSearch = () => {
     if (isSearching) {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
       setSearchInputText('');
       Animated.timing(searchBarTranslateY, {
         toValue: -100,
@@ -695,24 +714,17 @@ const AnimalListScreen = ({ navigation, route }) => {
               placeholder={t('animalList.searchPlaceholder', "Search tag, breed, location...")}
               placeholderTextColor={theme.colors.textMuted}
               value={searchInputText}
-              onChangeText={setSearchInputText}
+              onChangeText={handleSearchInputChange}
               returnKeyType="search"
               onSubmitEditing={() => handleTriggerSearch(searchInputText)}
               autoCapitalize="characters"
               autoFocus
             />
             {searchInputText.length > 0 && (
-              <TouchableOpacity onPress={handleClearSearch} style={{ padding: 4, marginRight: 6 }}>
+              <TouchableOpacity onPress={handleClearSearch} style={{ padding: 4 }}>
                 <X size={18} color={theme.colors.textLight} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              style={[styles.manualSearchBtn, { backgroundColor: theme.colors.primary }]}
-              onPress={() => handleTriggerSearch(searchInputText)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.manualSearchBtnText}>{t('common.search', 'Search')}</Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
       )}
@@ -851,19 +863,6 @@ const getStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: 15,
     paddingVertical: 8,
     fontFamily: 'Inter_500Medium',
-  },
-  manualSearchBtn: {
-    height: 36,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
-  },
-  manualSearchBtnText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontFamily: 'Inter_600SemiBold',
   },
   actionRow: {
     padding: 16,
