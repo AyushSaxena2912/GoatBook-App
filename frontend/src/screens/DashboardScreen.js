@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, SafeAreaView, FlatList, Scroll
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/ThemeContext';
+import { useFarmSettings } from '../context/FarmSettingsContext';
 import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { CLEARED_ANIMAL_LIST_PARAMS } from '../utils/animalListNav';
 import { 
@@ -24,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 
 const DashboardScreen = ({ navigation }) => {
   const { theme, isDarkMode, toggleTheme } = useTheme();
+  const { refreshFarmSettings } = useFarmSettings();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [farmName, setFarmName] = useState('Goatwala Farm');
@@ -104,7 +106,10 @@ const DashboardScreen = ({ navigation }) => {
           // 4. Fetch analytics
           const analyticsRes = await api.get('/analytics/dashboard');
           setAnalytics(analyticsRes.data);
-          
+
+          // 5. Refresh farm-wide settings (units, allowed species) now that we're authenticated
+          refreshFarmSettings();
+
         } catch (err) {
           console.warn('Dashboard: Failed to load data:', err);
           if (err.response?.status === 401) {
@@ -115,7 +120,7 @@ const DashboardScreen = ({ navigation }) => {
 
       setLoading(true);
       loadDashboardData().finally(() => setLoading(false));
-    }, [navigation])
+    }, [navigation, refreshFarmSettings])
   );
 
   const tiles = useMemo(() => {
@@ -136,7 +141,7 @@ const DashboardScreen = ({ navigation }) => {
       { id: '12', title: t('actions.financials', 'Financials'), icon: <Briefcase color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'FinancialList' },
       { id: '13', title: t('actions.replaceTag', 'Replace Tag'), icon: <RefreshCcw color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'ReplaceTag' },
       { id: '14', title: t('actions.milkRecords', 'Milk Records'), icon: <Milk color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
-      { id: '15', title: t('actions.farmSetting', 'Farm Setting'), icon: <Sliders color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: null },
+      { id: '15', title: t('actions.farmSetting', 'Farm Setting'), icon: <Sliders color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'FarmPreferences' },
       { id: '16', title: t('actions.feedFormulation', 'Feed Formulation'), icon: <Leaf color={theme.colors.primary} size={28} strokeWidth={1.8} />, screen: 'FormulationList' },
     ];
 

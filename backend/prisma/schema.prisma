@@ -158,6 +158,7 @@ model farms {
   feedFormulations    feedFormulation[]
   transactions        transactions[]
   notes               notes[]
+  farm_settings       farm_settings?
 }
 
 model locations {
@@ -217,6 +218,8 @@ model users {
   transactions_transactions_updated_by_user_idTousers               transactions[]        @relation("transactions_updated_by_user_idTousers")
   notes_notes_created_by_user_idTousers                             notes[]               @relation("notes_created_by_user_idTousers")
   notes_notes_updated_by_user_idTousers                             notes[]               @relation("notes_updated_by_user_idTousers")
+  farm_settings_created_by_user_idTousers                           farm_settings[]       @relation("farm_settings_created_by_user_idTousers")
+  farm_settings_updated_by_user_idTousers                           farm_settings[]       @relation("farm_settings_updated_by_user_idTousers")
 }
 
 model vaccination_records {
@@ -298,6 +301,29 @@ model notes {
   farms                                  farms     @relation(fields: [farm_id], references: [id], onDelete: Cascade)
   users_notes_created_by_user_idTousers  users?    @relation("notes_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
   users_notes_updated_by_user_idTousers  users?    @relation("notes_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
+}
+
+model farm_settings {
+  id                                                String   @id @db.Uuid
+  farm_id                                           String   @db.Uuid @unique
+  weight_unit                                       String   @default("KG") @db.VarChar(10)
+  height_unit                                       String   @default("IN") @db.VarChar(10)
+  milk_unit                                         String   @default("LTR") @db.VarChar(10)
+  goat_allowed                                      Boolean  @default(true)
+  goat_gestation_period_days                        Int      @default(150)
+  goat_female_kid_empty_months                      Int      @default(7)
+  goat_adult_female_empty_months                    Int      @default(5)
+  sheep_allowed                                     Boolean  @default(true)
+  sheep_gestation_period_days                       Int      @default(150)
+  sheep_female_kid_empty_months                     Int      @default(7)
+  sheep_adult_female_empty_months                   Int      @default(5)
+  created_by_user_id                                String?  @db.Uuid
+  updated_by_user_id                                String?  @db.Uuid
+  created_at                                        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                                         DateTime @updatedAt @db.Timestamptz(6)
+  farms                                              farms    @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  users_farm_settings_created_by_user_idTousers      users?   @relation("farm_settings_created_by_user_idTousers", fields: [created_by_user_id], references: [id])
+  users_farm_settings_updated_by_user_idTousers      users?   @relation("farm_settings_updated_by_user_idTousers", fields: [updated_by_user_id], references: [id])
 }
 
 model vaccination_schedules {

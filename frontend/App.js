@@ -46,6 +46,7 @@ import BulkDataScreen from './src/screens/BulkDataScreen';
 import AddWeightScreen from './src/screens/AddWeightScreen';
 import WeightListScreen from './src/screens/WeightListScreen';
 import FarmSettingsScreen from './src/screens/FarmSettingsScreen';
+import FarmPreferencesScreen from './src/screens/FarmPreferencesScreen';
 import SubscriptionScreen from './src/screens/SubscriptionScreen';
 import VaccinesMenuScreen from './src/screens/VaccinesMenuScreen';
 import AddVaccineNameScreen from './src/screens/AddVaccineNameScreen';
@@ -68,6 +69,7 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import NoteListScreen from './src/screens/NoteListScreen';
 import AddNoteScreen from './src/screens/AddNoteScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { FarmSettingsProvider } from './src/context/FarmSettingsContext';
 import SideMenu from './src/components/SideMenu';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
 import i18n from './src/i18n';
@@ -255,6 +257,7 @@ function AppContent() {
           <Stack.Screen name="AddWeight" component={AddWeightScreen} />
           <Stack.Screen name="WeightList" component={WeightListScreen} />
           <Stack.Screen name="FarmSettings" component={FarmSettingsScreen} />
+          <Stack.Screen name="FarmPreferences" component={FarmPreferencesScreen} />
           <Stack.Screen name="VaccineDefinitions" component={VaccineDefinitionsScreen} />
           <Stack.Screen name="AddVaccineName" component={AddVaccineNameScreen} />
           <Stack.Screen name="AddVaccination" component={AddVaccinationScreen} />
@@ -292,7 +295,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppContent />
+        <FarmSettingsProvider>
+          <AppContent />
+        </FarmSettingsProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

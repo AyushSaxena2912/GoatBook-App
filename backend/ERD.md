@@ -277,6 +277,24 @@ EXPENSE EXPENSE
     }
   
 
+  "farm_settings" {
+    String id "🗝️"
+    String weight_unit 
+    String height_unit 
+    String milk_unit 
+    Boolean goat_allowed 
+    Int goat_gestation_period_days 
+    Int goat_female_kid_empty_months 
+    Int goat_adult_female_empty_months 
+    Boolean sheep_allowed 
+    Int sheep_gestation_period_days 
+    Int sheep_female_kid_empty_months 
+    Int sheep_adult_female_empty_months 
+    DateTime created_at 
+    DateTime updated_at 
+    }
+  
+
   "vaccination_schedules" {
     String id "🗝️"
     Int start_day 
@@ -456,6 +474,9 @@ EXPENSE EXPENSE
     "notes" }o--|| "farms" : "farms"
     "notes" }o--|o "users" : "users_notes_created_by_user_idTousers"
     "notes" }o--|o "users" : "users_notes_updated_by_user_idTousers"
+    "farm_settings" |o--|| "farms" : "farms"
+    "farm_settings" }o--|o "users" : "users_farm_settings_created_by_user_idTousers"
+    "farm_settings" }o--|o "users" : "users_farm_settings_updated_by_user_idTousers"
     "vaccination_schedules" }o--|| "vaccines" : "vaccines"
     "animal_transactions" }o--|| "animals" : "animals"
     "matings" |o--|| "enum_mating_type" : "enum:mating_type"

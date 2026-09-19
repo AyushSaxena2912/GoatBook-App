@@ -60,6 +60,7 @@ app.use('/api/notifications', require('./modules/notifications/notification.rout
 app.use('/api/formulations', require('./modules/feedFormulation/feedFormulation.routes'));
 app.use('/api/finances', require('./modules/transactions/transaction.routes'));
 app.use('/api/notes', require('./modules/notes/note.routes'));
+app.use('/api/farm-settings', require('./modules/farmSettings/farmSetting.routes'));
 app.use('/api/bulk', require('./modules/bulk/bulk.routes'));
 
 // Error handling middleware

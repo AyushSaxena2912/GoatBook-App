@@ -144,10 +144,18 @@ const parseAndValidateMatingSheet = async (buffer, farmId) => {
 
   const animals = await prisma.animals.findMany({
     where: { farm_id: farmId },
-    select: { id: true, tag_number: true, gender: true }
+    select: { id: true, tag_number: true, gender: true, animal_type: true }
   });
   const animalMap = new Map();
   animals.forEach(a => animalMap.set(a.tag_number.trim(), a));
+
+  const farmSettings = await prisma.farm_settings.findUnique({ where: { farm_id: farmId } });
+  const gestationDaysFor = (animalType) => {
+    if (!farmSettings) return 150;
+    const type = (animalType || '').toLowerCase();
+    const days = type === 'sheep' ? farmSettings.sheep_gestation_period_days : farmSettings.goat_gestation_period_days;
+    return days || 150;
+  };
 
   const validTypes = ['NATURAL', 'AI', 'ET'];
   const validStatuses = ['NOT_SUCCESSFUL', 'PREGNANT', 'MISCARRIAGE'];
@@ -236,8 +244,9 @@ const parseAndValidateMatingSheet = async (buffer, farmId) => {
     if (expDelDateRaw !== '') {
       expectedDeliveryDate = parseExcelDate(expDelDateRaw);
     } else if (matingDate && status === 'PREGNANT') {
-      // Auto-calculate expected delivery date (~150 days for goats/sheep)
-      expectedDeliveryDate = new Date(matingDate.getTime() + (150 * 86400000));
+      // Auto-calculate expected delivery date from the farm's configured gestation period
+      const gestationDays = gestationDaysFor(matchedAnimal?.animal_type);
+      expectedDeliveryDate = new Date(matingDate.getTime() + (gestationDays * 86400000));
     }
 
     if (rowErrors.length > 0) {

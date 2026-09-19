@@ -1,6 +1,23 @@
 const prisma = require('../../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
+// Minimum days required between two deliveries for the given animal, driven
+// by the farm's configured "adult female empty" period (months) per species.
+// Falls back to the historical 150-day default when no settings row exists
+// or the animal's type isn't Goat/Sheep.
+const getMinGapDays = async (farmId, animalId) => {
+  const [animal, settings] = await Promise.all([
+    prisma.animals.findUnique({ where: { id: animalId }, select: { animal_type: true } }),
+    prisma.farm_settings.findUnique({ where: { farm_id: farmId } })
+  ]);
+
+  if (!settings) return 150;
+
+  const type = (animal?.animal_type || '').toLowerCase();
+  const months = type === 'sheep' ? settings.sheep_adult_female_empty_months : settings.goat_adult_female_empty_months;
+  return (months || 5) * 30;
+};
+
 // @desc    Get ALL breedings for the farm
 // @route   GET /api/breedings
 exports.getAllBreedings = async (req, res) => {
@@ -66,7 +83,8 @@ exports.addBreeding = async (req, res) => {
       return res.status(400).json({ message: 'A delivery/abortion record already exists for this date.' });
     }
 
-    // 2. 150-day gap constraint
+    // 2. Minimum gap constraint (from the farm's configured "adult female empty" period)
+    const minGapDays = await getMinGapDays(req.farmId, animal_id);
     const existingDeliveries = await prisma.breedings.findMany({
       where: { animal_id }
     });
@@ -76,9 +94,9 @@ exports.addBreeding = async (req, res) => {
       recDate.setHours(0, 0, 0, 0);
       const diffTime = Math.abs(dateToCheck.getTime() - recDate.getTime());
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays < 150) {
+      if (diffDays < minGapDays) {
         return res.status(400).json({
-          message: `Gap constraint violated: Another delivery/abortion was recorded on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum 150 days required).`
+          message: `Gap constraint violated: Another delivery/abortion was recorded on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum ${minGapDays} days required).`
         });
       }
     }
@@ -155,7 +173,8 @@ exports.updateBreeding = async (req, res) => {
         return res.status(400).json({ message: 'A delivery/abortion record already exists for this date.' });
       }
 
-      // 150-day gap constraint
+      // Minimum gap constraint (from the farm's configured "adult female empty" period)
+      const minGapDays = await getMinGapDays(req.farmId, existing.animal_id);
       const existingDeliveries = await prisma.breedings.findMany({
         where: {
           id: { not: req.params.id },
@@ -168,9 +187,9 @@ exports.updateBreeding = async (req, res) => {
         recDate.setHours(0, 0, 0, 0);
         const diffTime = Math.abs(dateToCheck.getTime() - recDate.getTime());
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays < 150) {
+        if (diffDays < minGapDays) {
           return res.status(400).json({
-            message: `Gap constraint violated: Another delivery/abortion exists on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum 150 days required).`
+            message: `Gap constraint violated: Another delivery/abortion exists on ${recDate.toLocaleDateString()} (${diffDays} days gap, minimum ${minGapDays} days required).`
           });
         }
       }
